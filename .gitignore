@@ -3,6 +3,9 @@
 ##
 ## Get latest from https://github.com/github/gitignore/blob/master/VisualStudio.gitignore
 
+# Derail Valley install path symlink
+dv
+
 # User-specific files
 *.rsuser
 *.suo
