@@ -1,0 +1,10 @@
+{
+  "Id": "DVCareer",
+  "DisplayName": "Derail Valley Career",
+  "Author": "fauxnik",
+  "Version": "0.0.0",
+  "AssemblyName": "DVCareer.dll",
+  "EntryMethod": "DVCareer.DVCareer.OnLoad",
+  "LoadAfter": [],
+  "Repository": "https://raw.githubusercontent.com/fauxnik/DVCareer/main/Repository.json"
+}
