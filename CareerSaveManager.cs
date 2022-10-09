@@ -1,7 +1,7 @@
-﻿using Harmony12;
+﻿using DV.JObjectExtstensions;
+using Harmony12;
 using Newtonsoft.Json.Linq;
 using System;
-using System.Linq;
 
 namespace DVCareer
 {
@@ -9,6 +9,8 @@ namespace DVCareer
     {
         private static readonly string PRIMARY_SAVE_KEY = "DVCareer";
         private static readonly string VERSION_SAVE_KEY = "Version";
+        private static readonly string TRACKS_HASH_SAVE_KEY = "TracksHash";
+        private static readonly string ROLLING_STOCK_SAVE_KEY = "RollingStock";
 
         public static new string AllowAutoCreate() { return "DVCareer_CareerSaveManager"; }
 
@@ -20,11 +22,14 @@ namespace DVCareer
                 try
                 {
                     var tracksHash = SingletonBehaviour<CarsSaveManager>.Instance.TracksHash;
+                    var rollingStockManager = SingletonBehaviour<RollingStockManager>.Instance;
 
-                    // TODO: save mod data
+                    // TODO: save more data
 
                     JObject saveData = new JObject(
-                        new JProperty(VERSION_SAVE_KEY, new JValue(DVCareer.Version.ToString())));
+                        new JProperty(VERSION_SAVE_KEY, DVCareer.Version.ToString()),
+                        new JProperty(TRACKS_HASH_SAVE_KEY, tracksHash),
+                        new JProperty(ROLLING_STOCK_SAVE_KEY, rollingStockManager.GetSaveData()));
 
                     SaveGameManager.data.SetJObject(PRIMARY_SAVE_KEY, saveData);
                 }
@@ -49,8 +54,22 @@ namespace DVCareer
                         return;
                     }
                     var tracksHash = SingletonBehaviour<CarsSaveManager>.Instance.TracksHash;
+                    var loadedTracksHash = saveData.GetString(TRACKS_HASH_SAVE_KEY);
 
-                    // TODO: load mod data
+                    var rollingStockSaveData = saveData[ROLLING_STOCK_SAVE_KEY];
+                    if (rollingStockSaveData == null) { DVCareer.Log($"Not loading rolling stock; data is null."); }
+                    else if (!(rollingStockSaveData.Type == JTokenType.Array)) { throw new Exception($"Tried to load rolling stock, but data type is {rollingStockSaveData.Type}; expected {JTokenType.Array}."); }
+                    else if (loadedTracksHash != tracksHash)
+                    {
+                        // TODO: handle tracks hash change
+                    }
+                    else
+                    {
+                        var rollingStockManager = SingletonBehaviour<RollingStockManager>.Instance;
+                        rollingStockManager.LoadSaveData(rollingStockSaveData as JArray);
+                    }
+
+                    // TODO: load more data
                 }
                 catch (Exception e) { DVCareer.OnCriticalFailure(e, "loading mod data"); }
             }

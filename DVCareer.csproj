@@ -40,6 +40,10 @@
     <Reference Include="Assembly-CSharp-firstpass">
       <HintPath>dv\DerailValley_Data\Managed\Assembly-CSharp-firstpass.dll</HintPath>
     </Reference>
+    <Reference Include="DV.PointSet, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>dv\DerailValley_Data\Managed\DV.PointSet.dll</HintPath>
+    </Reference>
     <Reference Include="DV.Utils">
       <HintPath>dv\DerailValley_Data\Managed\DV.Utils.dll</HintPath>
     </Reference>
@@ -67,8 +71,10 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="DVCareer.cs" />
+    <Compile Include="Equipment.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="CareerSaveManager.cs" />
+    <Compile Include="RollingStockManager.cs" />
     <Compile Include="Settings.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
