@@ -8,9 +8,9 @@ using System.Threading.Tasks;
 using UnityEngine;
 using UnityModManagerNet;
 
-namespace DVCareer
+namespace DVOwnership
 {
-    static class DVCareer
+    static class DVOwnership
     {
         private static UnityModManager.ModEntry modEntry;
 
@@ -73,16 +73,16 @@ namespace DVCareer
             // TODO: show floaty message (and offer to open log folder?) before quitting game
             modEntry.Active = false;
             Debug.Log(exception);
-            modEntry.Logger.Critical("Deactivating mod DVCareer due to unrecoverable failure!");
+            modEntry.Logger.Critical("Deactivating mod DVOwnership due to unrecoverable failure!");
             modEntry.Logger.Critical($"This happened while {action}.");
-            modEntry.Logger.Critical($"You can reactivate DVCareer by restarting the game, but this failure type likely indicates an incompatibility between the mod and a recent game update. Please search the mod's Github issue tracker for a relevant report. If none is found, please open one and include this log file.");
+            modEntry.Logger.Critical($"You can reactivate DVOwnership by restarting the game, but this failure type likely indicates an incompatibility between the mod and a recent game update. Please search the mod's Github issue tracker for a relevant report. If none is found, please open one and include this log file.");
             Application.Quit();
         }
 
         private static void NeedsUpdate()
         {
             // TODO: show floaty message before quitting game
-            modEntry.Logger.Critical($"There is a new version of DVCareer available. Please install it to continue using the mod.\nInstalled: {modEntry.Version}\nLatest: {modEntry.NewestVersion}");
+            modEntry.Logger.Critical($"There is a new version of DVOwnership available. Please install it to continue using the mod.\nInstalled: {modEntry.Version}\nLatest: {modEntry.NewestVersion}");
             Application.Quit();
         }
     }

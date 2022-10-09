@@ -4,7 +4,7 @@ using Newtonsoft.Json.Linq;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace DVCareer
+namespace DVOwnership
 {
     internal class Equipment
     {
@@ -142,7 +142,7 @@ namespace DVCareer
         {
             if (IsSpawned)
             {
-                DVCareer.LogWarning($"Trying to spawn train car with ID {id}, but it already exists!");
+                DVOwnership.LogWarning($"Trying to spawn train car with ID {id}, but it already exists!");
                 return;
             }
 

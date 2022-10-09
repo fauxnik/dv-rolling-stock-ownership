@@ -2,13 +2,13 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace DVCareer
+namespace DVOwnership
 {
     internal class RollingStockManager : SingletonBehaviour<RollingStockManager>
     {
         private List<Equipment> equipment = new List<Equipment>();
 
-        public static new string AllowAutoCreate() { return "DVCareer_RollingStockManager"; }
+        public static new string AllowAutoCreate() { return "DVOwnership_RollingStockManager"; }
 
         public void LoadSaveData(JArray data)
         {

@@ -1,9 +1,9 @@
 {
   "Releases": [
     {
-      "Id": "PersistentJobs",
+      "Id": "DVOwnership",
       "Version": "0.0.0",
-      "DownloadUrl": "https://github.com/fauxnik/DVCareer/releases/download/v0.0.0/DVCareer.zip"
+      "DownloadUrl": "https://github.com/fauxnik/DVOwnership/releases/download/v0.0.0/DVOwnership.zip"
     }
   ]
 }

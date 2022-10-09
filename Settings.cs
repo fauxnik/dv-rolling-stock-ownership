@@ -1,6 +1,6 @@
 ﻿using UnityModManagerNet;
 
-namespace DVCareer
+namespace DVOwnership
 {
     internal class Settings : UnityModManager.ModSettings, IDrawable
     {

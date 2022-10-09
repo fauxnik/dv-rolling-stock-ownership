@@ -1,10 +1,10 @@
 {
-  "Id": "DVCareer",
-  "DisplayName": "Derail Valley Career",
+  "Id": "DVOwnership",
+  "DisplayName": "Derail Valley Ownership",
   "Author": "fauxnik",
   "Version": "0.0.0",
-  "AssemblyName": "DVCareer.dll",
-  "EntryMethod": "DVCareer.DVCareer.OnLoad",
+  "AssemblyName": "DVOwnership.dll",
+  "EntryMethod": "DVOwnership.DVOwnership.OnLoad",
   "LoadAfter": [],
-  "Repository": "https://raw.githubusercontent.com/fauxnik/DVCareer/main/Repository.json"
+  "Repository": "https://raw.githubusercontent.com/fauxnik/DVOwnership/main/Repository.json"
 }
