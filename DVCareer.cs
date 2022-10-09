@@ -30,7 +30,7 @@ namespace DVCareer
                 var harmony = HarmonyInstance.Create(modEntry.Info.Id);
                 harmony.PatchAll(Assembly.GetExecutingAssembly());
             }
-            catch { OnCriticalFailure("patching assembly"); }
+            catch (Exception e) { OnCriticalFailure(e, "patching assembly"); }
 
             modEntry.OnUpdate = (entry, delta) =>
             {
@@ -40,7 +40,7 @@ namespace DVCareer
                     modEntry.OnUpdate = null;
 
                     try { unusedTrainCarDeleter.StopAllCoroutines(); }
-                    catch { OnCriticalFailure("stopping unused train car deleter");  }
+                    catch (Exception e) { OnCriticalFailure(e, "stopping unused train car deleter");  }
                 }
             };
         }
@@ -59,10 +59,11 @@ namespace DVCareer
         public static void LogWarning(object message) { modEntry.Logger.Warning($"{message}"); }
         public static void LogError(object message) { modEntry.Logger.Error($"{message}"); }
 
-        public static void OnCriticalFailure(string action)
+        public static void OnCriticalFailure(Exception exception, string action)
         {
             // TODO: show floaty message (and offer to open log folder?) before quitting game
             modEntry.Active = false;
+            Debug.Log(exception);
             modEntry.Logger.Critical("Deactivating mod DVCareer due to unrecoverable failure!");
             modEntry.Logger.Critical($"This happened while {action}.");
             modEntry.Logger.Critical($"You can reactivate DVCareer by restarting the game, but this failure type likely indicates an incompatibility between the mod and a recent game update. Please search the mod's Github issue tracker for a relevant report. If none is found, please open one and include this log file.");
