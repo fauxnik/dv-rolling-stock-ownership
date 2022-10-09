@@ -12,12 +12,14 @@ namespace DVCareer
 {
     static class DVCareer
     {
-        public static UnityModManager.ModEntry modEntry;
-        public static Settings settings;
+        private static UnityModManager.ModEntry modEntry;
 
-        static void OnLoad(UnityModManager.ModEntry modEntry)
+        public static Settings Settings { get; private set; }
+        public static Version Version { get { return modEntry.Version; } }
+
+        static void OnLoad(UnityModManager.ModEntry loadedEntry)
         {
-            DVCareer.modEntry = modEntry;
+            modEntry = loadedEntry;
 
             // TODO: figure out if HasUpdate actually works; Intellisense displays "Not used"
             //if (modEntry.HasUpdate)
@@ -26,10 +28,10 @@ namespace DVCareer
             //    return;
             //}
 
-            try { settings = Settings.Load<Settings>(modEntry); }
+            try { Settings = Settings.Load<Settings>(modEntry); }
             catch {
                 LogWarning("Unabled to load mod settings. Using defaults instead.");
-                settings = new Settings();
+                Settings = new Settings();
             }
 
             try
@@ -54,7 +56,7 @@ namespace DVCareer
 
         public static void Log(object message)
         {
-            if (!settings.isLoggingEnabled) { return; }
+            if (!Settings.isLoggingEnabled) { return; }
 
             if (message is string) { modEntry.Logger.Log(message as string); }
             else

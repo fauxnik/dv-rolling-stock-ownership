@@ -24,7 +24,7 @@ namespace DVCareer
                     // TODO: save mod data
 
                     JObject saveData = new JObject(
-                        new JProperty(VERSION_SAVE_KEY, new JValue(DVCareer.modEntry.Version.ToString())));
+                        new JProperty(VERSION_SAVE_KEY, new JValue(DVCareer.Version.ToString())));
 
                     SaveGameManager.data.SetJObject(PRIMARY_SAVE_KEY, saveData);
                 }
