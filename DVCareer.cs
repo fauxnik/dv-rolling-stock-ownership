@@ -19,6 +19,13 @@ namespace DVCareer
         {
             DVCareer.modEntry = modEntry;
 
+            // TODO: figure out if HasUpdate actually works; Intellisense displays "Not used"
+            //if (modEntry.HasUpdate)
+            //{
+            //    NeedsUpdate();
+            //    return;
+            //}
+
             try { settings = Settings.Load<Settings>(modEntry); }
             catch {
                 LogWarning("Unabled to load mod settings. Using defaults instead.");
@@ -67,6 +74,13 @@ namespace DVCareer
             modEntry.Logger.Critical("Deactivating mod DVCareer due to unrecoverable failure!");
             modEntry.Logger.Critical($"This happened while {action}.");
             modEntry.Logger.Critical($"You can reactivate DVCareer by restarting the game, but this failure type likely indicates an incompatibility between the mod and a recent game update. Please search the mod's Github issue tracker for a relevant report. If none is found, please open one and include this log file.");
+            Application.Quit();
+        }
+
+        private static void NeedsUpdate()
+        {
+            // TODO: show floaty message before quitting game
+            modEntry.Logger.Critical($"There is a new version of DVCareer available. Please install it to continue using the mod.\nInstalled: {modEntry.Version}\nLatest: {modEntry.NewestVersion}");
             Application.Quit();
         }
     }
