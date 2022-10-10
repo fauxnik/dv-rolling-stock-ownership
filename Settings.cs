@@ -12,6 +12,9 @@ namespace DVOwnership
             false;
 #endif
 
+        [Draw("Scale equipment price with career difficulty")]
+        public bool isPriceScaledWithDifficulty = false;
+
         public void OnChange() { }
     }
 }

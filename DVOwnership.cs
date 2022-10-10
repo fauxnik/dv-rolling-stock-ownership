@@ -1,8 +1,10 @@
-﻿using Harmony12;
+﻿using DVOwnership.Patches;
+using Harmony12;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Reflection.Emit;
 using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
@@ -13,6 +15,7 @@ namespace DVOwnership
     static class DVOwnership
     {
         private static UnityModManager.ModEntry modEntry;
+        private static HarmonyInstance harmony;
 
         public static Settings Settings { get; private set; }
         public static Version Version { get { return modEntry.Version; } }
@@ -36,8 +39,10 @@ namespace DVOwnership
 
             try
             {
-                var harmony = HarmonyInstance.Create(modEntry.Info.Id);
+                harmony = HarmonyInstance.Create(modEntry.Info.Id);
                 harmony.PatchAll(Assembly.GetExecutingAssembly());
+                CargoTypes_Patches.Setup();
+                Preferences_Patches.Setup();
             }
             catch (Exception e) { OnCriticalFailure(e, "patching assembly"); }
 
@@ -52,6 +57,11 @@ namespace DVOwnership
                     catch (Exception e) { OnCriticalFailure(e, "stopping unused train car deleter");  }
                 }
             };
+        }
+
+        public static DynamicMethod Patch(MethodBase original, HarmonyMethod prefix = null, HarmonyMethod postfix = null, HarmonyMethod transpiler = null)
+        {
+            return harmony.Patch(original, prefix, postfix, transpiler);
         }
 
         public static void Log(object message)

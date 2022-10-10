@@ -162,6 +162,15 @@ namespace DVOwnership
             if(locoStateSave != null && locoState != null) { locoState.SetLocoStateSaveData(locoStateSave); }
         }
 
+        public static bool operator ==(Equipment equipment, TrainCar trainCar)
+        {
+            return equipment.id == trainCar.ID;
+        }
+        public static bool operator !=(Equipment equipment, TrainCar trainCar)
+        {
+            return equipment.id != trainCar.ID;
+        }
+
         public static Equipment FromSaveData(JObject data)
         {
             string id = data.GetString(ID_SAVE_KEY);
