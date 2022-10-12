@@ -34,13 +34,15 @@ namespace DVOwnership
 
         [Header("Strings")]
         private const string MODE_NAME = "ROLLING STOCK";
-        private const string CONTENT_MAINMENU = "Purchase equipment?";
-        private const string CONTENT_CAR_SELECTION = "{0}\n${1}";
-        private const string CONTENT_DESTINATION_SELECTION = "{0}\n{1}m";
-        private const string CONTENT_CONFIRMATION = "Buy {0} for ${1}?";
-        private const string ACTION_CONFIRM = "confirm";
+        private const string CONTENT_MAINMENU = "Buy equipment?";
+        private const string CONTENT_SELECT_CAR = "{0}\n${1}\n\n{2}";
+        private const string CONTENT_SELECT_DESTINATION = "{0}\n{1}m\n\n{2}";
+        private const string CONTENT_CONFIRM_PURCHASE = "Buy {0} for ${1}?\n\n{2}";
+        private const string CONTENT_FRAGMENT_INSUFFICIENT_FUNDS = "Insufficient funds.";
+        private const string ACTION_CONFIRM_SELECTION = "buy";
+        private const string ACTION_CONFIRM_DESTINATION = "place";
+        private const string ACTION_CONFIRM_PURCHASE = "confirm";
         private const string ACTION_CANCEL = "cancel";
-        private const string ACTION_INSUFFICIENT_FUNDS = "insufficient funds";
 
         public Transform signalOrigin;
         public void OverrideSignalOrigin(Transform signalOrigin) { this.signalOrigin = signalOrigin; }
@@ -407,21 +409,26 @@ namespace DVOwnership
 
         private void DisplayCarTypeAndPrice()
         {
-            display.SetContentAndAction(string.Format(CONTENT_CAR_SELECTION, SelectedCarType, carPrice), CanAfford ? "" : ACTION_INSUFFICIENT_FUNDS);
+            var content = string.Format(CONTENT_SELECT_CAR, SelectedCarType.DisplayName(), carPrice.ToString("F0"), CanAfford ? "" : CONTENT_FRAGMENT_INSUFFICIENT_FUNDS);
+            var action = CanAfford ? ACTION_CONFIRM_SELECTION : ACTION_CANCEL;
+            display.SetContentAndAction(content, action);
             lcdArrow.TurnOff();
         }
 
         private void DisplayCarTypeAndLength()
         {
-
-            display.SetContentAndAction(string.Format(CONTENT_DESTINATION_SELECTION, SelectedCarType, carLength.ToString("F")), CanAfford ? canSpawnAtPoint ? ACTION_CONFIRM : ACTION_CANCEL : ACTION_INSUFFICIENT_FUNDS);
+            var content = string.Format(CONTENT_SELECT_DESTINATION, SelectedCarType.DisplayName(), carLength.ToString("F"), CanAfford ? "" : CONTENT_FRAGMENT_INSUFFICIENT_FUNDS);
+            var action = CanAfford && canSpawnAtPoint ? ACTION_CONFIRM_DESTINATION : ACTION_CANCEL;
+            display.SetContentAndAction(content, action);
             if (canSpawnAtPoint) { UpdateLCDRerailDirectionArrow(); }
             else { lcdArrow.TurnOff(); }
         }
 
         private void DisplayPurchaseConfirmation()
         {
-            display.SetContentAndAction(string.Format(CONTENT_CONFIRMATION, SelectedCarType, carPrice), CanAfford ? isPurchaseConfirmed ? ACTION_CONFIRM : ACTION_CANCEL : ACTION_INSUFFICIENT_FUNDS);
+            var content = string.Format(CONTENT_CONFIRM_PURCHASE, SelectedCarType.DisplayName(), carPrice.ToString("F0"), CanAfford ? "" : CONTENT_FRAGMENT_INSUFFICIENT_FUNDS);
+            var action = CanAfford && isPurchaseConfirmed ? ACTION_CONFIRM_PURCHASE : ACTION_CANCEL;
+            display.SetContentAndAction(content , action);
             lcdArrow.TurnOff();
         }
 
@@ -450,6 +457,15 @@ namespace DVOwnership
                 _couldAfford = canAfford;
                 return canAfford != couldAfford;
             }
+        }
+
+        private float CalculateCarPrice(TrainCarType carType)
+        {
+            var isLoco = CarTypes.IsLocomotive(carType);
+            var price = ResourceTypes.GetFullDamagePriceForCar(carType);
+            if (isLoco) { price = ScaleLocoPrice(price); }
+            if (DVOwnership.Settings.isPriceScaledWithDifficulty) { price = ScalePriceBasedOnDifficulty(price, isLoco); }
+            return Mathf.Round(price);
         }
 
         private float ScaleLocoPrice(float price)
@@ -498,11 +514,7 @@ namespace DVOwnership
         {
             var carType = SelectedCarType;
 
-            var isLoco = CarTypes.IsLocomotive(carType);
-            var price = ResourceTypes.GetFullDamagePriceForCar(carType);
-            if (isLoco) { price = ScaleLocoPrice(price); }
-            if (DVOwnership.Settings.isPriceScaledWithDifficulty) { price = ScalePriceBasedOnDifficulty(price, isLoco); }
-            carPrice = Mathf.Round(price);
+            carPrice = CalculateCarPrice(carType);
 
             carPrefabToSpawn = CarTypes.GetCarPrefab(carType);
             if (carPrefabToSpawn == null)
@@ -519,7 +531,7 @@ namespace DVOwnership
 
         public void UpdateCarTypesAvailableForPurchase()
         {
-            var prevSelectedCarType = carTypesAvailableForPurchase.Count > 0 ? SelectedCarType : TrainCarType.NotSet;
+            var prevSelectedCarType = carTypesAvailableForPurchase?.Count > 0 ? SelectedCarType : TrainCarType.NotSet;
             var allowedCarTypes = from carType in Enum.GetValues(typeof(TrainCarType)).Cast<TrainCarType>()
                               where !bannedTypes.Contains(carType) && !CarTypes.IsHidden(carType)
                               select carType;
