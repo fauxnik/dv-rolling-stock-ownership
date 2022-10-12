@@ -5,14 +5,12 @@ using System;
 
 namespace DVOwnership
 {
-    public class SaveManager : SingletonBehaviour<SaveManager>
+    public class SaveManager
     {
         private static readonly string PRIMARY_SAVE_KEY = "DVOwnership";
         private static readonly string VERSION_SAVE_KEY = "Version";
         private static readonly string TRACKS_HASH_SAVE_KEY = "TracksHash";
         private static readonly string ROLLING_STOCK_SAVE_KEY = "RollingStock";
-
-        public static new string AllowAutoCreate() { return "DVOwnership_SaveManager"; }
 
         [HarmonyPatch(typeof(SaveGameManager), "Save")]
         class SaveGameManager_Save_Patch

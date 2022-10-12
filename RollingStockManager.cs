@@ -43,35 +43,22 @@ namespace DVOwnership
 
         public JArray GetSaveData() { return new JArray(from eq in registry select eq.GetSaveData()); }
 
-        // TODO: This feels hacky. Is there a better way?
-        [HarmonyPatch(typeof(CommsRadioController), "PlayAudioFromCar")]
-        class CommsRadioController_PlayAudioFromCar_Patch
+        [HarmonyPatch(typeof(CommsRadioCarDeleter), "OnCarToDeleteDestroy")]
+        class CommsRadioCarDeleter_OnCarToDeleteDestroy_Patch
         {
-            static void Postfix(AudioClip clip, TrainCar audioOriginCar)
+            static void Postfix(TrainCar destroyedCar)
             {
-                // This is a static method, so we have to get the CommsRadioController instance elsewhere.
-                var controller = CommsRadioEquipmentPurchaser.controller;
-
-                if (controller == null)
-                {
-                    DVOwnership.LogError("Missing CommsRadioController instance! Can't detemine if the train car should be removed from RollingStockManager.");
-                    return;
-                }
-
-                var removeCarSound = controller.deleteControl?.removeCarSound;
-                if (removeCarSound == null || clip != removeCarSound) { return; }
-
-                DVOwnership.Log($"Train car is being deleted. Attempting to remove it from RollingStockManager.");
+                DVOwnership.Log($"Train car is being deleted. Attempting to remove it from RollingStockManager registry.");
 
                 var manager = Instance;
-                var equipment = manager?.GetByTrainCar(audioOriginCar);
+                var equipment = manager?.GetByTrainCar(destroyedCar);
                 if (equipment == null)
                 {
-                    DVOwnership.Log($"Equipment with ID {audioOriginCar.ID} not found in RollingStockManager registry.");
+                    DVOwnership.Log($"Equipment with ID {destroyedCar.ID} not found in RollingStockManager registry.");
                     return;
                 }
 
-                DVOwnership.Log($"Removing equipment with ID {audioOriginCar.ID} from RollingStockManager registry.");
+                DVOwnership.Log($"Removing equipment with ID {destroyedCar.ID} from RollingStockManager registry.");
 
                 manager.Remove(equipment);
             }
