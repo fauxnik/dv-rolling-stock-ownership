@@ -49,12 +49,26 @@ namespace DVOwnership
         {
             static void Postfix(CommsRadioController __instance, AudioClip clip, TrainCar audioOriginCar)
             {
-                var removeCarSound = __instance.deleteControl.removeCarSound;
+                if (__instance == null)
+                {
+                    DVOwnership.LogError("Missing CommsRadioController instance! Can't detemine if the train car should be removed from RollingStockManager.");
+                    return;
+                }
+
+                var removeCarSound = __instance.deleteControl?.removeCarSound;
                 if (removeCarSound == null || clip != removeCarSound) { return; }
 
+                DVOwnership.Log($"Train car is being deleted. Attempting to remove it from RollingStockManager.");
+
                 var manager = Instance;
-                var equipment = manager.GetByTrainCar(audioOriginCar);
-                if (equipment == null) { return; }
+                var equipment = manager?.GetByTrainCar(audioOriginCar);
+                if (equipment == null)
+                {
+                    DVOwnership.Log($"Equipment with ID {audioOriginCar.ID} not found in RollingStockManager registry.");
+                    return;
+                }
+
+                DVOwnership.Log($"Removing equipment with ID {audioOriginCar.ID} from RollingStockManager registry.");
 
                 manager.Remove(equipment);
             }
