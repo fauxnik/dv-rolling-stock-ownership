@@ -26,10 +26,10 @@ namespace DVOwnership
 
         public Equipment GetByTrainCar(TrainCar trainCar)
         {
-            DVOwnership.Log($"Looking up equipment record with ID {trainCar.ID} from the rolling stock registry.");
-            var equipment = from eq in registry where eq == trainCar select eq;
+            DVOwnership.Log($"Looking up equipment record from the rolling stock registry by train car.");
+            var equipment = from eq in registry where eq.IsRecordOf(trainCar) select eq;
             var count = equipment.Count();
-            if (count > 1) { DVOwnership.LogError($"Unexpected number of equipment records found! Expected 1 but found {count} for train car ID {trainCar.ID}."); }
+            if (count > 1) { DVOwnership.LogError($"Unexpected number of equipment records found! Expected 1 but found {count} for train car ID {equipment.First().ID}."); }
             return equipment.FirstOrDefault();
         }
 
@@ -64,11 +64,11 @@ namespace DVOwnership
                 var equipment = manager?.GetByTrainCar(destroyedCar);
                 if (equipment == null)
                 {
-                    DVOwnership.Log($"Equipment with ID {destroyedCar.ID} not found in the rolling stock registry.");
+                    DVOwnership.LogWarning($"Equipment record not found in the rolling stock registry.");
                     return;
                 }
 
-                DVOwnership.Log($"Removing equipment with ID {destroyedCar.ID} from the rolling stock registry.");
+                DVOwnership.Log($"Removing equipment with ID {equipment.ID} from the rolling stock registry.");
 
                 manager.Remove(equipment);
             }

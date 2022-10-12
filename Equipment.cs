@@ -167,13 +167,17 @@ namespace DVOwnership
             if(locoStateSave != null && locoState != null) { locoState.SetLocoStateSaveData(locoStateSave); }
         }
 
-        public static bool operator ==(Equipment equipment, TrainCar trainCar)
+        public bool IsRecordOf(TrainCar trainCar)
         {
-            return equipment.id == trainCar.ID;
-        }
-        public static bool operator !=(Equipment equipment, TrainCar trainCar)
-        {
-            return equipment.id != trainCar.ID;
+            if (trainCar == null)
+            {
+                DVOwnership.LogWarning("Train car is null. Can't compare equipment record. Returning false.");
+                return false;
+            }
+            if (trainCar.logicCar != null) { return id == trainCar.ID; }
+            if (IsSpawned) { return this.trainCar == trainCar; }
+            DVOwnership.LogWarning($"Trying to compare an unspawned equipment record with ID {id} and a train car without a logic car. Returning false, but this may have unexpected side effects.");
+            return false;
         }
 
         public static Equipment FromSaveData(JObject data)
