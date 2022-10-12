@@ -43,6 +43,7 @@ namespace DVOwnership
                 harmony.PatchAll(Assembly.GetExecutingAssembly());
                 CargoTypes_Patches.Setup();
                 Preferences_Patches.Setup();
+                StationLocoSpawner_Patches.Setup();
             }
             catch (Exception e) { OnCriticalFailure(e, "patching assembly"); }
         }
