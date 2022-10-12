@@ -3,62 +3,72 @@ using Harmony12;
 using Newtonsoft.Json.Linq;
 using System.Collections.Generic;
 using System.Linq;
-using UnityEngine;
 
 namespace DVOwnership
 {
-    internal class RollingStockManager : SingletonBehaviour<RollingStockManager>
+    public class RollingStockManager : SingletonBehaviour<RollingStockManager>
     {
         private List<Equipment> registry = new List<Equipment>();
 
-        public static new string AllowAutoCreate() { return "DVOwnership_RollingStockManager"; }
+        public static new string AllowAutoCreate() { return "[DVOwnership_RollingStockManager]"; }
 
         public void Add(Equipment equipment)
         {
+            DVOwnership.Log($"Adding equipment record with ID {equipment.ID}, which is {(equipment.IsSpawned ? "spawned" : "not spawned")}, to the rolling stock registry.");
             registry.Add(equipment);
         }
 
         public void Remove(Equipment equipment)
         {
+            DVOwnership.Log($"Removing equipment record with ID {equipment.ID}, which is {(equipment.IsSpawned ? "spawned" : "not spawned")}, from the rolling stock registry.");
             registry.Remove(equipment);
         }
 
         public Equipment GetByTrainCar(TrainCar trainCar)
         {
+            DVOwnership.Log($"Looking up equipment record with ID {trainCar.ID} from the rolling stock registry.");
             var equipment = from eq in registry where eq == trainCar select eq;
             var count = equipment.Count();
-            if (count > 1) { DVOwnership.LogError($"Unexpected number of equipment found! Expected 1 but found {count} for train car ID {trainCar.ID}."); }
+            if (count > 1) { DVOwnership.LogError($"Unexpected number of equipment records found! Expected 1 but found {count} for train car ID {trainCar.ID}."); }
             return equipment.FirstOrDefault();
         }
 
         public void LoadSaveData(JArray data)
         {
+            int countLoaded = 0;
             foreach(var token in data)
             {
                 if (token.Type != JTokenType.Object) { continue; }
 
                 registry.Add(Equipment.FromSaveData((JObject)token));
+                countLoaded++;
             }
+            DVOwnership.Log($"Loaded {countLoaded} equipment records into the rolling stock registry.");
         }
 
-        public JArray GetSaveData() { return new JArray(from eq in registry select eq.GetSaveData()); }
+        public JArray GetSaveData()
+        {
+            var serializedRecords = from eq in registry select eq.GetSaveData();
+            DVOwnership.Log($"Serialized {serializedRecords.Count()} equipment records from the rolling stock registry.");
+            return new JArray(serializedRecords.ToArray());
+        }
 
         [HarmonyPatch(typeof(CommsRadioCarDeleter), "OnCarToDeleteDestroy")]
         class CommsRadioCarDeleter_OnCarToDeleteDestroy_Patch
         {
             static void Postfix(TrainCar destroyedCar)
             {
-                DVOwnership.Log($"Train car is being deleted. Attempting to remove it from RollingStockManager registry.");
+                DVOwnership.Log($"Train car is being deleted. Attempting to remove it from the rolling stock registry.");
 
                 var manager = Instance;
                 var equipment = manager?.GetByTrainCar(destroyedCar);
                 if (equipment == null)
                 {
-                    DVOwnership.Log($"Equipment with ID {destroyedCar.ID} not found in RollingStockManager registry.");
+                    DVOwnership.Log($"Equipment with ID {destroyedCar.ID} not found in the rolling stock registry.");
                     return;
                 }
 
-                DVOwnership.Log($"Removing equipment with ID {destroyedCar.ID} from RollingStockManager registry.");
+                DVOwnership.Log($"Removing equipment with ID {destroyedCar.ID} from the rolling stock registry.");
 
                 manager.Remove(equipment);
             }

@@ -12,7 +12,7 @@ using UnityModManagerNet;
 
 namespace DVOwnership
 {
-    static class DVOwnership
+    public static class DVOwnership
     {
         private static UnityModManager.ModEntry modEntry;
         private static HarmonyInstance harmony;

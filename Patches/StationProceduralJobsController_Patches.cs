@@ -8,7 +8,7 @@ using UnityEngine;
 
 namespace DVOwnership.Patches
 {
-    internal class StationProceduralJobsController_Patches
+    public class StationProceduralJobsController_Patches
     {
         private static bool isSetup = false;
 

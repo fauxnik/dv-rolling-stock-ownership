@@ -2,7 +2,7 @@
 
 namespace DVOwnership.Patches
 {
-    internal static class Preferences_Patches
+    public static class Preferences_Patches
     {
         private static bool isSetup = false;
 

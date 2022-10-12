@@ -5,7 +5,7 @@ using System.Linq;
 
 namespace DVOwnership.Patches
 {
-    internal class CargoTypes_Patches
+    public class CargoTypes_Patches
     {
         private static bool isSetup = false;
 

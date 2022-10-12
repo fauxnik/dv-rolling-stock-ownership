@@ -2,7 +2,7 @@
 
 namespace DVOwnership
 {
-    internal class Settings : UnityModManager.ModSettings, IDrawable
+    public class Settings : UnityModManager.ModSettings, IDrawable
     {
         [Draw("Enable verbose logging")]
         public bool isLoggingEnabled =

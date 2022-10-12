@@ -6,10 +6,11 @@ using UnityEngine;
 
 namespace DVOwnership
 {
-    internal class Equipment
+    public class Equipment
     {
         private static readonly string ID_SAVE_KEY = "id";
         private string id;
+        public string ID { get { return id; } }
 
         private static readonly string CAR_GUID_SAVE_KEY = "carGuid";
         private string carGuid;
@@ -61,10 +62,11 @@ namespace DVOwnership
 
         private static readonly string SPAWNED_SAVE_KEY = "spawned";
         private TrainCar trainCar;
-        private bool IsSpawned { get { return trainCar != null; } }
+        public bool IsSpawned { get { return trainCar != null; } }
 
         public Equipment(string id, string carGuid, TrainCarType type, Vector3 position, Quaternion rotation, string bogie1TrackID, double bogie1PositionAlongTrack, bool isBogie1Derailed, string bogie2TrackID, double bogie2PositionAlongTrack, bool isBogie2Derailed, bool isCoupledFront, bool isCoupledRear, bool isExploded, CargoType loadedCargo, JObject carStateSave, JObject locoStateSave, TrainCar trainCar)
         {
+            DVOwnership.Log($"Creating equipment record from values with ID {trainCar.ID}.");
             this.id = id;
             this.carGuid = carGuid;
             this.type = type;
@@ -87,6 +89,7 @@ namespace DVOwnership
 
         public static Equipment FromTrainCar(TrainCar trainCar)
         {
+            DVOwnership.Log($"Creating equipment record from train car {trainCar.ID}.");
             var bogie1 = trainCar.Bogies[0];
             var bogie2 = trainCar.Bogies[1];
             var carState = trainCar.GetComponent<CarStateSave>();
@@ -112,8 +115,9 @@ namespace DVOwnership
                 trainCar);
         }
 
-        public void Update(TrainCar trainCar, bool isBeingDeleted)
+        public void Update(TrainCar trainCar, bool isBeingDespawned)
         {
+            DVOwnership.Log($"Updating equipment record for train car {trainCar.ID}{(isBeingDespawned ? ", which is being despawned" : "")}.");
             var bogie1 = trainCar.Bogies[0];
             var bogie2 = trainCar.Bogies[1];
             var carState = trainCar.GetComponent<CarStateSave>();
@@ -135,17 +139,18 @@ namespace DVOwnership
             loadedCargo = trainCar.logicCar.CurrentCargoTypeInCar;
             carStateSave = carState?.GetCarStateSaveData();
             locoStateSave = locoState?.GetLocoStateSaveData();
-            this.trainCar = isBeingDeleted ? null : trainCar;
+            this.trainCar = isBeingDespawned ? null : trainCar;
         }
 
         public void Spawn()
         {
             if (IsSpawned)
             {
-                DVOwnership.LogWarning($"Trying to spawn train car with ID {id}, but it already exists!");
+                DVOwnership.LogWarning($"Trying to spawn train car based on equipment record with ID {id}, but it already exists!");
                 return;
             }
 
+            DVOwnership.Log($"Spawning train car based on equipment record with ID {id}.");
             var carPrefab = CarTypes.GetCarPrefab(type);
             var allTracks = new List<RailTrack>(RailTrackRegistry.AllTracks);
             var bogie1Track = isBogie1Derailed ? null : allTracks.Find(track => track.logicTrack.ID.FullID == bogie1TrackID);
@@ -175,6 +180,7 @@ namespace DVOwnership
         {
             string id = data.GetString(ID_SAVE_KEY);
             bool isSpawned = data.GetBool(SPAWNED_SAVE_KEY).Value;
+            DVOwnership.Log($"Restoring equipment record with ID {id} and spawn state is {(isSpawned ? "spawned" : "not spawned")} from save data.");
             TrainCar trainCar = null;
             if (isSpawned)
             {

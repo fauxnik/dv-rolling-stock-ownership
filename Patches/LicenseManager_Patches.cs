@@ -4,7 +4,7 @@ using System.Linq;
 
 namespace DVOwnership.Patches
 {
-    internal class LicenseManager_Patches
+    public class LicenseManager_Patches
     {
         private static HashSet<CargoType>[] cargoTypesRequiringLicense = new HashSet<CargoType>[]
         {

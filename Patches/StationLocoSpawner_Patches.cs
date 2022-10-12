@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace DVOwnership.Patches
 {
-    internal class StationLocoSpawner_Patches
+    public class StationLocoSpawner_Patches
     {
         private static bool isSetup = false;
 
