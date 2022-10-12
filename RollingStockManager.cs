@@ -47,15 +47,18 @@ namespace DVOwnership
         [HarmonyPatch(typeof(CommsRadioController), "PlayAudioFromCar")]
         class CommsRadioController_PlayAudioFromCar_Patch
         {
-            static void Postfix(CommsRadioController __instance, AudioClip clip, TrainCar audioOriginCar)
+            static void Postfix(AudioClip clip, TrainCar audioOriginCar)
             {
-                if (__instance == null)
+                // This is a static method, so we have to get the CommsRadioController instance elsewhere.
+                var controller = CommsRadioEquipmentPurchaser.controller;
+
+                if (controller == null)
                 {
                     DVOwnership.LogError("Missing CommsRadioController instance! Can't detemine if the train car should be removed from RollingStockManager.");
                     return;
                 }
 
-                var removeCarSound = __instance.deleteControl?.removeCarSound;
+                var removeCarSound = controller.deleteControl?.removeCarSound;
                 if (removeCarSound == null || clip != removeCarSound) { return; }
 
                 DVOwnership.Log($"Train car is being deleted. Attempting to remove it from RollingStockManager.");
