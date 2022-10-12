@@ -9,23 +9,23 @@ namespace DVOwnership
 {
     internal class RollingStockManager : SingletonBehaviour<RollingStockManager>
     {
-        private List<Equipment> equipment = new List<Equipment>();
+        private List<Equipment> registry = new List<Equipment>();
 
         public static new string AllowAutoCreate() { return "DVOwnership_RollingStockManager"; }
 
         public void Add(Equipment equipment)
         {
-            this.equipment.Add(equipment);
+            registry.Add(equipment);
         }
 
         public void Remove(Equipment equipment)
         {
-            this.equipment.Remove(equipment);
+            registry.Remove(equipment);
         }
 
         public Equipment GetByTrainCar(TrainCar trainCar)
         {
-            var equipment = from eq in this.equipment where eq == trainCar select eq;
+            var equipment = from eq in registry where eq == trainCar select eq;
             var count = equipment.Count();
             if (count > 1) { DVOwnership.LogError($"Unexpected number of equipment found! Expected 1 but found {count} for train car ID {trainCar.ID}."); }
             return equipment.FirstOrDefault();
@@ -37,11 +37,11 @@ namespace DVOwnership
             {
                 if (token.Type != JTokenType.Object) { continue; }
 
-                equipment.Add(Equipment.FromSaveData((JObject)token));
+                registry.Add(Equipment.FromSaveData((JObject)token));
             }
         }
 
-        public JArray GetSaveData() { return new JArray(from eq in equipment select eq.GetSaveData()); }
+        public JArray GetSaveData() { return new JArray(from eq in registry select eq.GetSaveData()); }
 
         // TODO: This feels hacky. Is there a better way?
         [HarmonyPatch(typeof(CommsRadioController), "PlayAudioFromCar")]
