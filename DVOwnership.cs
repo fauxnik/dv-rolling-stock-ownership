@@ -45,18 +45,6 @@ namespace DVOwnership
                 Preferences_Patches.Setup();
             }
             catch (Exception e) { OnCriticalFailure(e, "patching assembly"); }
-
-            modEntry.OnUpdate = (entry, delta) =>
-            {
-                var unusedTrainCarDeleter = SingletonBehaviour<UnusedTrainCarDeleter>.Instance;
-                if (unusedTrainCarDeleter != null)
-                {
-                    modEntry.OnUpdate = null;
-
-                    try { unusedTrainCarDeleter.StopAllCoroutines(); }
-                    catch (Exception e) { OnCriticalFailure(e, "stopping unused train car deleter");  }
-                }
-            };
         }
 
         public static DynamicMethod Patch(MethodBase original, HarmonyMethod prefix = null, HarmonyMethod postfix = null, HarmonyMethod transpiler = null)
