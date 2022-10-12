@@ -44,6 +44,7 @@ namespace DVOwnership
                 CargoTypes_Patches.Setup();
                 Preferences_Patches.Setup();
                 StationLocoSpawner_Patches.Setup();
+                StationProceduralJobsController_Patches.Setup();
             }
             catch (Exception e) { OnCriticalFailure(e, "patching assembly"); }
         }

@@ -93,6 +93,7 @@
     <Compile Include="Patches\LicenseManager_Patches.cs" />
     <Compile Include="Patches\Preferences_Patches.cs" />
     <Compile Include="Patches\StationLocoSpawner_Patches.cs" />
+    <Compile Include="Patches\StationProceduralJobsController_Patches.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SaveManager.cs" />
     <Compile Include="RollingStockManager.cs" />
