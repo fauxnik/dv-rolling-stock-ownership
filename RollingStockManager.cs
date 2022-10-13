@@ -24,7 +24,7 @@ namespace DVOwnership
             registry.Remove(equipment);
         }
 
-        public Equipment GetByTrainCar(TrainCar trainCar)
+        public Equipment FindByTrainCar(TrainCar trainCar)
         {
             DVOwnership.Log($"Looking up equipment record from the rolling stock registry by train car.");
             var equipment = from eq in registry where eq.IsRecordOf(trainCar) select eq;
@@ -61,7 +61,7 @@ namespace DVOwnership
                 DVOwnership.Log($"Train car is being deleted. Attempting to remove it from the rolling stock registry.");
 
                 var manager = Instance;
-                var equipment = manager?.GetByTrainCar(destroyedCar);
+                var equipment = manager?.FindByTrainCar(destroyedCar);
                 if (equipment == null)
                 {
                     DVOwnership.LogWarning($"Equipment record not found in the rolling stock registry.");
