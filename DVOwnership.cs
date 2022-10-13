@@ -71,7 +71,10 @@ namespace DVOwnership
         public static void OnCriticalFailure(Exception exception, string action)
         {
             // TODO: show floaty message (and offer to open log folder?) before quitting game
+#if DEBUG
+#else
             modEntry.Active = false;
+#endif
             Debug.Log(exception);
             modEntry.Logger.Critical("Deactivating mod DVOwnership due to unrecoverable failure!");
             modEntry.Logger.Critical($"This happened while {action}.");
