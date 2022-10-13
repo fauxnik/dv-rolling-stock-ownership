@@ -24,6 +24,8 @@ namespace DVOwnership
         {
             modEntry = loadedEntry;
 
+            if (!modEntry.Enabled) { return; }
+
             // TODO: figure out if HasUpdate actually works; Intellisense displays "Not used"
             //if (modEntry.HasUpdate)
             //{
@@ -73,7 +75,7 @@ namespace DVOwnership
             // TODO: show floaty message (and offer to open log folder?) before quitting game
 #if DEBUG
 #else
-            modEntry.Active = false;
+            modEntry.Enabled = false;
 #endif
             Debug.Log(exception);
             modEntry.Logger.Critical("Deactivating mod DVOwnership due to unrecoverable failure!");
