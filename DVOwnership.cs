@@ -43,12 +43,20 @@ namespace DVOwnership
             {
                 harmony = HarmonyInstance.Create(modEntry.Info.Id);
                 harmony.PatchAll(Assembly.GetExecutingAssembly());
-                CargoTypes_Patches.Setup();
-                Preferences_Patches.Setup();
-                StationLocoSpawner_Patches.Setup();
-                StationProceduralJobsController_Patches.Setup();
             }
-            catch (Exception e) { OnCriticalFailure(e, "patching assembly"); }
+            catch (Exception e) { OnCriticalFailure(e, "patching miscellaneous assembly"); }
+
+            try { CargoTypes_Patches.Setup(); }
+            catch (Exception e) { OnCriticalFailure(e, "patching CargoTypes"); }
+
+            try { Preferences_Patches.Setup(); }
+            catch (Exception e) { OnCriticalFailure(e, "patching Preferences"); }
+
+            try { StationLocoSpawner_Patches.Setup(); }
+            catch (Exception e) { OnCriticalFailure(e, "patching StationLocoSpawner"); }
+
+            try { StationProceduralJobsController_Patches.Setup(); }
+            catch (Exception e) { OnCriticalFailure(e, "patching StationProceduralJobsController"); }
         }
 
         public static DynamicMethod Patch(MethodBase original, HarmonyMethod prefix = null, HarmonyMethod postfix = null, HarmonyMethod transpiler = null)
