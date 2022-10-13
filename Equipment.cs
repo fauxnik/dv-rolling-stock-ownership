@@ -142,12 +142,12 @@ namespace DVOwnership
             this.trainCar = isBeingDespawned ? null : trainCar;
         }
 
-        public void Spawn()
+        public TrainCar Spawn()
         {
             if (IsSpawned)
             {
                 DVOwnership.LogWarning($"Trying to spawn train car based on equipment record with ID {id}, but it already exists!");
-                return;
+                return trainCar;
             }
 
             DVOwnership.Log($"Spawning train car based on equipment record with ID {id}.");
@@ -165,6 +165,8 @@ namespace DVOwnership
 
             var locoState = trainCar.GetComponent<LocoStateSave>();
             if(locoStateSave != null && locoState != null) { locoState.SetLocoStateSaveData(locoStateSave); }
+
+            return trainCar;
         }
 
         public bool IsRecordOf(TrainCar trainCar)
