@@ -1,4 +1,4 @@
-using Harmony12;
+﻿using Harmony12;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -34,7 +34,7 @@ namespace DVOwnership
             {
                 DVOwnership.LogWarning("Proximity checking coroutine stop requested, but it wasn't running.");
                 return;
-        }
+            }
 
             DVOwnership.Log("Stopping spawn state manager coroutine.");
             StopCoroutine(proximityCoro);
@@ -45,15 +45,20 @@ namespace DVOwnership
         {
             for (;;)
             {
+                DVOwnership.Log("A");
                 var rollingStock = SingletonBehaviour<RollingStockManager>.Instance;
                 var seenGuids = new HashSet<string>();
 
+                // TODO: coupled cars don't appear to be recorded as coupled. perhaps update all equipment here?
+
                 foreach (var equipment in rollingStock.AllEquipment)
                 {
+                    DVOwnership.Log($"B\n\tequipment.ID: {equipment.ID}");
                     yield return null;
                     if (seenGuids.Contains(equipment.CarGUID)) { continue; }
                     var connectedEquipment = rollingStock.GetConnectedEquipment(equipment);
 
+                    DVOwnership.Log($"C\n\tconnectedEquipment.Count: {connectedEquipment.Count}");
                     yield return null;
                     if (!connectedEquipment.All(eq => eq.IsSpawned == equipment.IsSpawned))
                     {
@@ -63,12 +68,13 @@ namespace DVOwnership
                     if (equipment.IsSpawned)
                     {
                         // Check if ALL connected equipment should be despawned
-
+                        
                         var bestGuessLastDrivenTrainset = PlayerManager.LastLoco?.trainset;
-
+                        
                         bool isDespawnable = !equipment.ExistsInTrainset(bestGuessLastDrivenTrainset);
                         foreach (var eq in connectedEquipment)
                         {
+                            DVOwnership.Log($"D\nisDespawnable:{isDespawnable}\n\tIsStationary: {eq.IsStationary}\n\tSquaredDistanceFromPlayer: {eq.SquaredDistanceFromPlayer()}\n\tDESPAWN_SQR_DISTANCE: {DESPAWN_SQR_DISTANCE}\n\tflag: {isDespawnable && (!eq.IsStationary || eq.SquaredDistanceFromPlayer() < DESPAWN_SQR_DISTANCE)}");
                             yield return null;
                             seenGuids.Add(eq.CarGUID);
                             // Short circuit avoids doing expensive calculation unnecessarily
@@ -81,6 +87,7 @@ namespace DVOwnership
 
                         if (isDespawnable)
                         {
+                            DVOwnership.Log("E");
                             yield return null;
                             foreach (var eq in connectedEquipment) { eq.PrepareForDespawning(); }
                         }
@@ -92,6 +99,7 @@ namespace DVOwnership
                         bool isSpawnable = false;
                         foreach (var eq in connectedEquipment)
                         {
+                            DVOwnership.Log($"F\n\tisSpawnable: {isSpawnable}\n\tIsStationary: {eq.IsStationary}\n\tSquaredDistanceFromPlayer: {eq.SquaredDistanceFromPlayer()}\n\tSPAWN_SQR_DISTANCE: {SPAWN_SQR_DISTANCE}\n\tflag: {!isSpawnable && eq.SquaredDistanceFromPlayer() < SPAWN_SQR_DISTANCE}");
                             yield return null;
                             seenGuids.Add(eq.CarGUID);
                             // Short circuit avoids doing expensive calculation unnecessarily
@@ -106,6 +114,7 @@ namespace DVOwnership
                         {
                             foreach(var eq in connectedEquipment)
                             {
+                                DVOwnership.Log("G");
                                 yield return null;
                                 eq.Spawn();
                             }
@@ -113,6 +122,7 @@ namespace DVOwnership
                     }
                 }
 
+                DVOwnership.Log("H");
                 yield return WaitFor.SecondsRealtime(DELAY_SECONDS_BETWEEN_CHECK_CYCLES);
             }
         }
