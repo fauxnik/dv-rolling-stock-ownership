@@ -27,7 +27,7 @@ namespace DVOwnership
 
         public Equipment FindByTrainCar(TrainCar trainCar)
         {
-            DVOwnership.Log($"Looking up equipment record from the rolling stock registry by train car.");
+            DVOwnership.LogDebug(() => $"Looking up equipment record from the rolling stock registry by train car.");
             var equipment = from eq in registry where eq.IsRecordOf(trainCar) select eq;
             var count = equipment.Count();
             if (count != 1) { DVOwnership.LogError($"Unexpected number of equipment records found! Expected 1 but found {count} for train car ID {trainCar.ID}."); }
@@ -36,7 +36,7 @@ namespace DVOwnership
 
         public Equipment FindByCarGUID(string carGuid)
         {
-            DVOwnership.Log($"Looking up equipment record from the rolling stock registry by car GUID {carGuid}.");
+            DVOwnership.LogDebug(() => $"Looking up equipment record from the rolling stock registry by car GUID {carGuid}.");
             var equipment = from eq in registry where eq.CarGUID == carGuid select eq;
             var count = equipment.Count();
             if (count != 1) { DVOwnership.LogError($"Unexpected number of equipment records found! Expected 1 but found {count} for car GUID {carGuid}."); }

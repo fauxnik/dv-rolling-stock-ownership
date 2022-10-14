@@ -72,10 +72,11 @@ namespace DVOwnership
             return harmony.Patch(original, prefix, postfix, transpiler);
         }
 
-        public static void LogDebug(object message)
+        public static void LogDebug(System.Func<object> messageFactory)
         {
             if (Settings.selectedLogLevel > LogLevel.Debug) { return; }
 
+            var message = messageFactory();
             if (message is string) { modEntry.Logger.Log(message as string); }
             else
             {
