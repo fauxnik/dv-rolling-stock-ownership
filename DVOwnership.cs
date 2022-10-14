@@ -72,9 +72,9 @@ namespace DVOwnership
             return harmony.Patch(original, prefix, postfix, transpiler);
         }
 
-        public static void Log(object message)
+        public static void LogDebug(object message)
         {
-            if (!Settings.isLoggingEnabled) { return; }
+            if (Settings.selectedLogLevel > LogLevel.Debug) { return; }
 
             if (message is string) { modEntry.Logger.Log(message as string); }
             else
@@ -83,8 +83,32 @@ namespace DVOwnership
                 Debug.Log(message);
             }
         }
-        public static void LogWarning(object message) { modEntry.Logger.Warning($"{message}"); }
-        public static void LogError(object message) { modEntry.Logger.Error($"{message}"); }
+
+        public static void Log(object message)
+        {
+            if (Settings.selectedLogLevel > LogLevel.Info) { return; }
+
+            if (message is string) { modEntry.Logger.Log(message as string); }
+            else
+            {
+                modEntry.Logger.Log("Logging object via UnityEngine.Debug...");
+                Debug.Log(message);
+            }
+        }
+
+        public static void LogWarning(object message)
+        {
+            if (Settings.selectedLogLevel > LogLevel.Warn) { return; }
+
+            modEntry.Logger.Warning($"{message}");
+        }
+
+        public static void LogError(object message)
+        {
+            if (Settings.selectedLogLevel > LogLevel.Error) { return; }
+
+            modEntry.Logger.Error($"{message}");
+        }
 
         public static void OnCriticalFailure(Exception exception, string action)
         {

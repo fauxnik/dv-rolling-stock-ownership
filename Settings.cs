@@ -4,12 +4,12 @@ namespace DVOwnership
 {
     public class Settings : UnityModManager.ModSettings, IDrawable
     {
-        [Draw("Enable verbose logging")]
-        public bool isLoggingEnabled =
+        [Draw("Log level")]
+        public LogLevel selectedLogLevel =
 #if DEBUG
-            true;
+            LogLevel.Debug;
 #else
-            false;
+            LogLevel.Warn;
 #endif
 
         [Draw("Scale equipment price with career difficulty")]
