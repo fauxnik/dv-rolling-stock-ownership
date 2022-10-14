@@ -19,6 +19,8 @@ namespace DVOwnership
 
         public static Settings Settings { get; private set; }
         public static Version Version { get { return modEntry.Version; } }
+        public static string DisplayName { get { return modEntry.Info.DisplayName; } }
+        public static string Id { get { return modEntry.Info.Id; } }
 
         static void OnLoad(UnityModManager.ModEntry loadedEntry)
         {

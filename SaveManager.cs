@@ -48,7 +48,11 @@ namespace DVOwnership
 
                     if (saveData == null)
                     {
+#if DEBUG
                         DVOwnership.Log("Not loading save data: primary object is null.");
+#else
+                        throw new Exception($"The active savegame file is not compatible with the {DVOwnership.DisplayName} ({DVOwnership.Id}) mod! Please use a compatible savegame file and try again. A compatible savegame file can be found on the NexusMods download page where you downloaded this mod.");
+#endif
                         return;
                     }
                     var tracksHash = SingletonBehaviour<CarsSaveManager>.Instance.TracksHash;
