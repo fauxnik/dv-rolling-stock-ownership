@@ -94,7 +94,10 @@
     <Compile Include="Patches\Preferences_Patches.cs" />
     <Compile Include="Patches\StationLocoSpawner_Patches.cs" />
     <Compile Include="Patches\StationProceduralJobsController_Patches.cs" />
+    <Compile Include="Patches\TrainCar_Patches.cs" />
+    <Compile Include="Patches\UnusedTrainCarDeleter_Patches.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="SpawnStateManager.cs" />
     <Compile Include="SaveManager.cs" />
     <Compile Include="RollingStockManager.cs" />
     <Compile Include="Settings.cs" />

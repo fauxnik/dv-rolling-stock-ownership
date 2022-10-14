@@ -8,9 +8,10 @@ namespace DVOwnership
 {
     public class RollingStockManager : SingletonBehaviour<RollingStockManager>
     {
-        private List<Equipment> registry = new List<Equipment>();
-
         public static new string AllowAutoCreate() { return "[DVOwnership_RollingStockManager]"; }
+
+        private List<Equipment> registry = new List<Equipment>();
+        public List<Equipment> AllEquipment { get { return new List<Equipment>(registry); } }
 
         public void Add(Equipment equipment)
         {
@@ -29,8 +30,40 @@ namespace DVOwnership
             DVOwnership.Log($"Looking up equipment record from the rolling stock registry by train car.");
             var equipment = from eq in registry where eq.IsRecordOf(trainCar) select eq;
             var count = equipment.Count();
-            if (count > 1) { DVOwnership.LogError($"Unexpected number of equipment records found! Expected 1 but found {count} for train car ID {equipment.First().ID}."); }
+            if (count != 1) { DVOwnership.LogError($"Unexpected number of equipment records found! Expected 1 but found {count} for train car ID {trainCar.ID}."); }
             return equipment.FirstOrDefault();
+        }
+
+        public Equipment FindByCarGUID(string carGuid)
+        {
+            DVOwnership.Log($"Looking up equipment record from the rolling stock registry by car GUID {carGuid}.");
+            var equipment = from eq in registry where eq.CarGUID == carGuid select eq;
+            var count = equipment.Count();
+            if (count != 1) { DVOwnership.LogError($"Unexpected number of equipment records found! Expected 1 but found {count} for car GUID {carGuid}."); }
+            return equipment.FirstOrDefault();
+        }
+
+        public List<Equipment> GetConnectedEquipment(Equipment equipment)
+        {
+            var connectedEquipment = new List<Equipment>();
+            var seenGuids = new HashSet<string>();
+            var q = new Queue<Equipment>();
+            q.Enqueue(equipment);
+
+            while (q.Count > 0)
+            {
+                var next = q.Dequeue();
+                connectedEquipment.Add(next);
+                seenGuids.Add(next.CarGUID);
+
+                var frontGuid = next.CarGuidCoupledFront;
+                if (next.IsCoupledFront && !seenGuids.Contains(frontGuid)) { q.Enqueue(FindByCarGUID(frontGuid)); }
+
+                var rearGuid = next.CarGuidCoupledRear;
+                if (next.IsCoupledRear && !seenGuids.Contains(rearGuid)) { q.Enqueue(FindByCarGUID(rearGuid)); }
+            }
+
+            return connectedEquipment;
         }
 
         public void LoadSaveData(JArray data)

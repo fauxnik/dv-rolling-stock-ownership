@@ -8,12 +8,13 @@ namespace DVOwnership
 {
     public class Equipment
     {
+        private static readonly float STATIONARY_SPEED_EPSILON = 0.3f; // taken from TransportTask.UpdateTaskState()
+
         private static readonly string ID_SAVE_KEY = "id";
-        private string id;
-        public string ID { get { return id; } }
+        public string ID { get; private set; }
 
         private static readonly string CAR_GUID_SAVE_KEY = "carGuid";
-        private string carGuid;
+        public string CarGUID { get; private set; }
 
         private static readonly string CAR_TYPE_SAVE_KEY = "type";
         private TrainCarType type;
@@ -43,10 +44,12 @@ namespace DVOwnership
         private bool isBogie2Derailed;
 
         private static readonly string COUPLED_FRONT_SAVE_KEY = "coupledF";
-        private bool isCoupledFront;
+        public string CarGuidCoupledFront { get; private set; }
+        public bool IsCoupledFront { get { return !string.IsNullOrEmpty(CarGuidCoupledFront); } }
 
         private static readonly string COUPLED_REAR_SAVE_KEY = "coupledR";
-        private bool isCoupledRear;
+        public string CarGuidCoupledRear { get; private set; }
+        public bool IsCoupledRear { get { return !string.IsNullOrEmpty(CarGuidCoupledRear); } }
 
         private static readonly string CAR_EXPLODED_SAVE_KEY = "exploded";
         private bool isExploded;
@@ -63,12 +66,21 @@ namespace DVOwnership
         private static readonly string SPAWNED_SAVE_KEY = "spawned";
         private TrainCar trainCar;
         public bool IsSpawned { get { return trainCar != null; } }
+        public bool IsMarkedForDespawning { get; private set; } = false;
+        public bool IsStationary
+        {
+            get
+            {
+                if (!IsSpawned) { return true; }
+                return trainCar.GetForwardSpeed() < STATIONARY_SPEED_EPSILON;
+            }
+        }
 
-        public Equipment(string id, string carGuid, TrainCarType type, Vector3 position, Quaternion rotation, string bogie1TrackID, double bogie1PositionAlongTrack, bool isBogie1Derailed, string bogie2TrackID, double bogie2PositionAlongTrack, bool isBogie2Derailed, bool isCoupledFront, bool isCoupledRear, bool isExploded, CargoType loadedCargo, JObject carStateSave, JObject locoStateSave, TrainCar trainCar)
+        public Equipment(string id, string carGuid, TrainCarType type, Vector3 position, Quaternion rotation, string bogie1TrackID, double bogie1PositionAlongTrack, bool isBogie1Derailed, string bogie2TrackID, double bogie2PositionAlongTrack, bool isBogie2Derailed, string carGuidCoupledFront, string carGuidCoupledRear, bool isExploded, CargoType loadedCargo, JObject carStateSave, JObject locoStateSave, TrainCar trainCar)
         {
             DVOwnership.Log($"Creating equipment record from values with ID {trainCar.ID}.");
-            this.id = id;
-            this.carGuid = carGuid;
+            this.ID = id;
+            this.CarGUID = carGuid;
             this.type = type;
             this.position = position;
             this.rotation = rotation;
@@ -78,8 +90,8 @@ namespace DVOwnership
             this.bogie2TrackID = bogie2TrackID;
             this.bogie2PositionAlongTrack = bogie2PositionAlongTrack;
             this.isBogie2Derailed = isBogie2Derailed;
-            this.isCoupledFront = isCoupledFront;
-            this.isCoupledRear = isCoupledRear;
+            this.CarGuidCoupledFront = carGuidCoupledFront;
+            this.CarGuidCoupledRear = carGuidCoupledRear;
             this.isExploded = isExploded;
             this.loadedCargo = loadedCargo;
             this.carStateSave = carStateSave;
@@ -95,8 +107,8 @@ namespace DVOwnership
             var carState = trainCar.GetComponent<CarStateSave>();
             var locoState = trainCar.GetComponent<LocoStateSave>();
             return new Equipment(
-                trainCar.logicCar.ID,
-                trainCar.logicCar.carGuid,
+                trainCar.ID,
+                trainCar.CarGUID,
                 trainCar.carType,
                 trainCar.transform.position - WorldMover.currentMove,
                 trainCar.transform.rotation,
@@ -106,8 +118,8 @@ namespace DVOwnership
                 bogie2.HasDerailed ? null : bogie2.track.logicTrack.ID.FullID,
                 bogie2.HasDerailed ? -1 : bogie2.traveller.Span,
                 bogie2.HasDerailed,
-                trainCar.frontCoupler.IsCoupled(),
-                trainCar.rearCoupler.IsCoupled(),
+                trainCar.frontCoupler.train?.CarGUID,
+                trainCar.rearCoupler.train?.CarGUID,
                 trainCar.useExplodedModel,
                 trainCar.logicCar.CurrentCargoTypeInCar,
                 carState?.GetCarStateSaveData(),
@@ -122,8 +134,8 @@ namespace DVOwnership
             var bogie2 = trainCar.Bogies[1];
             var carState = trainCar.GetComponent<CarStateSave>();
             var locoState = trainCar.GetComponent<LocoStateSave>();
-            id = trainCar.logicCar.ID;
-            carGuid = trainCar.logicCar.carGuid;
+            ID = trainCar.ID;
+            CarGUID = trainCar.CarGUID;
             type = trainCar.carType;
             position = trainCar.transform.position - WorldMover.currentMove;
             rotation = trainCar.transform.rotation;
@@ -133,8 +145,8 @@ namespace DVOwnership
             bogie2TrackID = bogie2.HasDerailed ? null : bogie2.track.logicTrack.ID.FullID;
             bogie2PositionAlongTrack = bogie2.HasDerailed ? -1 : bogie2.traveller.Span;
             isBogie2Derailed = bogie2.HasDerailed;
-            isCoupledFront = trainCar.frontCoupler.IsCoupled();
-            isCoupledRear = trainCar.rearCoupler.IsCoupled();
+            CarGuidCoupledFront = trainCar.frontCoupler.train?.CarGUID;
+            CarGuidCoupledRear = trainCar.rearCoupler.train?.CarGUID;
             isExploded = trainCar.useExplodedModel;
             loadedCargo = trainCar.logicCar.CurrentCargoTypeInCar;
             carStateSave = carState?.GetCarStateSaveData();
@@ -142,20 +154,33 @@ namespace DVOwnership
             this.trainCar = isBeingDespawned ? null : trainCar;
         }
 
+        public bool PrepareForDespawning()
+        {
+            if (!IsSpawned)
+            {
+                DVOwnership.LogError($"Attempting to prepare equipment with ID {ID} for despawning, but it is not currently known to be spawned!");
+                return false;
+            }
+
+            DVOwnership.Log($"Preparing equipment record with ID {ID} for despawning.");
+            IsMarkedForDespawning = true;
+            return true;
+        }
+
         public TrainCar Spawn()
         {
             if (IsSpawned)
             {
-                DVOwnership.LogWarning($"Trying to spawn train car based on equipment record with ID {id}, but it already exists!");
+                DVOwnership.LogWarning($"Trying to spawn train car based on equipment record with ID {ID}, but it already exists!");
                 return trainCar;
             }
 
-            DVOwnership.Log($"Spawning train car based on equipment record with ID {id}.");
+            DVOwnership.Log($"Spawning train car based on equipment record with ID {ID}.");
             var carPrefab = CarTypes.GetCarPrefab(type);
             var allTracks = new List<RailTrack>(RailTrackRegistry.AllTracks);
             var bogie1Track = isBogie1Derailed ? null : allTracks.Find(track => track.logicTrack.ID.FullID == bogie1TrackID);
             var bogie2Track = isBogie2Derailed ? null : allTracks.Find(track => track.logicTrack.ID.FullID == bogie2TrackID);
-            trainCar = CarSpawner.SpawnLoadedCar(carPrefab, id, carGuid, false, position + WorldMover.currentMove, rotation, isBogie1Derailed, bogie1Track, bogie1PositionAlongTrack, isBogie2Derailed, bogie2Track, bogie2PositionAlongTrack, isCoupledFront, isCoupledRear);
+            trainCar = CarSpawner.SpawnLoadedCar(carPrefab, ID, CarGUID, false, position + WorldMover.currentMove, rotation, isBogie1Derailed, bogie1Track, bogie1PositionAlongTrack, isBogie2Derailed, bogie2Track, bogie2PositionAlongTrack, IsCoupledFront, IsCoupledRear);
 
             if (loadedCargo != CargoType.None) { trainCar.logicCar.LoadCargo(trainCar.cargoCapacity, loadedCargo, null); }
             if (isExploded) { TrainCarExplosion.UpdateTrainCarModelToExploded(trainCar); }
@@ -165,6 +190,9 @@ namespace DVOwnership
 
             var locoState = trainCar.GetComponent<LocoStateSave>();
             if(locoStateSave != null && locoState != null) { locoState.SetLocoStateSaveData(locoStateSave); }
+
+            IsMarkedForDespawning = false;
+            SingletonBehaviour<UnusedTrainCarDeleter>.Instance.MarkForDelete(trainCar);
 
             return trainCar;
         }
@@ -176,26 +204,42 @@ namespace DVOwnership
                 DVOwnership.LogWarning("Train car is null. Can't compare equipment record. Returning false.");
                 return false;
             }
-            if (trainCar.logicCar != null) { return id == trainCar.ID; }
+            if (trainCar.logicCar != null) { return CarGUID == trainCar.CarGUID; }
             if (IsSpawned) { return this.trainCar == trainCar; }
-            DVOwnership.LogWarning($"Trying to compare an unspawned equipment record with ID {id} and a train car without a logic car. Returning false, but this may have unexpected side effects.");
+            DVOwnership.LogWarning($"Trying to compare an unspawned equipment record with ID {ID} and a train car without a logic car. Returning false, but this may have unexpected side effects.");
             return false;
+        }
+
+        public float SquaredDistanceFromPlayer()
+        {
+            // Make sure position is up-to-date before comparing
+            if (IsSpawned) { Update(trainCar, false); }
+            // Train car position appears to be world absolute, so we have compare to the player's world absolute position
+            // This is different from what UnusedTrainCarDeleter appears to be doing, but I'm not sure why
+            return (position - PlayerManager.GetWorldAbsolutePlayerPosition()).sqrMagnitude;
+        }
+
+        public bool ExistsInTrainset(Trainset trainset)
+        {
+            if (!IsSpawned || trainset == null) { return false; }
+            return trainset.cars.Contains(trainCar);
         }
 
         public static Equipment FromSaveData(JObject data)
         {
             string id = data.GetString(ID_SAVE_KEY);
+            string carGuid = data.GetString(CAR_GUID_SAVE_KEY);
             bool isSpawned = data.GetBool(SPAWNED_SAVE_KEY).Value;
             DVOwnership.Log($"Restoring equipment record with ID {id} and spawn state is {(isSpawned ? "spawned" : "not spawned")} from save data.");
             TrainCar trainCar = null;
             if (isSpawned)
             {
                 var allCars = SingletonBehaviour<CarSpawner>.Instance.GetCars();
-                trainCar = allCars.Find(tc => tc.ID == id);
+                trainCar = allCars.Find(tc => tc.CarGUID == carGuid);
             }
             return new Equipment(
                 id,
-                data.GetString(CAR_GUID_SAVE_KEY),
+                carGuid,
                 (TrainCarType)data.GetInt(CAR_TYPE_SAVE_KEY),
                 data.GetVector3(WORLD_POSITION_SAVE_KEY).Value,
                 Quaternion.Euler(data.GetVector3(WORLD_ROTATION_SAVE_KEY).Value),
@@ -205,8 +249,8 @@ namespace DVOwnership
                 data.GetString(BOGIE_2_TRACK_ID_SAVE_KEY),
                 data.GetDouble(BOGIE_2_POSITION_ALONG_TRACK_SAVE_KEY).Value,
                 data.GetBool(BOGIE_2_DERAILED_SAVE_KEY).Value,
-                data.GetBool(COUPLED_FRONT_SAVE_KEY).Value,
-                data.GetBool(COUPLED_REAR_SAVE_KEY).Value,
+                data.GetString(COUPLED_FRONT_SAVE_KEY),
+                data.GetString(COUPLED_REAR_SAVE_KEY),
                 data.GetBool(CAR_EXPLODED_SAVE_KEY).Value,
                 (CargoType)data.GetInt(LOADED_CARGO_SAVE_KEY),
                 data.GetJObject(CAR_STATE_SAVE_KEY),
@@ -219,8 +263,8 @@ namespace DVOwnership
             if (IsSpawned) { Update(trainCar, false); }
 
             var data = new JObject();
-            data.SetString(ID_SAVE_KEY, id);
-            data.SetString(CAR_GUID_SAVE_KEY, carGuid);
+            data.SetString(ID_SAVE_KEY, ID);
+            data.SetString(CAR_GUID_SAVE_KEY, CarGUID);
             data.SetInt(CAR_TYPE_SAVE_KEY, (int)type);
             data.SetVector3(WORLD_POSITION_SAVE_KEY, position);
             data.SetVector3(WORLD_ROTATION_SAVE_KEY, rotation.eulerAngles);
@@ -230,8 +274,8 @@ namespace DVOwnership
             data.SetString(BOGIE_2_TRACK_ID_SAVE_KEY, bogie2TrackID);
             data.SetDouble(BOGIE_2_POSITION_ALONG_TRACK_SAVE_KEY, bogie2PositionAlongTrack);
             data.SetBool(BOGIE_2_DERAILED_SAVE_KEY, isBogie2Derailed);
-            data.SetBool(COUPLED_FRONT_SAVE_KEY, isCoupledFront);
-            data.SetBool(COUPLED_REAR_SAVE_KEY, isCoupledRear);
+            data.SetString(COUPLED_FRONT_SAVE_KEY, CarGuidCoupledFront);
+            data.SetString(COUPLED_REAR_SAVE_KEY, CarGuidCoupledRear);
             data.SetBool(CAR_EXPLODED_SAVE_KEY, isExploded);
             data.SetInt(LOADED_CARGO_SAVE_KEY, (int)loadedCargo);
             data.SetJObject(CAR_STATE_SAVE_KEY, carStateSave);

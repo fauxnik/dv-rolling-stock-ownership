@@ -59,6 +59,12 @@ namespace DVOwnership
 
             try { StationProceduralJobsController_Patches.Setup(); }
             catch (Exception e) { OnCriticalFailure(e, "patching StationProceduralJobsController"); }
+
+            try { TrainCar_Patches.Setup(); }
+            catch (Exception e) { OnCriticalFailure(e, "patching TrainCar"); }
+
+            try { UnusedTrainCarDeleter_Patches.Setup(); }
+            catch (Exception e) { OnCriticalFailure(e, "patching UnusedTrainCarDeleter"); }
         }
 
         public static DynamicMethod Patch(MethodBase original, HarmonyMethod prefix = null, HarmonyMethod postfix = null, HarmonyMethod transpiler = null)

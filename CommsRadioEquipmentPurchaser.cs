@@ -610,7 +610,6 @@ namespace DVOwnership
             vector = spawnWithTrackDirection ? vector : -vector;
 
             var trainCar = CarSpawner.SpawnCar(carPrefabToSpawn, destinationTrack, position, vector);
-
             if (trainCar == null)
             {
                 DVOwnership.LogError($"Couldn't spawn {SelectedCarType}!");
@@ -619,6 +618,7 @@ namespace DVOwnership
 
             CommsRadioController.PlayAudioFromCar(spawnVehicleSound, trainCar);
             SingletonBehaviour<RollingStockManager>.Instance.Add(Equipment.FromTrainCar(trainCar));
+            SingletonBehaviour<UnusedTrainCarDeleter>.Instance.MarkForDelete(trainCar);
         }
 
         private void ReverseSpawnDirection()
