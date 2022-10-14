@@ -91,6 +91,7 @@
     <Compile Include="Equipment.cs" />
     <Compile Include="Patches\CargoTypes_Patches.cs" />
     <Compile Include="Patches\LicenseManager_Patches.cs" />
+    <Compile Include="Patches\PlayerManager_Patches.cs" />
     <Compile Include="Patches\Preferences_Patches.cs" />
     <Compile Include="Patches\StationLocoSpawner_Patches.cs" />
     <Compile Include="Patches\StationProceduralJobsController_Patches.cs" />
