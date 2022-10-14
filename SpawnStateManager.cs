@@ -24,7 +24,7 @@ namespace DVOwnership
                 return;
             }
 
-            DVOwnership.Log("Starting spawn state manager coroutine.");
+            DVOwnership.Log("Starting proximity checking coroutine.");
             proximityCoro = StartCoroutine(ProximityCheckCoro());
         }
 
@@ -36,7 +36,7 @@ namespace DVOwnership
                 return;
             }
 
-            DVOwnership.Log("Stopping spawn state manager coroutine.");
+            DVOwnership.Log("Stopping proximity checking coroutine.");
             StopCoroutine(proximityCoro);
             proximityCoro = null;
         }
