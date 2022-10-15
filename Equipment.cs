@@ -44,11 +44,31 @@ namespace DVOwnership
         private bool isBogie2Derailed;
 
         private static readonly string COUPLED_FRONT_SAVE_KEY = "coupledF";
-        public string CarGuidCoupledFront { get; private set; }
+        private string _carGuidCoupledFront;
+        public string CarGuidCoupledFront
+        {
+            get
+            {
+                // Make sure coupler state is up-to-date before returning
+                if (IsSpawned) { Update(trainCar, false); }
+                return _carGuidCoupledFront;
+            }
+            private set { _carGuidCoupledFront = value; }
+        }
         public bool IsCoupledFront { get { return !string.IsNullOrEmpty(CarGuidCoupledFront); } }
 
         private static readonly string COUPLED_REAR_SAVE_KEY = "coupledR";
-        public string CarGuidCoupledRear { get; private set; }
+        private string _carGuidCoupledRear;
+        public string CarGuidCoupledRear
+        {
+            get
+            {
+                // Make sure coupler state is up-to-date before returning
+                if (IsSpawned) { Update(trainCar, false); }
+                return _carGuidCoupledRear;
+            }
+            private set { _carGuidCoupledRear = value; }
+        }
         public bool IsCoupledRear { get { return !string.IsNullOrEmpty(CarGuidCoupledRear); } }
 
         private static readonly string CAR_EXPLODED_SAVE_KEY = "exploded";
@@ -145,8 +165,8 @@ namespace DVOwnership
             bogie2TrackID = bogie2.HasDerailed ? null : bogie2.track.logicTrack.ID.FullID;
             bogie2PositionAlongTrack = bogie2.HasDerailed ? -1 : bogie2.traveller.Span;
             isBogie2Derailed = bogie2.HasDerailed;
-            CarGuidCoupledFront = trainCar.frontCoupler.train?.CarGUID;
-            CarGuidCoupledRear = trainCar.rearCoupler.train?.CarGUID;
+            CarGuidCoupledFront = trainCar.frontCoupler.GetCoupled()?.train?.CarGUID;
+            CarGuidCoupledRear = trainCar.rearCoupler.GetCoupled()?.train?.CarGUID;
             isExploded = trainCar.useExplodedModel;
             loadedCargo = trainCar.logicCar.CurrentCargoTypeInCar;
             carStateSave = carState?.GetCarStateSaveData();
@@ -214,6 +234,7 @@ namespace DVOwnership
         {
             // Make sure position is up-to-date before comparing
             if (IsSpawned) { Update(trainCar, false); }
+
             // Train car position appears to be world absolute, so we have compare to the player's world absolute position
             // This is different from what UnusedTrainCarDeleter appears to be doing, but I'm not sure why
             return (position - PlayerManager.GetWorldAbsolutePlayerPosition()).sqrMagnitude;
