@@ -51,6 +51,9 @@ namespace DVOwnership
             try { CargoTypes_Patches.Setup(); }
             catch (Exception e) { OnCriticalFailure(e, "patching CargoTypes"); }
 
+            try { IdGenerator_Patches.Setup(); }
+            catch (Exception e) { OnCriticalFailure(e, "patching IdGenerator"); }
+
             try { Preferences_Patches.Setup(); }
             catch (Exception e) { OnCriticalFailure(e, "patching Preferences"); }
 

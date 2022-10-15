@@ -1,4 +1,5 @@
 ﻿using DV;
+using DVOwnership.Patches;
 using Harmony12;
 using Newtonsoft.Json.Linq;
 using System.Collections.Generic;
@@ -17,12 +18,14 @@ namespace DVOwnership
         {
             DVOwnership.Log($"Adding equipment record with ID {equipment.ID}, which is {(equipment.IsSpawned ? "spawned" : "not spawned")}, to the rolling stock registry.");
             registry.Add(equipment);
+            IdGenerator_Patches.RegisterCarId(equipment.ID);
         }
 
         public void Remove(Equipment equipment)
         {
             DVOwnership.Log($"Removing equipment record with ID {equipment.ID}, which is {(equipment.IsSpawned ? "spawned" : "not spawned")}, from the rolling stock registry.");
             registry.Remove(equipment);
+            IdGenerator_Patches.UnregisterCarId(equipment.ID);
         }
 
         public Equipment FindByTrainCar(TrainCar trainCar)
@@ -73,7 +76,7 @@ namespace DVOwnership
             {
                 if (token.Type != JTokenType.Object) { continue; }
 
-                registry.Add(Equipment.FromSaveData((JObject)token));
+                Add(Equipment.FromSaveData((JObject)token));
                 countLoaded++;
             }
             DVOwnership.Log($"Loaded {countLoaded} equipment records into the rolling stock registry.");
