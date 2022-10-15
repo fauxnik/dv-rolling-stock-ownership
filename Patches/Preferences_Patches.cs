@@ -10,9 +10,11 @@ namespace DVOwnership.Patches
         {
             if (isSetup)
             {
-                DVOwnership.LogWarning("Trying to setup preferences patches, but they've already been set up!");
+                DVOwnership.LogWarning("Trying to set up preferences patches, but they've already been set up!");
                 return;
             }
+
+            DVOwnership.Log("Setting up Preferences patches.");
 
             isSetup = true;
             var PreferenceUtils_IsExcluded = AccessTools.Method(typeof(PreferencesUtils), "IsExcluded");

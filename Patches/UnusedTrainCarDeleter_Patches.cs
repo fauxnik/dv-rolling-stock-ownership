@@ -14,6 +14,8 @@ namespace DVOwnership.Patches
                 return;
             }
 
+            DVOwnership.Log("Setting up UnusedTrainCarDeleter patches.");
+
             isSetup = true;
             var UnusedTrainCarDeleter_AreDeleteConditionsFulfilled = AccessTools.Method(typeof(UnusedTrainCarDeleter), "AreDeleteConditionsFulfilled");
             var UnusedTrainCarDeleter_AreDeleteConditionsFulfilled_Prefix = AccessTools.Method(typeof(UnusedTrainCarDeleter_Patches), "AreDeleteConditionsFulfilled_Prefix");

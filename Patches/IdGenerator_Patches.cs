@@ -17,6 +17,8 @@ namespace DVOwnership.Patches
                 return;
             }
 
+            DVOwnership.Log("Setting up IdGenerator patches.");
+
             isSetup = true;
             idGenerator = SingletonBehaviour<IdGenerator>.Instance;
             var IdGenerator_RegisterCarId = AccessTools.Method(typeof(IdGenerator), nameof(idGenerator.RegisterCarId));

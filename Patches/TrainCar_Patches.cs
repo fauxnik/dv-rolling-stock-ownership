@@ -14,6 +14,8 @@ namespace DVOwnership.Patches
                 return;
             }
 
+            DVOwnership.Log("Setting up TrainCar patches.");
+
             isSetup = true;
             var TrainCar_PrepareForDestroy = AccessTools.Method(typeof(TrainCar), nameof(TrainCar.PrepareForDestroy));
             var TrainCar_PrepareForDestroy_Prefix = AccessTools.Method(typeof(TrainCar_Patches), nameof(PrepareForDestroy_Prefix));

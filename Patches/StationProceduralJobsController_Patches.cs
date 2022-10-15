@@ -20,6 +20,8 @@ namespace DVOwnership.Patches
                 return;
             }
 
+            DVOwnership.Log("Setting up StationProceduralJobsController patches.");
+
             isSetup = true;
             var StationProceduralJobsController_TryToGenerateJobs = AccessTools.Method(typeof(StationProceduralJobsController), nameof(StationProceduralJobsController.TryToGenerateJobs));
             var StationProceduralJobsController_TryToGenerateJobs_Prefix = AccessTools.Method(typeof(StationProceduralJobsController_Patches), nameof(TryToGenerateJobs_Prefix));

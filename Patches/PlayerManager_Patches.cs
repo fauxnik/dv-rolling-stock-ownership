@@ -14,6 +14,8 @@ namespace DVOwnership.Patches
                 return;
             }
 
+            DVOwnership.Log("Setting up PlayerManager patches.");
+
             isSetup = true;
             var PlayerManager_SetCar = AccessTools.Method(typeof(PlayerManager), nameof(PlayerManager.SetCar));
             var PlayerManager_SetCar_Prefix = AccessTools.Method(typeof(PlayerManager_Patches), nameof(SetCar_Prefix));

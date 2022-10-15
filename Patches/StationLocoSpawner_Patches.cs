@@ -15,6 +15,8 @@ namespace DVOwnership.Patches
                 return;
             }
 
+            DVOwnership.Log("Setting up StationLocoSpawner patches.");
+
             isSetup = true;
             var StationLocoSpawner_Update = AccessTools.Method(typeof(StationLocoSpawner), "Update");
             var StationLocoSpawner_Update_Prefix = AccessTools.Method(typeof(StationLocoSpawner_Patches), nameof(Update_Prefix));

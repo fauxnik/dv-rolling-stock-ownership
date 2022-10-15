@@ -17,6 +17,8 @@ namespace DVOwnership.Patches
                 return;
             }
 
+            DVOwnership.Log("Setting up CargoTypes patches.");
+
             isSetup = true;
             CargoTypes.CarTypeToContainerType[TrainCarType.GondolaGray] = CargoContainerType.Gondola;
             CargoTypes.CarTypeToContainerType[TrainCarType.GondolaGreen] = CargoContainerType.Gondola;
