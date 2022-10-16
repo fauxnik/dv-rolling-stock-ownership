@@ -89,25 +89,6 @@ namespace DVOwnership
             return new JArray(serializedRecords.ToArray());
         }
 
-        [HarmonyPatch(typeof(CommsRadioCarDeleter), "OnCarToDeleteDestroy")]
-        class CommsRadioCarDeleter_OnCarToDeleteDestroy_Patch
-        {
-            static void Postfix(TrainCar destroyedCar)
-            {
-                DVOwnership.Log($"Train car is being deleted. Attempting to remove it from the rolling stock registry.");
-
-                var manager = Instance;
-                var equipment = manager?.FindByTrainCar(destroyedCar);
-                if (equipment == null)
-                {
-                    DVOwnership.LogWarning($"Equipment record not found in the rolling stock registry.");
-                    return;
-                }
-
-                DVOwnership.Log($"Removing equipment with ID {equipment.ID} from the rolling stock registry.");
-
-                manager.Remove(equipment);
-            }
-        }
+        // See CommsRadioCarDeleter_Patches for relevant patches
     }
 }

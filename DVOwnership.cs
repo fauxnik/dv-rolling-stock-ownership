@@ -51,6 +51,9 @@ namespace DVOwnership
             try { CargoTypes_Patches.Setup(); }
             catch (Exception e) { OnCriticalFailure(e, "patching CargoTypes"); }
 
+            try { CommsRadioCarDeleter_Patches.Setup(); }
+            catch (Exception e) { OnCriticalFailure(e, "patching CommsRadioCarDeleter"); }
+
             try { IdGenerator_Patches.Setup(); }
             catch (Exception e) { OnCriticalFailure(e, "patching IdGenerator"); }
 
