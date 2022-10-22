@@ -249,6 +249,11 @@ namespace DVOwnership
             return false;
         }
 
+        public bool IsCoupledTo(string carGuid)
+        {
+            return carGuid == CarGuidCoupledFront || carGuid == CarGuidCoupledRear;
+        }
+
         public float SquaredDistanceFromPlayer()
         {
             // Make sure position is up-to-date before comparing

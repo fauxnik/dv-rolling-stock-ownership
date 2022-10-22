@@ -32,7 +32,7 @@ namespace DVOwnership
             throw new NotImplementedException();
         }
 
-        public JobChainController GenerateLoadChainJobForCars(List<Car> carsForJob)
+        public JobChainController GenerateLoadChainJobForCars(List<List<Car>> carSetsForJob)
         {
 
             throw new NotImplementedException();

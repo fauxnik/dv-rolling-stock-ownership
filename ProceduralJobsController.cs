@@ -5,7 +5,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using UnityEngine;
 
 namespace DVOwnership
 {
@@ -94,20 +93,20 @@ namespace DVOwnership
             {
                 yield return null;
 
-                var car = carsQ.Dequeue();
-                if (!carsInYard.Contains(car)) { continue; }
+                var thisCar = carsQ.Dequeue();
+                if (!carsInYard.Contains(thisCar)) { continue; }
 
-                DVOwnership.LogDebug(() => $"Attempting to generate job for car {car.ID}.");
+                DVOwnership.LogDebug(() => $"Attempting to generate job for car {thisCar.ID}.");
 
                 // TODO: generate job
                 JobChainController jobChainController = null;
                 var manager = SingletonBehaviour<RollingStockManager>.Instance;
-                var equipment = manager.FindByCarGUID(car.carGuid);
+                var thisEquipment = manager.FindByCarGUID(thisCar.carGuid);
                 var carsForJob = new HashSet<Car>();
-                carsForJob.Add(car);
+                carsForJob.Add(thisCar);
 
-                var carType = car.carType;
-                var cargoTypeInCar = car.CurrentCargoTypeInCar;
+                var carType = thisCar.carType;
+                var cargoTypeInCar = thisCar.CurrentCargoTypeInCar;
                 if (cargoTypeInCar != CargoType.None)
                 {
                     if (proceduralRuleset.haulStartingJobSupported && licensedOutputCargoGroups.Any(group => group.cargoTypes.Contains(cargoTypeInCar)))
@@ -124,9 +123,9 @@ namespace DVOwnership
                         var seekQ = new Queue<Equipment>();
                         var seenEquipment = new HashSet<Equipment>();
                         Equipment coupledEquipment;
-                        coupledEquipment = manager.FindByCarGUID(equipment.CarGuidCoupledFront);
+                        coupledEquipment = manager.FindByCarGUID(thisEquipment.CarGuidCoupledFront);
                         if (coupledEquipment != null) { seekQ.Enqueue(coupledEquipment); }
-                        coupledEquipment = manager.FindByCarGUID(equipment.CarGuidCoupledRear);
+                        coupledEquipment = manager.FindByCarGUID(thisEquipment.CarGuidCoupledRear);
                         if (coupledEquipment != null) { seekQ.Enqueue(coupledEquipment); }
                         while (seekQ.Count > 0 && carsForJob.Count < proceduralRuleset.maxCarsPerJob)
                         {
@@ -149,7 +148,7 @@ namespace DVOwnership
                             jobChainController = procJobGenerator.GenerateHaulChainJobForCars(carsForJob.ToList());
                         }
                     }
-                    else if (proceduralRuleset.unloadStartingJobSupported && equipment.DestinationID == stationId && proceduralRuleset.inputCargoGroups.Any(group => group.cargoTypes.Contains(cargoTypeInCar)))
+                    else if (proceduralRuleset.unloadStartingJobSupported && thisEquipment.DestinationID == stationId && proceduralRuleset.inputCargoGroups.Any(group => group.cargoTypes.Contains(cargoTypeInCar)))
                     {
                         // Player previously hauled car here, generate shunting unload job
                     }
@@ -159,6 +158,69 @@ namespace DVOwnership
                     if (proceduralRuleset.loadStartingJobSupported && licensedOutputCargoGroups.Any(group => group.cargoTypes.Any(cargoType => CargoTypes.CanCarContainCargoType(carType, cargoType))))
                     {
                         // Station can load cargo into this car & player is licensed to do so, generate shunting load job
+                        var potentialCargoGroups = licensedOutputCargoGroups.Where(group => group.cargoTypes.Any(cargoType => CargoTypes.CanCarContainCargoType(carType, cargoType)));
+                        var countCargoGroups = potentialCargoGroups.Count();
+                        var indexInCargoGroups = rng.Next(countCargoGroups);
+                        var cargoGroup = potentialCargoGroups.ElementAt(indexInCargoGroups);
+
+                        DVOwnership.LogDebug(() => $"Attempting to generate shunting load job using cargo group {indexInCargoGroups + 1} of {countCargoGroups} possible groups.");
+
+                        // Find all equipment that matches the selected cargo group
+                        var potentialEmptyCars = carsInYard.Where(car => car.CurrentCargoTypeInCar == CargoType.None && cargoGroup.cargoTypes.Any(cargoType => CargoTypes.CanCarContainCargoType(car.carType, cargoType))).ToList();
+                        var potentialEquipment = potentialEmptyCars.Select(car => manager.FindByCarGUID(car.carGuid)).ToList();
+                        
+                        // Group equipment into train sets
+                        var contiguousEquipment = new List<HashSet<Equipment>>();
+                        foreach (var currentEquipment in potentialEquipment)
+                        {
+                            var currentCarGUID = currentEquipment.CarGUID;
+                            var contiguousSet = contiguousEquipment.Find(set => set.Any(equipmentFromSet => equipmentFromSet.IsCoupledTo(currentCarGUID)));
+
+                            if (contiguousSet != null)
+                            {
+                                contiguousSet.Add(currentEquipment);
+                                continue;
+                            }
+
+                            contiguousSet = new HashSet<Equipment>();
+                            contiguousSet.Add(currentEquipment);
+                            contiguousEquipment.Add(contiguousSet);
+                        }
+
+                        // Get the train set that includes the original car (and remove it from the list to avoid double processing)
+                        var thisEquipmentSet = contiguousEquipment.Find(set => set.Contains(thisEquipment));
+                        contiguousEquipment.Remove(thisEquipmentSet);
+
+                        // Select train sets based on maximum requirements
+                        var equipmentSetsForJob = new List<HashSet<Equipment>>();
+                        equipmentSetsForJob.Add(thisEquipmentSet);
+                        for (var index = 0; equipmentSetsForJob.Count < proceduralRuleset.maxShuntingStorageTracks && index < contiguousEquipment.Count; ++index)
+                        {
+                            var trainLengthSoFar = equipmentSetsForJob.Aggregate(0, (sum, set) => sum + set.Count);
+                            var equipmentSet = contiguousEquipment[index];
+                            if (trainLengthSoFar + equipmentSet.Count > proceduralRuleset.maxCarsPerJob) { continue; }
+
+                            equipmentSetsForJob.Add(equipmentSet);
+                        }
+                        
+                        // Add cars to carsForJob so that they'll be removed from carsInYard if a job is successfully generated
+                        foreach (var equipmentSet in equipmentSetsForJob)
+                        {
+                            foreach (var equipment in equipmentSet)
+                            {
+                                var car = equipment.GetLogicCar();
+                                carsForJob.Add(car);
+                            }
+                        }
+
+                        // Generate the job, but only if it meets the minimum requirements
+                        if (carsForJob.Count >= proceduralRuleset.minCarsPerJob)
+                        {
+                            var carSetsForJob =
+                                from equipmentSet in equipmentSetsForJob
+                                select (from equipment in equipmentSet select equipment.GetLogicCar()).ToList();
+                            jobChainController = procJobGenerator.GenerateLoadChainJobForCars(carSetsForJob.ToList());
+                        }
                     }
                 }
 
@@ -170,7 +232,7 @@ namespace DVOwnership
                 else
                 {
                     // Try again, but only after attempting to generate jobs for other cars first
-                    carsQ.Enqueue(car);
+                    carsQ.Enqueue(thisCar);
                     --attemptsRemaining;
                 }
             }
