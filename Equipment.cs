@@ -225,6 +225,17 @@ namespace DVOwnership
             return trainCar;
         }
 
+        public TrainCar GetTrainCar()
+        {
+            if (!IsSpawned)
+            {
+                DVOwnership.Log($"Trying to get the logic car of equipment record with ID {ID}, but it isn't spawned!");
+                return null;
+            }
+
+            return trainCar;
+        }
+
         public Car GetLogicCar()
         {
             if (!IsSpawned)
