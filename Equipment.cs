@@ -80,10 +80,10 @@ namespace DVOwnership
         private static readonly string CAR_STATE_SAVE_KEY = "carState";
         private JObject carStateSave;
 
-        private static readonly string LOCO_STATE_SAVE_KEY = "locoState";
+        private const string LOCO_STATE_SAVE_KEY = "locoState";
         private JObject locoStateSave;
 
-        private static readonly string SPAWNED_SAVE_KEY = "spawned";
+        private const string SPAWNED_SAVE_KEY = "spawned";
         private TrainCar trainCar;
         public bool IsSpawned { get { return trainCar != null; } }
         public bool IsMarkedForDespawning { get; private set; } = false;
@@ -95,6 +95,9 @@ namespace DVOwnership
                 return trainCar.GetForwardSpeed() < STATIONARY_SPEED_EPSILON;
             }
         }
+
+        private static readonly string DESTINATION_SAVE_KEY = "destination";
+        public string DestinationID { get; private set; }
 
         public Equipment(string id, string carGuid, TrainCarType type, Vector3 position, Quaternion rotation, string bogie1TrackID, double bogie1PositionAlongTrack, bool isBogie1Derailed, string bogie2TrackID, double bogie2PositionAlongTrack, bool isBogie2Derailed, string carGuidCoupledFront, string carGuidCoupledRear, bool isExploded, CargoType loadedCargo, JObject carStateSave, JObject locoStateSave, TrainCar trainCar)
         {
@@ -174,6 +177,11 @@ namespace DVOwnership
             this.trainCar = isBeingDespawned ? null : trainCar;
         }
 
+        public void SetDestination(string stationId)
+        {
+            DestinationID = stationId;
+        }
+
         public bool PrepareForDespawning()
         {
             if (!IsSpawned)
@@ -217,6 +225,17 @@ namespace DVOwnership
             return trainCar;
         }
 
+        public Car GetLogicCar()
+        {
+            if (!IsSpawned)
+            {
+                DVOwnership.Log($"Trying to get the logic car of equipment record with ID {ID}, but it isn't spawned!");
+                return null;
+            }
+
+            return trainCar.logicCar;
+        }
+
         public bool IsRecordOf(TrainCar trainCar)
         {
             if (trainCar == null)
@@ -258,7 +277,7 @@ namespace DVOwnership
                 var allCars = SingletonBehaviour<CarSpawner>.Instance.GetCars();
                 trainCar = allCars.Find(tc => tc.CarGUID == carGuid);
             }
-            return new Equipment(
+            var equipment = new Equipment(
                 id,
                 carGuid,
                 (TrainCarType)data.GetInt(CAR_TYPE_SAVE_KEY),
@@ -277,6 +296,9 @@ namespace DVOwnership
                 data.GetJObject(CAR_STATE_SAVE_KEY),
                 data.GetJObject(LOCO_STATE_SAVE_KEY),
                 trainCar);
+            string destination = data.GetString(DESTINATION_SAVE_KEY);
+            if (!string.IsNullOrEmpty(destination)) { equipment.SetDestination(destination); }
+            return equipment;
         }
 
         public JObject GetSaveData()
@@ -302,6 +324,7 @@ namespace DVOwnership
             data.SetJObject(CAR_STATE_SAVE_KEY, carStateSave);
             data.SetJObject(LOCO_STATE_SAVE_KEY, locoStateSave);
             data.SetBool(SPAWNED_SAVE_KEY, IsSpawned);
+            data.SetString(DESTINATION_SAVE_KEY, DestinationID);
 
             return data;
         }

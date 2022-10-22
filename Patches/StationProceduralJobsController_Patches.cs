@@ -11,6 +11,8 @@ namespace DVOwnership.Patches
     public class StationProceduralJobsController_Patches
     {
         private static bool isSetup = false;
+        private static Dictionary<StationController, StationProceduralJobsController> stationToVanillaJobsController = new Dictionary<StationController, StationProceduralJobsController>();
+        private static Dictionary<StationController, ProceduralJobsController> stationToModJobsController = new Dictionary<StationController, ProceduralJobsController>();
 
         public static void Setup()
         {
@@ -28,15 +30,38 @@ namespace DVOwnership.Patches
             DVOwnership.Patch(StationProceduralJobsController_TryToGenerateJobs, prefix: new HarmonyMethod(StationProceduralJobsController_TryToGenerateJobs_Prefix));
         }
 
-        static bool TryToGenerateJobs_Prefix(StationProceduralJobsController __instance, ref Coroutine ___generationCoro)
+        static bool TryToGenerateJobs_Prefix(StationProceduralJobsController __instance, ref Coroutine ___generationCoro, StationController ___stationController)
         {
             DVOwnership.Log($"Generating jobs for equipment at {__instance.stationController.logicStation.ID} station.");
+
             __instance.StopJobGeneration();
-            // TODO: start the job generation coroutine and set it below
-            ___generationCoro = null;
+            ProceduralJobsController jobsController;
+            if (!stationToModJobsController.TryGetValue(___stationController, out jobsController))
+            {
+                jobsController = new ProceduralJobsController(___stationController);
+                stationToModJobsController.Add(___stationController, jobsController);
+            }
+            if (!stationToVanillaJobsController.ContainsKey(___stationController))
+            {
+                stationToVanillaJobsController.Add(___stationController, __instance);
+            }
+            
+            ___generationCoro = __instance.StartCoroutine(jobsController.GenerateJobsCoro());
 
             DVOwnership.Log("Skipping default job generation.");
             return false;
+        }
+
+        public static void ReportJobGenerationComplete(StationController stationController)
+        {
+            StationProceduralJobsController proceduralJobsController;
+            if (stationToVanillaJobsController.TryGetValue(stationController, out proceduralJobsController))
+            {
+                AccessTools.Field(typeof(StationProceduralJobsController), "generationCoro").SetValue(proceduralJobsController, null);
+                return;
+            }
+
+            DVOwnership.LogError($"Couldn't find station procedural jobs controller for station controller {stationController.stationInfo.Name}!");
         }
     }
 }
