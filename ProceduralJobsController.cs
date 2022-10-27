@@ -119,38 +119,39 @@ namespace DVOwnership
 
                         DVOwnership.LogDebug(() => $"Attempting to generate freight haul job using cargo group {indexInCargoGroups + 1} of {countCargoGroups} possible groups.");
 
-                        // Move outward from car, seeking adjacent coupled cars that match the cargo group
-                        var seekQ = new Queue<Equipment>();
-                        var seenEquipment = new HashSet<Equipment>();
-                        Equipment coupledEquipment;
-                        coupledEquipment = manager.FindByCarGUID(thisEquipment.CarGuidCoupledFront);
-                        if (coupledEquipment != null) { seekQ.Enqueue(coupledEquipment); }
-                        coupledEquipment = manager.FindByCarGUID(thisEquipment.CarGuidCoupledRear);
-                        if (coupledEquipment != null) { seekQ.Enqueue(coupledEquipment); }
-                        while (seekQ.Count > 0 && carsForJob.Count < proceduralRuleset.maxCarsPerJob)
-                        {
-                            var possibleMatch = seekQ.Dequeue();
-                            seenEquipment.Add(possibleMatch);
-
-                            var possibleMatchLogicCar = possibleMatch.GetLogicCar();
-                            if (!carsInYard.Contains(possibleMatchLogicCar) || !cargoGroup.cargoTypes.Contains(possibleMatchLogicCar.CurrentCargoTypeInCar)) { continue; }
-
-                            carsForJob.Add(possibleMatchLogicCar);
-                            coupledEquipment = manager.FindByCarGUID(possibleMatch.CarGuidCoupledFront);
-                            if (coupledEquipment != null && !seenEquipment.Contains(coupledEquipment)) { seekQ.Enqueue(coupledEquipment); }
-                            coupledEquipment = manager.FindByCarGUID(possibleMatch.CarGuidCoupledRear);
-                            if (coupledEquipment != null && !seenEquipment.Contains(coupledEquipment)) { seekQ.Enqueue(coupledEquipment); }
-                        }
+                        carsForJob.UnionWith(GetMatchingCoupledCars(thisEquipment, cargoGroup, carsInYard, proceduralRuleset.maxCarsPerJob));
 
                         // Generate the job, but only if it meets the minimum requirements
                         if (carsForJob.Count >= proceduralRuleset.minCarsPerJob)
                         {
                             jobChainController = procJobGenerator.GenerateHaulChainJobForCars(carsForJob.ToList());
                         }
+                        else
+                        {
+                            DVOwnership.LogDebug(() => $"Didn't meet the minimum number of cars per job ({proceduralRuleset.minCarsPerJob}).");
+                        }
                     }
                     else if (proceduralRuleset.unloadStartingJobSupported && thisEquipment.DestinationID == stationId && proceduralRuleset.inputCargoGroups.Any(group => group.cargoTypes.Contains(cargoTypeInCar)))
                     {
                         // Player previously hauled car here, generate shunting unload job
+                        var potentialCargoGroups = proceduralRuleset.inputCargoGroups.Where(group => group.cargoTypes.Contains(cargoTypeInCar));
+                        var countCargoGroups = potentialCargoGroups.Count();
+                        var indexInCargoGroups = rng.Next(countCargoGroups);
+                        var cargoGroup = potentialCargoGroups.ElementAt(indexInCargoGroups);
+
+                        DVOwnership.LogDebug(() => $"Attempting to generate shunting unload job using cargo group {indexInCargoGroups + 1} of {countCargoGroups} possible groups.");
+
+                        carsForJob.UnionWith(GetMatchingCoupledCars(thisEquipment, cargoGroup, carsInYard, proceduralRuleset.maxCarsPerJob));
+
+                        // Generate the job, but only if it meets the minimum requirements
+                        if (carsForJob.Count >= proceduralRuleset.minCarsPerJob)
+                        {
+                            jobChainController = procJobGenerator.GenerateUnloadChainJobForCars(carsForJob.ToList());
+                        }
+                        else
+                        {
+                            DVOwnership.LogDebug(() => $"Didn't meet the minimum number of cars per job ({proceduralRuleset.minCarsPerJob}).");
+                        }
                     }
                 }
                 else
@@ -221,13 +222,17 @@ namespace DVOwnership
                                 select (from equipment in equipmentSet select equipment.GetLogicCar()).ToList();
                             jobChainController = procJobGenerator.GenerateLoadChainJobForCars(carSetsForJob.ToList());
                         }
+                        else
+                        {
+                            DVOwnership.LogDebug(() => $"Didn't meet the minimum number of cars per job ({proceduralRuleset.minCarsPerJob}).");
                     }
+                }
                 }
 
                 if (jobChainController != null)
                 {
                     // TODO: what do we do with it?
-                    carsInYard.ExceptWith(carsForJob);
+                    carsInYard.ExceptWith(from trainCar in jobChainController.trainCarsForJobChain select trainCar.logicCar);
                 }
                 else
                 {
@@ -240,6 +245,37 @@ namespace DVOwnership
             DVOwnership.Log(log.ToString());
             StationProceduralJobsController_Patches.ReportJobGenerationComplete(stationController);
             yield break;
+        }
+
+        private static HashSet<Car> GetMatchingCoupledCars(Equipment equipment, CargoGroup cargoGroup, HashSet<Car> carsInYard, int maxCarsPerJob)
+        {
+            var manager = SingletonBehaviour<RollingStockManager>.Instance;
+            var cars = new HashSet<Car>();
+
+            // Move outward from car, seeking adjacent coupled cars that match the cargo group
+            var seekQ = new Queue<Equipment>();
+            var seenEquipment = new HashSet<Equipment>();
+            Equipment coupledEquipment;
+            coupledEquipment = manager.FindByCarGUID(equipment.CarGuidCoupledFront);
+            if (coupledEquipment != null) { seekQ.Enqueue(coupledEquipment); }
+            coupledEquipment = manager.FindByCarGUID(equipment.CarGuidCoupledRear);
+            if (coupledEquipment != null) { seekQ.Enqueue(coupledEquipment); }
+            while (seekQ.Count > 0 && cars.Count < maxCarsPerJob)
+            {
+                var possibleMatch = seekQ.Dequeue();
+                seenEquipment.Add(possibleMatch);
+
+                var possibleMatchLogicCar = possibleMatch.GetLogicCar();
+                if (!carsInYard.Contains(possibleMatchLogicCar) || !cargoGroup.cargoTypes.Contains(possibleMatchLogicCar.CurrentCargoTypeInCar)) { continue; }
+
+                cars.Add(possibleMatchLogicCar);
+                coupledEquipment = manager.FindByCarGUID(possibleMatch.CarGuidCoupledFront);
+                if (coupledEquipment != null && !seenEquipment.Contains(coupledEquipment)) { seekQ.Enqueue(coupledEquipment); }
+                coupledEquipment = manager.FindByCarGUID(possibleMatch.CarGuidCoupledRear);
+                if (coupledEquipment != null && !seenEquipment.Contains(coupledEquipment)) { seekQ.Enqueue(coupledEquipment); }
+            }
+
+            return cars;
         }
 
         private static List<Track> GetTracksByStationID (string stationId)
