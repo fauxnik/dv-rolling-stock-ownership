@@ -33,7 +33,7 @@ namespace DVOwnership
         {
             this.stationController = stationController;
             procJobGenerator = new ProceduralJobGenerator(stationController);
-            stationTracks = GetTracksByStationID(stationController.logicStation.ID);
+            stationTracks = GetTracksByStationID(stationController.logicStation.ID).ToList();
         }
 
         public IEnumerator GenerateJobsCoro(Action onComplete)
@@ -309,11 +309,10 @@ namespace DVOwnership
             return cars;
         }
 
-        private static List<Track> GetTracksByStationID (string stationId)
+        private static IEnumerable<Track> GetTracksByStationID (string stationId)
         {
             var allTracks = RailTrackRegistry.AllTracks;
-            var stationTracks = from railTrack in allTracks where railTrack.logicTrack.ID.yardId == stationId select railTrack.logicTrack;
-            return stationTracks.ToList();
+            return from railTrack in allTracks where railTrack.logicTrack.ID.yardId == stationId select railTrack.logicTrack;
         }
     }
 }
