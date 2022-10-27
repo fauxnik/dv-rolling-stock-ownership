@@ -132,11 +132,13 @@ namespace DVOwnership
 
                         DVOwnership.LogDebug(() => $"Attempting to generate freight haul job using cargo group {indexInCargoGroups + 1} of {countCargoGroups} possible groups.");
 
+                        yield return null;
                         carsForJob.UnionWith(GetMatchingCoupledCars(thisEquipment, cargoGroup, carsInYard, proceduralRuleset.maxCarsPerJob));
 
                         // Generate the job, but only if it meets the minimum requirements
                         if (carsForJob.Count >= proceduralRuleset.minCarsPerJob)
                         {
+                            yield return null;
                             jobChainController = procJobGenerator.GenerateHaulChainJobForCars(carsForJob.ToList());
                         }
                         else
@@ -154,11 +156,13 @@ namespace DVOwnership
 
                         DVOwnership.LogDebug(() => $"Attempting to generate shunting unload job using cargo group {indexInCargoGroups + 1} of {countCargoGroups} possible groups.");
 
+                        yield return null;
                         carsForJob.UnionWith(GetMatchingCoupledCars(thisEquipment, cargoGroup, carsInYard, proceduralRuleset.maxCarsPerJob));
 
                         // Generate the job, but only if it meets the minimum requirements
                         if (carsForJob.Count >= proceduralRuleset.minCarsPerJob)
                         {
+                            yield return null;
                             jobChainController = procJobGenerator.GenerateUnloadChainJobForCars(carsForJob.ToList());
                         }
                         else
@@ -179,9 +183,13 @@ namespace DVOwnership
 
                         DVOwnership.LogDebug(() => $"Attempting to generate shunting load job using cargo group {indexInCargoGroups + 1} of {countCargoGroups} possible groups.");
 
+                        yield return null;
+
                         // Find all equipment that matches the selected cargo group
                         var potentialEmptyCars = carsInYard.Where(car => car.CurrentCargoTypeInCar == CargoType.None && cargoGroup.cargoTypes.Any(cargoType => CargoTypes.CanCarContainCargoType(car.carType, cargoType))).ToList();
                         var potentialEquipment = potentialEmptyCars.Select(car => manager.FindByCarGUID(car.carGuid)).ToList();
+
+                        yield return null;
                         
                         // Group equipment into train sets
                         var contiguousEquipment = new List<HashSet<Equipment>>();
@@ -201,9 +209,13 @@ namespace DVOwnership
                             contiguousEquipment.Add(contiguousSet);
                         }
 
+                        yield return null;
+
                         // Get the train set that includes the original car (and remove it from the list to avoid double processing)
                         var thisEquipmentSet = contiguousEquipment.Find(set => set.Contains(thisEquipment));
                         contiguousEquipment.Remove(thisEquipmentSet);
+
+                        yield return null;
 
                         // Select train sets based on maximum requirements
                         var equipmentSetsForJob = new List<HashSet<Equipment>>();
@@ -216,6 +228,8 @@ namespace DVOwnership
 
                             equipmentSetsForJob.Add(equipmentSet);
                         }
+
+                        yield return null;
                         
                         // Add cars to carsForJob so that they'll be removed from carsInYard if a job is successfully generated
                         foreach (var equipmentSet in equipmentSetsForJob)
@@ -230,6 +244,7 @@ namespace DVOwnership
                         // Generate the job, but only if it meets the minimum requirements
                         if (carsForJob.Count >= proceduralRuleset.minCarsPerJob)
                         {
+                            yield return null;
                             var carSetsForJob =
                                 from equipmentSet in equipmentSetsForJob
                                 select (from equipment in equipmentSet select equipment.GetLogicCar()).ToList();
