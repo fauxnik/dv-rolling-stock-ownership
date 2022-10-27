@@ -111,7 +111,6 @@ namespace DVOwnership
 
                 DVOwnership.LogDebug(() => $"Attempting to generate job for car {thisCar.ID}.");
 
-                // TODO: generate job
                 JobChainController jobChainController = null;
                 var manager = SingletonBehaviour<RollingStockManager>.Instance;
                 var thisEquipment = manager.FindByCarGUID(thisCar.carGuid);
@@ -139,7 +138,7 @@ namespace DVOwnership
                         if (carsForJob.Count >= proceduralRuleset.minCarsPerJob)
                         {
                             yield return null;
-                            jobChainController = procJobGenerator.GenerateHaulChainJobForCars(carsForJob.ToList());
+                            jobChainController = procJobGenerator.GenerateHaulChainJobForCars(carsForJob.ToList(), cargoGroup);
                         }
                         else
                         {
@@ -163,7 +162,7 @@ namespace DVOwnership
                         if (carsForJob.Count >= proceduralRuleset.minCarsPerJob)
                         {
                             yield return null;
-                            jobChainController = procJobGenerator.GenerateUnloadChainJobForCars(carsForJob.ToList());
+                            jobChainController = procJobGenerator.GenerateUnloadChainJobForCars(carsForJob.ToList(), cargoGroup);
                         }
                         else
                         {
@@ -248,7 +247,7 @@ namespace DVOwnership
                             var carSetsForJob =
                                 from equipmentSet in equipmentSetsForJob
                                 select (from equipment in equipmentSet select equipment.GetLogicCar()).ToList();
-                            jobChainController = procJobGenerator.GenerateLoadChainJobForCars(carSetsForJob.ToList());
+                            jobChainController = procJobGenerator.GenerateLoadChainJobForCars(carSetsForJob.ToList(), cargoGroup);
                         }
                         else
                         {

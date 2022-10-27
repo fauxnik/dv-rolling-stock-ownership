@@ -20,19 +20,19 @@ namespace DVOwnership
             yto = SingletonBehaviour<YardTracksOrganizer>.Instance;
         }
 
-        public JobChainController GenerateHaulChainJobForCars(List<Car> carsForJob)
+        public JobChainController GenerateHaulChainJobForCars(List<Car> carsForJob, CargoGroup cargoGroup)
         {
 
             throw new NotImplementedException();
         }
 
-        public JobChainController GenerateUnloadChainJobForCars(List<Car> carsForJob)
+        public JobChainController GenerateUnloadChainJobForCars(List<Car> carsForJob, CargoGroup cargoGroup)
         {
 
             throw new NotImplementedException();
         }
 
-        public JobChainController GenerateLoadChainJobForCars(List<List<Car>> carSetsForJob)
+        public JobChainController GenerateLoadChainJobForCars(List<List<Car>> carSetsForJob, CargoGroup cargoGroup)
         {
 
             throw new NotImplementedException();
