@@ -11,19 +11,32 @@ namespace DVOwnership
     public class ProceduralJobsController
     {
         private static readonly int MAX_JOB_GENERATION_ATTEMPTS = 30;
+        private static Dictionary<StationController, ProceduralJobsController> instances = new Dictionary<StationController, ProceduralJobsController>();
 
         private StationController stationController;
         private ProceduralJobGenerator procJobGenerator;
         private List<Track> stationTracks;
 
-        public ProceduralJobsController(StationController stationController)
+        public static ProceduralJobsController ForStation(StationController stationController)
+        {
+            ProceduralJobsController instance;
+            if (!instances.TryGetValue(stationController, out instance))
+            {
+                instance = new ProceduralJobsController(stationController);
+                instances.Add(stationController, instance);
+            }
+
+            return instance;
+        }
+
+        private ProceduralJobsController(StationController stationController)
         {
             this.stationController = stationController;
             procJobGenerator = new ProceduralJobGenerator(stationController);
             stationTracks = GetTracksByStationID(stationController.logicStation.ID);
         }
 
-        public IEnumerator GenerateJobsCoro()
+        public IEnumerator GenerateJobsCoro(Action onComplete)
         {
             var log = new StringBuilder();
             int tickCount = Environment.TickCount;
@@ -225,8 +238,8 @@ namespace DVOwnership
                         else
                         {
                             DVOwnership.LogDebug(() => $"Didn't meet the minimum number of cars per job ({proceduralRuleset.minCarsPerJob}).");
+                        }
                     }
-                }
                 }
 
                 if (jobChainController != null)
@@ -243,7 +256,10 @@ namespace DVOwnership
             }
 
             DVOwnership.Log(log.ToString());
-            StationProceduralJobsController_Patches.ReportJobGenerationComplete(stationController);
+            if (onComplete != null)
+            {
+                onComplete();
+            }
             yield break;
         }
 
