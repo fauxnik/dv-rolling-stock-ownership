@@ -138,7 +138,7 @@ namespace DVOwnership
                         if (carsForJob.Count >= proceduralRuleset.minCarsPerJob)
                         {
                             yield return null;
-                            jobChainController = procJobGenerator.GenerateHaulChainJobForCars(carsForJob.ToList(), cargoGroup);
+                            jobChainController = procJobGenerator.GenerateHaulChainJobForCars(rng, carsForJob.ToList(), cargoGroup);
                         }
                         else
                         {
@@ -162,7 +162,7 @@ namespace DVOwnership
                         if (carsForJob.Count >= proceduralRuleset.minCarsPerJob)
                         {
                             yield return null;
-                            jobChainController = procJobGenerator.GenerateUnloadChainJobForCars(carsForJob.ToList(), cargoGroup);
+                            jobChainController = procJobGenerator.GenerateUnloadChainJobForCars(rng, carsForJob.ToList(), cargoGroup);
                         }
                         else
                         {
@@ -247,7 +247,7 @@ namespace DVOwnership
                             var carSetsForJob =
                                 from equipmentSet in equipmentSetsForJob
                                 select (from equipment in equipmentSet select equipment.GetLogicCar()).ToList();
-                            jobChainController = procJobGenerator.GenerateLoadChainJobForCars(carSetsForJob.ToList(), cargoGroup);
+                            jobChainController = procJobGenerator.GenerateLoadChainJobForCars(rng, carSetsForJob.ToList(), cargoGroup);
                         }
                         else
                         {
