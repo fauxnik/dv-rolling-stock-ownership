@@ -197,15 +197,13 @@ namespace DVOwnership
                             var currentCarGUID = currentEquipment.CarGUID;
                             var contiguousSet = contiguousEquipment.Find(set => set.Any(equipmentFromSet => equipmentFromSet.IsCoupledTo(currentCarGUID)));
 
-                            if (contiguousSet != null)
+                            if (contiguousSet == null)
                             {
-                                contiguousSet.Add(currentEquipment);
-                                continue;
+                                contiguousSet = new HashSet<Equipment>();
+                                contiguousEquipment.Add(contiguousSet);
                             }
 
-                            contiguousSet = new HashSet<Equipment>();
                             contiguousSet.Add(currentEquipment);
-                            contiguousEquipment.Add(contiguousSet);
                         }
 
                         yield return null;
