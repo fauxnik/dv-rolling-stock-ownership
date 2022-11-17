@@ -62,6 +62,8 @@ namespace DVOwnership
             jobChainController.AddJobDefinitionToChain(jobDefinition);
             jobChainController.FinalizeSetupAndGenerateFirstJob();
 
+            jobChainController.JobChainCompleted += GenerateDestinationSetter(destinationController.logicStation.ID);
+
             return jobChainController;
         }
 
@@ -122,6 +124,8 @@ namespace DVOwnership
 
             jobChainController.AddJobDefinitionToChain(jobDefinition);
             jobChainController.FinalizeSetupAndGenerateFirstJob();
+
+            jobChainController.JobChainCompleted += GenerateDestinationSetter(null);
 
             return jobChainController;
         }
@@ -245,6 +249,20 @@ namespace DVOwnership
             jobDefinition.destinationTrack = destinationTrack;
             jobDefinition.forceCorrectCargoStateOnCars = true;
             return jobDefinition;
+        }
+
+        private static Action<JobChainController> GenerateDestinationSetter(string destinationID)
+        {
+            return (controller) =>
+            {
+                var rollingStock = SingletonBehaviour<RollingStockManager>.Instance;
+                var trainCars = controller.trainCarsForJobChain;
+                var equipments = from trainCar in trainCars select rollingStock.FindByTrainCar(trainCar);
+                foreach (var equipment in equipments)
+                {
+                    equipment.SetDestination(destinationID);
+                }
+            };
         }
     }
 }
