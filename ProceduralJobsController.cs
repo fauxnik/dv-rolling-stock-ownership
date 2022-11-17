@@ -44,12 +44,15 @@ namespace DVOwnership
             var stationId = stationController.logicStation.ID;
             var proceduralRuleset = stationController.proceduralJobsRuleset;
             var licensedOutputCargoGroups = (from cargoGroup in proceduralRuleset.outputCargoGroups where LicenseManager_Patches.IsLicensedForCargoTypes(cargoGroup.cargoTypes) select cargoGroup).ToList();
+            var manager = SingletonBehaviour<RollingStockManager>.Instance;
 
             // get all (logic) cars in the yard
             var carsInYard = new HashSet<Car>();
             foreach (var track in stationTracks)
             {
                 yield return null;
+
+                manager.RespawnEquipmentOnTrack(track);
 
                 foreach (var car in track.GetCarsFullyOnTrack())
                 {
@@ -112,7 +115,6 @@ namespace DVOwnership
                 DVOwnership.LogDebug(() => $"Attempting to generate job for car {thisCar.ID}.");
 
                 JobChainController jobChainController = null;
-                var manager = SingletonBehaviour<RollingStockManager>.Instance;
                 var thisEquipment = manager.FindByCarGUID(thisCar.carGuid);
                 var carsForJob = new HashSet<Car>();
                 carsForJob.Add(thisCar);

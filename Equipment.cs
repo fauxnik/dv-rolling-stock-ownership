@@ -265,6 +265,11 @@ namespace DVOwnership
             return carGuid == CarGuidCoupledFront || carGuid == CarGuidCoupledRear;
         }
 
+        public bool IsOnTrack(Track track)
+        {
+            return bogie1TrackID == track.ID.FullID || bogie2TrackID == track.ID.FullID;
+        }
+
         public float SquaredDistanceFromPlayer()
         {
             // Make sure position is up-to-date before comparing

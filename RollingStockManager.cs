@@ -1,6 +1,5 @@
-﻿using DV;
+﻿using DV.Logic.Job;
 using DVOwnership.Patches;
-using Harmony12;
 using Newtonsoft.Json.Linq;
 using System.Collections.Generic;
 using System.Linq;
@@ -67,6 +66,18 @@ namespace DVOwnership
             }
 
             return connectedEquipment;
+        }
+
+        public void RespawnEquipmentOnTrack(Track track)
+        {
+            DVOwnership.Log($"Spawning all equipment on track {track.ID.FullDisplayID}");
+            foreach (var equipment in registry)
+            {
+                if (equipment.IsOnTrack(track) && !equipment.IsSpawned)
+                {
+                    equipment.Spawn();
+                }
+            }
         }
 
         public void LoadSaveData(JArray data)
