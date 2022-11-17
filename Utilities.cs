@@ -2,15 +2,17 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using UnityEngine;
 
 namespace DVOwnership
 {
     public static class Utilities
     {
-        public static T GetRandomFromList<T>(System.Random rng, List<T> list)
+        public static T GetRandomFrom<T>(System.Random rng, IEnumerable<T> enumerable)
         {
-            return list[rng.Next(list.Count)];
+            var index = rng.Next(enumerable.Count());
+            return enumerable.ElementAt(index);
         }
 
         public static List<CarsPerTrack> GetRandomSortingOfCarsOnTracks(System.Random rng, List<Track> tracks, List<Car> allCarsForJobChain, int maxNumberOfStorageTracks)
@@ -66,7 +68,7 @@ namespace DVOwnership
                     return null;
                 }
 
-                Track track = Utilities.GetRandomFromList(rng, tracksWithRequiredFreeSpace);
+                Track track = Utilities.GetRandomFrom(rng, tracksWithRequiredFreeSpace);
                 tracks.Remove(track);
                 carsPerTracks.Add(new CarsPerTrack(track, carsForCurrentTrack));
             }
@@ -104,22 +106,50 @@ namespace DVOwnership
 
         public static List<CarsPerCargoType> ExtractCarsPerCargoType(List<Car> cars)
         {
-            var cargoTypeToCars = new Dictionary<CargoType, List<Car>>();
+            return ExtractCarsPerCargoType(cars, (from car in cars select car.CurrentCargoTypeInCar).ToList(), (from car in cars select car.LoadedCargoAmount).ToList());
+        }
 
-            foreach (var car in cars)
+        public static List<CarsPerCargoType> ExtractCarsPerCargoType(List<Car> cars, List<CargoType> cargoTypes, List<float> cargoAmounts = null)
+        {
+            var hasCargoAmounts = cargoAmounts != null;
+            if (cars.Count != cargoTypes.Count || (hasCargoAmounts && cars.Count != cargoAmounts.Count))
             {
-                var cargoType = car.CurrentCargoTypeInCar;
-                if (!cargoTypeToCars.ContainsKey(cargoType))
-                {
-                    cargoTypeToCars.Add(cargoType, new List<Car>());
-                }
-                cargoTypeToCars[cargoType].Add(car);
+                var messageBuilder = new StringBuilder("Expected lists of the same length, but got ");
+                messageBuilder.Append($"List<Car> of length {cars.Count}");
+                if (hasCargoAmounts)
+                    messageBuilder.Append(", ");
+                else
+                    messageBuilder.Append(" and ");
+                messageBuilder.Append($"List<CargoType> of length {cargoTypes.Count}");
+                if (hasCargoAmounts)
+                    messageBuilder.Append($", and List<float> of length {cargoAmounts.Count}");
+                messageBuilder.Append(".");
+                throw new ArgumentException(messageBuilder.ToString());
             }
 
-            var carsPerCargoTypes = from kv in cargoTypeToCars
+            if (!hasCargoAmounts)
+            {
+                cargoAmounts = (from car in cars select 1f).ToList(); // this may break if the way cargo amounts work gets changed
+            }
+
+            var cargoTypeToCarAmountTuples = new Dictionary<CargoType, List<(Car, float)>>();
+
+            for (var index = 0; index < cars.Count; ++index)
+            {
+                var car = cars[index];
+                var cargoType = cargoTypes[index];
+                var cargoAmount = cargoAmounts[index];
+                if (!cargoTypeToCarAmountTuples.ContainsKey(cargoType))
+                {
+                    cargoTypeToCarAmountTuples.Add(cargoType, new List<(Car, float)>());
+                }
+                cargoTypeToCarAmountTuples[cargoType].Add((car, cargoAmount));
+            }
+
+            var carsPerCargoTypes = from kv in cargoTypeToCarAmountTuples
                                     let cargoType = kv.Key
-                                    let carsForCargoType = kv.Value
-                                    let cargoAmount = (from car in carsForCargoType select car.LoadedCargoAmount).Sum()
+                                    let carsForCargoType = (from tuple in kv.Value select tuple.Item1).ToList()
+                                    let cargoAmount = (from tuple in kv.Value select tuple.Item2).Sum()
                                     select new CarsPerCargoType(cargoType, carsForCargoType, cargoAmount);
 
             return carsPerCargoTypes.ToList();
