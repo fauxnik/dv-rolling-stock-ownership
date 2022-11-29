@@ -52,7 +52,12 @@ namespace DVOwnership
             {
                 yield return null;
 
-                manager.RespawnEquipmentOnTrack(track);
+                // respawn equipment on track
+                foreach (var equipment in manager.GetEquipmentOnTrack(track, false))
+                {
+                    yield return null;
+                    equipment.Spawn();
+                }
 
                 foreach (var car in track.GetCarsFullyOnTrack())
                 {

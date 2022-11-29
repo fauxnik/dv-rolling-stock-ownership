@@ -68,18 +68,6 @@ namespace DVOwnership
             return connectedEquipment;
         }
 
-        public void RespawnEquipmentOnTrack(Track track)
-        {
-            DVOwnership.Log($"Spawning all equipment on track {track.ID.FullDisplayID}");
-            foreach (var equipment in registry)
-            {
-                if (equipment.IsOnTrack(track) && !equipment.IsSpawned)
-                {
-                    equipment.Spawn();
-                }
-            }
-        }
-
         public List<Equipment> GetEquipmentOnTrack(Track track, bool? spawned = null)
         {
             DVOwnership.Log($"Getting unspawned equipment on track {track.ID.FullDisplayID}");
