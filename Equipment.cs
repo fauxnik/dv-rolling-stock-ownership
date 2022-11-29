@@ -17,7 +17,7 @@ namespace DVOwnership
         public string CarGUID { get; private set; }
 
         private static readonly string CAR_TYPE_SAVE_KEY = "type";
-        private TrainCarType type;
+        public TrainCarType CarType { get; private set; }
 
         private static readonly string WORLD_POSITION_SAVE_KEY = "position";
         private Vector3 position;
@@ -104,7 +104,7 @@ namespace DVOwnership
             DVOwnership.Log($"Creating equipment record from values with ID {trainCar.ID}.");
             this.ID = id;
             this.CarGUID = carGuid;
-            this.type = type;
+            this.CarType = type;
             this.position = position;
             this.rotation = rotation;
             this.bogie1TrackID = bogie1TrackID;
@@ -159,7 +159,7 @@ namespace DVOwnership
             var locoState = trainCar.GetComponent<LocoStateSave>();
             ID = trainCar.ID;
             CarGUID = trainCar.CarGUID;
-            type = trainCar.carType;
+            CarType = trainCar.carType;
             position = trainCar.transform.position - WorldMover.currentMove;
             rotation = trainCar.transform.rotation;
             bogie1TrackID = bogie1.HasDerailed ? null : bogie1.track.logicTrack.ID.FullID;
@@ -204,7 +204,7 @@ namespace DVOwnership
             }
 
             DVOwnership.Log($"Spawning train car based on equipment record with ID {ID}.");
-            var carPrefab = CarTypes.GetCarPrefab(type);
+            var carPrefab = CarTypes.GetCarPrefab(CarType);
             var allTracks = new List<RailTrack>(RailTrackRegistry.AllTracks);
             var bogie1Track = isBogie1Derailed ? null : allTracks.Find(track => track.logicTrack.ID.FullID == bogie1TrackID);
             var bogie2Track = isBogie2Derailed ? null : allTracks.Find(track => track.logicTrack.ID.FullID == bogie2TrackID);
@@ -329,7 +329,7 @@ namespace DVOwnership
             var data = new JObject();
             data.SetString(ID_SAVE_KEY, ID);
             data.SetString(CAR_GUID_SAVE_KEY, CarGUID);
-            data.SetInt(CAR_TYPE_SAVE_KEY, (int)type);
+            data.SetInt(CAR_TYPE_SAVE_KEY, (int)CarType);
             data.SetVector3(WORLD_POSITION_SAVE_KEY, position);
             data.SetVector3(WORLD_ROTATION_SAVE_KEY, rotation.eulerAngles);
             data.SetString(BOGIE_1_TRACK_ID_SAVE_KEY, bogie1TrackID);

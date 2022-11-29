@@ -80,6 +80,16 @@ namespace DVOwnership
             }
         }
 
+        public List<Equipment> GetEquipmentOnTrack(Track track, bool? spawned = null)
+        {
+            DVOwnership.Log($"Getting unspawned equipment on track {track.ID.FullDisplayID}");
+            var yto = SingletonBehaviour<YardTracksOrganizer>.Instance;
+            var equipments = from equipment in registry
+                             where equipment.IsOnTrack(track) && (!spawned.HasValue || equipment.IsSpawned == spawned)
+                             select equipment;
+            return equipments.ToList();
+        }
+
         public void LoadSaveData(JArray data)
         {
             int countLoaded = 0;

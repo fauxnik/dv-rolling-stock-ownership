@@ -66,6 +66,9 @@ namespace DVOwnership
             try { StationProceduralJobsController_Patches.Setup(); }
             catch (Exception e) { OnCriticalFailure(e, "patching StationProceduralJobsController"); }
 
+            try { Track_Patches.Setup(); }
+            catch (Exception e) { OnCriticalFailure(e, "patching Track"); }
+
             try { TrainCar_Patches.Setup(); }
             catch (Exception e) { OnCriticalFailure(e, "patching TrainCar"); }
 
