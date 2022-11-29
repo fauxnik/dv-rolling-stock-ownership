@@ -101,7 +101,7 @@ namespace DVOwnership
 
         public Equipment(string id, string carGuid, TrainCarType type, Vector3 position, Quaternion rotation, string bogie1TrackID, double bogie1PositionAlongTrack, bool isBogie1Derailed, string bogie2TrackID, double bogie2PositionAlongTrack, bool isBogie2Derailed, string carGuidCoupledFront, string carGuidCoupledRear, bool isExploded, CargoType loadedCargo, JObject carStateSave, JObject locoStateSave, TrainCar trainCar)
         {
-            DVOwnership.Log($"Creating equipment record from values with ID {trainCar.ID}.");
+            DVOwnership.Log($"Creating equipment record from values with ID {id}.");
             this.ID = id;
             this.CarGUID = carGuid;
             this.CarType = type;
