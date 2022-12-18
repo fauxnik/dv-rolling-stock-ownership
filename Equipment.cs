@@ -49,11 +49,16 @@ namespace DVOwnership
         {
             get
             {
+                DVOwnership.LogDebug(() => $"Getting front coupling for {ID} / {CarGUID} (currently: {_carGuidCoupledFront})");
                 // Make sure coupler state is up-to-date before returning
                 if (IsSpawned) { Update(trainCar, false); }
                 return _carGuidCoupledFront;
             }
-            private set { _carGuidCoupledFront = value; }
+            private set
+            {
+                DVOwnership.LogDebug(() => $"Setting front coupling for {ID} / {CarGUID} to {value}");
+                _carGuidCoupledFront = value;
+        }
         }
         public bool IsCoupledFront { get { return !string.IsNullOrEmpty(CarGuidCoupledFront); } }
 
@@ -63,11 +68,16 @@ namespace DVOwnership
         {
             get
             {
+                DVOwnership.LogDebug(() => $"Getting rear coupling for {ID} / {CarGUID} (currently: {_carGuidCoupledFront})");
                 // Make sure coupler state is up-to-date before returning
                 if (IsSpawned) { Update(trainCar, false); }
                 return _carGuidCoupledRear;
             }
-            private set { _carGuidCoupledRear = value; }
+            private set
+            {
+                DVOwnership.LogDebug(() => $"Setting rear coupling for {ID} / {CarGUID} to {value}");
+                _carGuidCoupledRear = value;
+        }
         }
         public bool IsCoupledRear { get { return !string.IsNullOrEmpty(CarGuidCoupledRear); } }
 
@@ -168,8 +178,12 @@ namespace DVOwnership
             bogie2TrackID = bogie2.HasDerailed ? null : bogie2.track.logicTrack.ID.FullID;
             bogie2PositionAlongTrack = bogie2.HasDerailed ? -1 : bogie2.traveller.Span;
             isBogie2Derailed = bogie2.HasDerailed;
+            // If the train car is being despawned, the coupler state is untrustworthy. It must be updated by the PrepareForDespawning method instead.
+            if (!IsMarkedForDespawning)
+            {
             CarGuidCoupledFront = trainCar.frontCoupler.GetCoupled()?.train?.CarGUID;
             CarGuidCoupledRear = trainCar.rearCoupler.GetCoupled()?.train?.CarGUID;
+            }
             isExploded = trainCar.useExplodedModel;
             loadedCargo = trainCar.logicCar.CurrentCargoTypeInCar;
             carStateSave = carState?.GetCarStateSaveData();
@@ -191,6 +205,9 @@ namespace DVOwnership
             }
 
             DVOwnership.Log($"Preparing equipment record with ID {ID} for despawning.");
+            // We must update the coupler state here because it will be rendered untrustworthy before the Equipment#Update method gets called by the TrainCar#PrepareForDestroy patch.
+            CarGuidCoupledFront = trainCar.frontCoupler.GetCoupled()?.train?.CarGUID;
+            CarGuidCoupledRear = trainCar.rearCoupler.GetCoupled()?.train?.CarGUID;
             IsMarkedForDespawning = true;
             return true;
         }
