@@ -50,15 +50,13 @@ namespace DVOwnership
             get
             {
                 DVOwnership.LogDebug(() => $"Getting front coupling for {ID} / {CarGUID} (currently: {_carGuidCoupledFront})");
-                // Make sure coupler state is up-to-date before returning
-                if (IsSpawned) { Update(trainCar, false); }
                 return _carGuidCoupledFront;
             }
             private set
             {
                 DVOwnership.LogDebug(() => $"Setting front coupling for {ID} / {CarGUID} to {value}");
                 _carGuidCoupledFront = value;
-        }
+            }
         }
         public bool IsCoupledFront { get { return !string.IsNullOrEmpty(CarGuidCoupledFront); } }
 
@@ -69,15 +67,13 @@ namespace DVOwnership
             get
             {
                 DVOwnership.LogDebug(() => $"Getting rear coupling for {ID} / {CarGUID} (currently: {_carGuidCoupledFront})");
-                // Make sure coupler state is up-to-date before returning
-                if (IsSpawned) { Update(trainCar, false); }
                 return _carGuidCoupledRear;
             }
             private set
             {
                 DVOwnership.LogDebug(() => $"Setting rear coupling for {ID} / {CarGUID} to {value}");
                 _carGuidCoupledRear = value;
-        }
+            }
         }
         public bool IsCoupledRear { get { return !string.IsNullOrEmpty(CarGuidCoupledRear); } }
 
@@ -130,6 +126,8 @@ namespace DVOwnership
             this.carStateSave = carStateSave;
             this.locoStateSave = locoStateSave;
             this.trainCar = trainCar;
+
+            SetupCouplerEventHandlers(trainCar);
         }
 
         public static Equipment FromTrainCar(TrainCar trainCar)
@@ -178,17 +176,82 @@ namespace DVOwnership
             bogie2TrackID = bogie2.HasDerailed ? null : bogie2.track.logicTrack.ID.FullID;
             bogie2PositionAlongTrack = bogie2.HasDerailed ? -1 : bogie2.traveller.Span;
             isBogie2Derailed = bogie2.HasDerailed;
-            // If the train car is being despawned, the coupler state is untrustworthy. It must be updated by the PrepareForDespawning method instead.
-            if (!IsMarkedForDespawning)
-            {
-            CarGuidCoupledFront = trainCar.frontCoupler.GetCoupled()?.train?.CarGUID;
-            CarGuidCoupledRear = trainCar.rearCoupler.GetCoupled()?.train?.CarGUID;
-            }
+            // Coupler state is kept updated via event handlers.
             isExploded = trainCar.useExplodedModel;
             loadedCargo = trainCar.logicCar.CurrentCargoTypeInCar;
             carStateSave = carState?.GetCarStateSaveData();
             locoStateSave = locoState?.GetLocoStateSaveData();
             this.trainCar = isBeingDespawned ? null : trainCar;
+
+            if (isBeingDespawned)
+            {
+                RemoveCouplerEventHandlers(trainCar);
+            }
+        }
+
+        private void SetupCouplerEventHandlers(TrainCar trainCar)
+        {
+            if (trainCar == null) { return; }
+
+            // This guarantees the event handlers won't be registered more than once. See: https://stackoverflow.com/a/1104269
+            RemoveCouplerEventHandlers(trainCar);
+
+            DVOwnership.LogDebug(() => $"Setting up coupler event handlers for {ID}.");
+
+            trainCar.frontCoupler.Coupled += UpdateFrontCoupler;
+            trainCar.frontCoupler.Uncoupled += UpdateFrontCoupler;
+            trainCar.rearCoupler.Coupled += UpdateRearCoupler;
+            trainCar.rearCoupler.Uncoupled += UpdateRearCoupler;
+        }
+
+        private void RemoveCouplerEventHandlers(TrainCar trainCar)
+        {
+            if (trainCar == null ) { return; }
+
+            DVOwnership.LogDebug(() => $"Removing coupler event handlers for {ID}.");
+
+            trainCar.frontCoupler.Coupled -= UpdateFrontCoupler;
+            trainCar.frontCoupler.Uncoupled -= UpdateFrontCoupler;
+            trainCar.rearCoupler.Coupled -= UpdateRearCoupler;
+            trainCar.rearCoupler.Uncoupled -= UpdateRearCoupler;
+        }
+
+        private void UpdateFrontCoupler(object sender, object args)
+        {
+            if (IsMarkedForDespawning) { return; }
+
+            var coupleArgs = args as CoupleEventArgs;
+            if (coupleArgs != null)
+            {
+                CarGuidCoupledFront = coupleArgs.otherCoupler.train?.CarGUID;
+                return;
+            }
+
+            var uncoupleArgs = args as UncoupleEventArgs;
+            if (uncoupleArgs != null)
+            {
+                CarGuidCoupledFront = null;
+                return;
+            }
+        }
+
+        private void UpdateRearCoupler(object sender, object args)
+        {
+            if (IsMarkedForDespawning) { return; }
+
+            var coupleArgs = args as CoupleEventArgs;
+            if (coupleArgs != null)
+            {
+                CarGuidCoupledRear = coupleArgs.otherCoupler.train?.CarGUID;
+                return;
+            }
+
+            var uncoupleArgs = args as UncoupleEventArgs;
+            if (uncoupleArgs != null)
+            {
+                CarGuidCoupledRear = null;
+                return;
+            }
         }
 
         public void SetDestination(string stationId)
@@ -205,9 +268,10 @@ namespace DVOwnership
             }
 
             DVOwnership.Log($"Preparing equipment record with ID {ID} for despawning.");
-            // We must update the coupler state here because it will be rendered untrustworthy before the Equipment#Update method gets called by the TrainCar#PrepareForDestroy patch.
-            CarGuidCoupledFront = trainCar.frontCoupler.GetCoupled()?.train?.CarGUID;
-            CarGuidCoupledRear = trainCar.rearCoupler.GetCoupled()?.train?.CarGUID;
+
+            // We remove the coupler event handlers because the train cars will be decoupled as they despawn, but we want to keep their pre-despawn state.
+            RemoveCouplerEventHandlers(trainCar);
+
             IsMarkedForDespawning = true;
             return true;
         }
@@ -238,6 +302,8 @@ namespace DVOwnership
 
             IsMarkedForDespawning = false;
             SingletonBehaviour<UnusedTrainCarDeleter>.Instance.MarkForDelete(trainCar);
+
+            SetupCouplerEventHandlers(trainCar);
 
             return trainCar;
         }
