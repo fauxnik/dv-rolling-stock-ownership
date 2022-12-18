@@ -106,6 +106,14 @@ namespace DVOwnership
             yield return null;
             carsInYard.ExceptWith(carsWithJobs);
 
+            var minCarsPerJob = Math.Min(proceduralRuleset.minCarsPerJob, carsInYard.Count);
+            var maxCarsPerJob = proceduralRuleset.maxCarsPerJob;
+            var maxShuntingStorageTracks = proceduralRuleset.maxShuntingStorageTracks;
+            var haulStartingJobSupported = proceduralRuleset.haulStartingJobSupported;
+            var unloadStartingJobSupported = proceduralRuleset.unloadStartingJobSupported;
+            var loadStartingJobSupported = proceduralRuleset.loadStartingJobSupported;
+            var inputCargoGroups = proceduralRuleset.inputCargoGroups;
+
             // loop, generating jobs for train cars, until all train cars are accounted for or we reach an upper bound of attempts
             var carsQ = new Queue<Car>();
             foreach (var car in carsInYard) { carsQ.Enqueue(car); }
@@ -128,7 +136,7 @@ namespace DVOwnership
                 var cargoTypeInCar = thisCar.CurrentCargoTypeInCar;
                 if (cargoTypeInCar != CargoType.None)
                 {
-                    if (proceduralRuleset.haulStartingJobSupported && licensedOutputCargoGroups.Any(group => group.cargoTypes.Contains(cargoTypeInCar)))
+                    if (haulStartingJobSupported && licensedOutputCargoGroups.Any(group => group.cargoTypes.Contains(cargoTypeInCar)))
                     {
                         // Player previously loaded car here, generate freight haul job
                         var potentialCargoGroups = licensedOutputCargoGroups.Where(group => group.cargoTypes.Contains(cargoTypeInCar));
@@ -139,23 +147,23 @@ namespace DVOwnership
                         DVOwnership.LogDebug(() => $"Attempting to generate freight haul job using cargo group {indexInCargoGroups + 1} of {countCargoGroups} possible groups.");
 
                         yield return null;
-                        carsForJob.UnionWith(GetMatchingCoupledCars(thisEquipment, cargoGroup, carsInYard, proceduralRuleset.maxCarsPerJob));
+                        carsForJob.UnionWith(GetMatchingCoupledCars(thisEquipment, cargoGroup, carsInYard, maxCarsPerJob));
 
                         // Generate the job, but only if it meets the minimum requirements
-                        if (carsForJob.Count >= proceduralRuleset.minCarsPerJob)
+                        if (carsForJob.Count >= minCarsPerJob)
                         {
                             yield return null;
                             jobChainController = procJobGenerator.GenerateHaulChainJobForCars(rng, carsForJob.ToList(), cargoGroup);
                         }
                         else
                         {
-                            DVOwnership.LogDebug(() => $"Didn't meet the minimum number of cars per job ({proceduralRuleset.minCarsPerJob}).");
+                            DVOwnership.LogDebug(() => $"Didn't meet the minimum number of cars per job ({minCarsPerJob}).");
                         }
                     }
-                    else if (proceduralRuleset.unloadStartingJobSupported && thisEquipment.DestinationID == stationId && proceduralRuleset.inputCargoGroups.Any(group => group.cargoTypes.Contains(cargoTypeInCar)))
+                    else if (unloadStartingJobSupported && thisEquipment.DestinationID == stationId && inputCargoGroups.Any(group => group.cargoTypes.Contains(cargoTypeInCar)))
                     {
                         // Player previously hauled car here, generate shunting unload job
-                        var potentialCargoGroups = proceduralRuleset.inputCargoGroups.Where(group => group.cargoTypes.Contains(cargoTypeInCar));
+                        var potentialCargoGroups = inputCargoGroups.Where(group => group.cargoTypes.Contains(cargoTypeInCar));
                         var countCargoGroups = potentialCargoGroups.Count();
                         var indexInCargoGroups = rng.Next(countCargoGroups);
                         var cargoGroup = potentialCargoGroups.ElementAt(indexInCargoGroups);
@@ -163,23 +171,23 @@ namespace DVOwnership
                         DVOwnership.LogDebug(() => $"Attempting to generate shunting unload job using cargo group {indexInCargoGroups + 1} of {countCargoGroups} possible groups.");
 
                         yield return null;
-                        carsForJob.UnionWith(GetMatchingCoupledCars(thisEquipment, cargoGroup, carsInYard, proceduralRuleset.maxCarsPerJob));
+                        carsForJob.UnionWith(GetMatchingCoupledCars(thisEquipment, cargoGroup, carsInYard, maxCarsPerJob));
 
                         // Generate the job, but only if it meets the minimum requirements
-                        if (carsForJob.Count >= proceduralRuleset.minCarsPerJob)
+                        if (carsForJob.Count >= minCarsPerJob)
                         {
                             yield return null;
                             jobChainController = procJobGenerator.GenerateUnloadChainJobForCars(rng, carsForJob.ToList(), cargoGroup);
                         }
                         else
                         {
-                            DVOwnership.LogDebug(() => $"Didn't meet the minimum number of cars per job ({proceduralRuleset.minCarsPerJob}).");
+                            DVOwnership.LogDebug(() => $"Didn't meet the minimum number of cars per job ({minCarsPerJob}).");
                         }
                     }
                 }
                 else
                 {
-                    if (proceduralRuleset.loadStartingJobSupported && licensedOutputCargoGroups.Any(group => group.cargoTypes.Any(cargoType => CargoTypes.CanCarContainCargoType(carType, cargoType))))
+                    if (loadStartingJobSupported && licensedOutputCargoGroups.Any(group => group.cargoTypes.Any(cargoType => CargoTypes.CanCarContainCargoType(carType, cargoType))))
                     {
                         // Station can load cargo into this car & player is licensed to do so, generate shunting load job
                         var potentialCargoGroups = licensedOutputCargoGroups.Where(group => group.cargoTypes.Any(cargoType => CargoTypes.CanCarContainCargoType(carType, cargoType)));
@@ -224,11 +232,11 @@ namespace DVOwnership
                         // Select train sets based on maximum requirements
                         var equipmentSetsForJob = new List<HashSet<Equipment>>();
                         equipmentSetsForJob.Add(thisEquipmentSet);
-                        for (var index = 0; equipmentSetsForJob.Count < proceduralRuleset.maxShuntingStorageTracks && index < contiguousEquipment.Count; ++index)
+                        for (var index = 0; equipmentSetsForJob.Count < maxShuntingStorageTracks && index < contiguousEquipment.Count; ++index)
                         {
                             var trainLengthSoFar = equipmentSetsForJob.Aggregate(0, (sum, set) => sum + set.Count);
                             var equipmentSet = contiguousEquipment[index];
-                            if (trainLengthSoFar + equipmentSet.Count > proceduralRuleset.maxCarsPerJob) { continue; }
+                            if (trainLengthSoFar + equipmentSet.Count > maxCarsPerJob) { continue; }
 
                             equipmentSetsForJob.Add(equipmentSet);
                         }
@@ -246,7 +254,7 @@ namespace DVOwnership
                         }
 
                         // Generate the job, but only if it meets the minimum requirements
-                        if (carsForJob.Count >= proceduralRuleset.minCarsPerJob)
+                        if (carsForJob.Count >= minCarsPerJob)
                         {
                             yield return null;
                             var carSetsForJob =
@@ -256,7 +264,7 @@ namespace DVOwnership
                         }
                         else
                         {
-                            DVOwnership.LogDebug(() => $"Didn't meet the minimum number of cars per job ({proceduralRuleset.minCarsPerJob}).");
+                            DVOwnership.LogDebug(() => $"Didn't meet the minimum number of cars per job ({minCarsPerJob}).");
                         }
                     }
                 }
