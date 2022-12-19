@@ -70,7 +70,10 @@ namespace DVOwnership
                 }
             }
 
-            // TODO: get all (logic) cars from player's train
+            // get all (logic) cars from player's train
+            var playerTrainCars = PlayerManager.Car?.trainset?.cars ?? new List<TrainCar>();
+            var playerCars = from trainCar in playerTrainCars where !trainCar.IsLoco select trainCar.logicCar;
+            foreach (var car in playerCars) { carsInYard.Add(car); }
 
             // get all (logic) cars with active jobs
             var carsWithJobs = new HashSet<Car>();
