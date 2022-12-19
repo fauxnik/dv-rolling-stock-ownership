@@ -130,8 +130,7 @@ namespace DVOwnership
 
                 JobChainController jobChainController = null;
                 var thisEquipment = manager.FindByCarGUID(thisCar.carGuid);
-                var carsForJob = new HashSet<Car>();
-                carsForJob.Add(thisCar);
+                var carsForJob = new HashSet<Car> { thisCar };
 
                 string jobType = "unknown";
                 var carType = thisCar.carType;
@@ -237,8 +236,7 @@ namespace DVOwnership
                         yield return null;
 
                         // Select train sets based on maximum requirements
-                        var equipmentSetsForJob = new List<HashSet<Equipment>>();
-                        equipmentSetsForJob.Add(thisEquipmentSet);
+                        var equipmentSetsForJob = new List<HashSet<Equipment>> { thisEquipmentSet };
                         for (var index = 0; equipmentSetsForJob.Count < maxShuntingStorageTracks && index < contiguousEquipment.Count; ++index)
                         {
                             var trainLengthSoFar = equipmentSetsForJob.Aggregate(0, (sum, set) => sum + set.Count);
@@ -291,6 +289,8 @@ namespace DVOwnership
                     --attemptsRemaining;
                 }
             }
+
+            yield return null;
 
             var attemptsUsed = MAX_JOB_GENERATION_ATTEMPTS - attemptsRemaining;
             log.Append($"Generated a total of {jobsGenerated} jobs in {attemptsUsed}/{MAX_JOB_GENERATION_ATTEMPTS} attempt cycles.");

@@ -49,6 +49,7 @@ namespace DVOwnership
             var gameObject = new GameObject($"ChainJob[{JobType.Transport}]: {stationController.logicStation.ID} - {destinationController.logicStation.ID}");
             gameObject.transform.SetParent(stationController.transform);
             var jobChainController = new JobChainController(gameObject);
+            jobChainController.trainCarsForJobChain = Utilities.ConvertLogicCarsToTrainCars(carsForJob).ToList();
 
             var stationsChainData = new StationsChainData(stationController.stationInfo.YardID, destinationController.stationInfo.YardID);
 
@@ -109,6 +110,7 @@ namespace DVOwnership
             var gameObject = new GameObject($"ChainJob[{JobType.ShuntingUnload}]: {originController.logicStation.ID} - {stationController.logicStation.ID}");
             gameObject.transform.SetParent(stationController.transform);
             var jobChainController = new JobChainController(gameObject);
+            jobChainController.trainCarsForJobChain = Utilities.ConvertLogicCarsToTrainCars(carsForJob).ToList();
 
             var stationsChainData = new StationsChainData(originController.stationInfo.YardID, stationController.stationInfo.YardID);
 
@@ -197,6 +199,7 @@ namespace DVOwnership
             var gameObject = new GameObject($"ChainJob[{JobType.ShuntingLoad}]: {stationController.logicStation.ID} - {destinationController.logicStation.ID}");
             gameObject.transform.SetParent(stationController.transform);
             var jobChainController = new JobChainController(gameObject);
+            jobChainController.trainCarsForJobChain = Utilities.ConvertLogicCarsToTrainCars(carsForJob).ToList();
 
             var stationsChainData = new StationsChainData(stationController.stationInfo.YardID, destinationController.stationInfo.YardID);
 

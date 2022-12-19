@@ -154,5 +154,22 @@ namespace DVOwnership
 
             return carsPerCargoTypes.ToList();
         }
+
+        public static IEnumerable<TrainCar> ConvertLogicCarsToTrainCars(IEnumerable<Car> cars)
+        {
+            var trainCars = new List<TrainCar>();
+
+            if (cars == null || cars.Count() == 0) { return trainCars; }
+
+            var allTrainCars = CarSpawner.Instance.GetCars();
+            var trainCarsByLogicCar = new Dictionary<Car, TrainCar>();
+
+            foreach(var trainCar in allTrainCars)
+            {
+                trainCarsByLogicCar.Add(trainCar.logicCar, trainCar);
+            }
+
+            return from car in cars select trainCarsByLogicCar[car];
+        }
     }
 }
