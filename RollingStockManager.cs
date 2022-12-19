@@ -29,7 +29,7 @@ namespace DVOwnership
 
         public Equipment FindByTrainCar(TrainCar trainCar)
         {
-            DVOwnership.LogDebug(() => $"Looking up equipment record from the rolling stock registry by train car.");
+            //DVOwnership.LogDebug(() => $"Looking up equipment record from the rolling stock registry by train car.");
             var equipment = from eq in registry where eq.IsRecordOf(trainCar) select eq;
             var count = equipment.Count();
             if (count != 1) { DVOwnership.LogError($"Unexpected number of equipment records found! Expected 1 but found {count} for train car ID {trainCar.ID}."); }
@@ -38,7 +38,7 @@ namespace DVOwnership
 
         public Equipment FindByCarGUID(string carGuid)
         {
-            DVOwnership.LogDebug(() => $"Looking up equipment record from the rolling stock registry by car GUID {carGuid}.");
+            //DVOwnership.LogDebug(() => $"Looking up equipment record from the rolling stock registry by car GUID {carGuid}.");
             var equipment = from eq in registry where eq.CarGUID == carGuid select eq;
             var count = equipment.Count();
             if (count != 1) { DVOwnership.LogError($"Unexpected number of equipment records found! Expected 1 but found {count} for car GUID {carGuid}."); }
@@ -70,7 +70,8 @@ namespace DVOwnership
 
         public List<Equipment> GetEquipmentOnTrack(Track track, bool? spawned = null)
         {
-            DVOwnership.Log($"Getting unspawned equipment on track {track.ID.FullDisplayID}");
+            var typeOfEquipment = spawned.HasValue ? spawned.Value ? "spawned " : "unspawned " : "";
+            DVOwnership.Log($"Finding all {typeOfEquipment}equipment that is on track {track.ID.FullDisplayID}");
             var yto = SingletonBehaviour<YardTracksOrganizer>.Instance;
             var equipments = from equipment in registry
                              where equipment.IsOnTrack(track) && (!spawned.HasValue || equipment.IsSpawned == spawned)

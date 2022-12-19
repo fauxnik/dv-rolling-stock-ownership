@@ -118,6 +118,7 @@ namespace DVOwnership
             var carsQ = new Queue<Car>();
             foreach (var car in carsInYard) { carsQ.Enqueue(car); }
             var attemptsRemaining = MAX_JOB_GENERATION_ATTEMPTS;
+            var jobsGenerated = 0;
             while (attemptsRemaining > 0 && carsInYard.Count > 0 && carsQ.Count > 0)
             {
                 yield return null;
@@ -132,6 +133,7 @@ namespace DVOwnership
                 var carsForJob = new HashSet<Car>();
                 carsForJob.Add(thisCar);
 
+                string jobType = "unknown";
                 var carType = thisCar.carType;
                 var cargoTypeInCar = thisCar.CurrentCargoTypeInCar;
                 if (cargoTypeInCar != CargoType.None)
@@ -139,6 +141,7 @@ namespace DVOwnership
                     if (haulStartingJobSupported && licensedOutputCargoGroups.Any(group => group.cargoTypes.Contains(cargoTypeInCar)))
                     {
                         // Player previously loaded car here, generate freight haul job
+                        jobType = JobType.Transport.ToString();
                         var potentialCargoGroups = licensedOutputCargoGroups.Where(group => group.cargoTypes.Contains(cargoTypeInCar));
                         var countCargoGroups = potentialCargoGroups.Count();
                         var indexInCargoGroups = rng.Next(countCargoGroups);
@@ -163,6 +166,7 @@ namespace DVOwnership
                     else if (unloadStartingJobSupported && thisEquipment.DestinationID == stationId && inputCargoGroups.Any(group => group.cargoTypes.Contains(cargoTypeInCar)))
                     {
                         // Player previously hauled car here, generate shunting unload job
+                        jobType = JobType.ShuntingUnload.ToString();
                         var potentialCargoGroups = inputCargoGroups.Where(group => group.cargoTypes.Contains(cargoTypeInCar));
                         var countCargoGroups = potentialCargoGroups.Count();
                         var indexInCargoGroups = rng.Next(countCargoGroups);
@@ -190,6 +194,7 @@ namespace DVOwnership
                     if (loadStartingJobSupported && licensedOutputCargoGroups.Any(group => group.cargoTypes.Any(cargoType => CargoTypes.CanCarContainCargoType(carType, cargoType))))
                     {
                         // Station can load cargo into this car & player is licensed to do so, generate shunting load job
+                        jobType = JobType.ShuntingLoad.ToString();
                         var potentialCargoGroups = licensedOutputCargoGroups.Where(group => group.cargoTypes.Any(cargoType => CargoTypes.CanCarContainCargoType(carType, cargoType)));
                         var countCargoGroups = potentialCargoGroups.Count();
                         var indexInCargoGroups = rng.Next(countCargoGroups);
@@ -220,6 +225,8 @@ namespace DVOwnership
 
                             contiguousSet.Add(currentEquipment);
                         }
+
+                        DVOwnership.LogDebug(() => $"Contiguous Equipment: [{contiguousEquipment.Select(set => $"[{set.Aggregate("", (str, eq) => (string.IsNullOrEmpty(str) ? eq.ID : $"{str}, {eq.ID}"))}]").Aggregate("", (str, setStr) => (string.IsNullOrEmpty(str) ? setStr : $"{str}, {setStr}"))}]");
 
                         yield return null;
 
@@ -272,7 +279,10 @@ namespace DVOwnership
                 if (jobChainController != null)
                 {
                     // TODO: what do we do with it?
-                    carsInYard.ExceptWith(from trainCar in jobChainController.trainCarsForJobChain select trainCar.logicCar);
+                    jobsGenerated++;
+                    var trainCarsForJob = jobChainController.trainCarsForJobChain;
+                    carsInYard.ExceptWith(from trainCar in trainCarsForJob select trainCar.logicCar);
+                    log.Append($"Generated {jobType} job with cars {string.Join(", ", trainCarsForJob.Select(tc => tc.ID))}.\n              ");
                 }
                 else
                 {
@@ -282,6 +292,8 @@ namespace DVOwnership
                 }
             }
 
+            var attemptsUsed = MAX_JOB_GENERATION_ATTEMPTS - attemptsRemaining;
+            log.Append($"Generated a total of {jobsGenerated} jobs in {attemptsUsed}/{MAX_JOB_GENERATION_ATTEMPTS} attempt cycles.");
             DVOwnership.Log(log.ToString());
             if (onComplete != null)
             {

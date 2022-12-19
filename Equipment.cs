@@ -49,12 +49,12 @@ namespace DVOwnership
         {
             get
             {
-                DVOwnership.LogDebug(() => $"Getting front coupling for {ID} / {CarGUID} (currently: {_carGuidCoupledFront})");
+                //DVOwnership.LogDebug(() => $"Getting front coupling for {ID} / {CarGUID} (currently: {_carGuidCoupledFront})");
                 return _carGuidCoupledFront;
             }
             private set
             {
-                DVOwnership.LogDebug(() => $"Setting front coupling for {ID} / {CarGUID} to {value}");
+                DVOwnership.LogDebug(() => $"Setting front coupling for {ID} / {CarGUID} to {value}.");
                 _carGuidCoupledFront = value;
             }
         }
@@ -66,12 +66,12 @@ namespace DVOwnership
         {
             get
             {
-                DVOwnership.LogDebug(() => $"Getting rear coupling for {ID} / {CarGUID} (currently: {_carGuidCoupledFront})");
+                //.LogDebug(() => $"Getting rear coupling for {ID} / {CarGUID} (currently: {_carGuidCoupledFront})");
                 return _carGuidCoupledRear;
             }
             private set
             {
-                DVOwnership.LogDebug(() => $"Setting rear coupling for {ID} / {CarGUID} to {value}");
+                DVOwnership.LogDebug(() => $"Setting rear coupling for {ID} / {CarGUID} to {value}.");
                 _carGuidCoupledRear = value;
             }
         }
