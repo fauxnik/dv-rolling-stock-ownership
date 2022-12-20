@@ -17,7 +17,7 @@ namespace DVOwnership
         private static HashSet<TrainCarType> bannedTypes = new HashSet<TrainCarType>
         {
             TrainCarType.NotSet,
-            TrainCarType.CabooseRed,
+            // Crew vehicle types are added by the Awake method
         };
 
         public ButtonBehaviourType ButtonBehaviour { get; private set; }
@@ -129,6 +129,21 @@ namespace DVOwnership
                 moneyRemovedSound = summoner.moneyRemovedSound;
             }
             catch (Exception e) { DVOwnership.OnCriticalFailure(e, "copying radio components"); }
+
+            try
+            {
+                // Crew vehicles use the vanilla crew vehicle summoning logic, so they can't be purchased.
+                var summoner = controller.crewVehicleControl;
+                var garageCarSpawners = AccessTools.Field(typeof(CommsRadioCrewVehicle), "garageCarSpawners").GetValue(summoner) as GarageCarSpawner[];
+                if (garageCarSpawners != null)
+                {
+                    foreach (var garageSpawner in garageCarSpawners)
+                    {
+                        bannedTypes.Add(garageSpawner.locoType);
+                    }
+                }
+            }
+            catch (Exception e) { DVOwnership.OnCriticalFailure(e, "banning crew vehicles from purchase"); }
 
             if (!signalOrigin)
             {
