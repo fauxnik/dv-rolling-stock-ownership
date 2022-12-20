@@ -45,20 +45,15 @@ namespace DVOwnership
         {
             for (;;)
             {
-                DVOwnership.LogDebug(() => "A");
                 var rollingStock = SingletonBehaviour<RollingStockManager>.Instance;
                 var seenGuids = new HashSet<string>();
 
-                // TODO: coupled cars don't appear to be recorded as coupled. perhaps update all equipment here?
-
                 foreach (var equipment in rollingStock.AllEquipment)
                 {
-                    DVOwnership.LogDebug(() => $"B\n\tequipment.ID: {equipment.ID}");
                     yield return null;
                     if (seenGuids.Contains(equipment.CarGUID)) { continue; }
                     var connectedEquipment = rollingStock.GetConnectedEquipment(equipment);
 
-                    DVOwnership.LogDebug(() => $"C\n\tconnectedEquipment.Count: {connectedEquipment.Count}");
                     yield return null;
                     if (!connectedEquipment.All(eq => eq.IsSpawned == equipment.IsSpawned))
                     {
@@ -74,7 +69,7 @@ namespace DVOwnership
                         bool isDespawnable = !equipment.ExistsInTrainset(bestGuessLastDrivenTrainset);
                         foreach (var eq in connectedEquipment)
                         {
-                            DVOwnership.LogDebug(() => $"D\n\tisDespawnable:{isDespawnable}\n\tIsStationary: {eq.IsStationary}\n\tSquaredDistanceFromPlayer: {eq.SquaredDistanceFromPlayer()}\n\tDESPAWN_SQR_DISTANCE: {DESPAWN_SQR_DISTANCE}\n\tJob: {JobChainController.GetJobOfCar(eq.GetTrainCar())}\n\tflag: {isDespawnable && (!eq.IsStationary || eq.SquaredDistanceFromPlayer() < DESPAWN_SQR_DISTANCE || JobChainController.GetJobOfCar(eq.GetTrainCar()) != null)}");
+                            DVOwnership.LogDebug(() => $"Testing despawnability of {eq.ID} (from connected set of {connectedEquipment.Count})\n\tisDespawnable:{isDespawnable}\n\tIsStationary: {eq.IsStationary}\n\tSquaredDistanceFromPlayer: {eq.SquaredDistanceFromPlayer()}\n\tDESPAWN_SQR_DISTANCE: {DESPAWN_SQR_DISTANCE}\n\tJob: {JobChainController.GetJobOfCar(eq.GetTrainCar())?.ID}\n\tflag: {isDespawnable && (!eq.IsStationary || eq.SquaredDistanceFromPlayer() < DESPAWN_SQR_DISTANCE || JobChainController.GetJobOfCar(eq.GetTrainCar()) != null)}");
                             yield return null;
                             seenGuids.Add(eq.CarGUID);
                             // Short circuit avoids doing expensive calculation unnecessarily
@@ -87,7 +82,6 @@ namespace DVOwnership
 
                         if (isDespawnable)
                         {
-                            DVOwnership.LogDebug(() => "E");
                             yield return null;
                             foreach (var eq in connectedEquipment) { eq.PrepareForDespawning(); }
                         }
@@ -99,7 +93,7 @@ namespace DVOwnership
                         bool isSpawnable = false;
                         foreach (var eq in connectedEquipment)
                         {
-                            DVOwnership.LogDebug(() => $"F\n\tisSpawnable: {isSpawnable}\n\tIsStationary: {eq.IsStationary}\n\tSquaredDistanceFromPlayer: {eq.SquaredDistanceFromPlayer()}\n\tSPAWN_SQR_DISTANCE: {SPAWN_SQR_DISTANCE}\n\tflag: {!isSpawnable && eq.SquaredDistanceFromPlayer() < SPAWN_SQR_DISTANCE}");
+                            DVOwnership.LogDebug(() => $"Testing spawnability of {eq.ID} (from connected set of {connectedEquipment.Count})\n\tisSpawnable: {isSpawnable}\n\tIsStationary: {eq.IsStationary}\n\tSquaredDistanceFromPlayer: {eq.SquaredDistanceFromPlayer()}\n\tSPAWN_SQR_DISTANCE: {SPAWN_SQR_DISTANCE}\n\tflag: {!isSpawnable && eq.SquaredDistanceFromPlayer() < SPAWN_SQR_DISTANCE}");
                             yield return null;
                             seenGuids.Add(eq.CarGUID);
                             // Short circuit avoids doing expensive calculation unnecessarily
@@ -114,7 +108,6 @@ namespace DVOwnership
                         {
                             foreach(var eq in connectedEquipment)
                             {
-                                DVOwnership.LogDebug(() => "G");
                                 yield return null;
                                 eq.Spawn();
                             }
@@ -122,7 +115,6 @@ namespace DVOwnership
                     }
                 }
 
-                DVOwnership.LogDebug(() => "H");
                 yield return WaitFor.SecondsRealtime(DELAY_SECONDS_BETWEEN_CHECK_CYCLES);
             }
         }
