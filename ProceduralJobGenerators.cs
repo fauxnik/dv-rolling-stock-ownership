@@ -42,7 +42,8 @@ namespace DVOwnership
 
             var gameObject = new GameObject($"ChainJob[{JobType.Transport}]: {originController.logicStation.ID} - {destinationController.logicStation.ID}");
             gameObject.transform.SetParent(originController.transform);
-            var jobChainController = new JobChainController(gameObject);
+            // This class is patched to do next-in-chain job generation
+            var jobChainController = new JobChainControllerWithEmptyHaulGeneration(gameObject);
             jobChainController.trainCarsForJobChain = Utilities.ConvertLogicCarsToTrainCars(carsForJob).ToList();
 
             var stationsChainData = new StationsChainData(originController.stationInfo.YardID, destinationController.stationInfo.YardID);
@@ -56,9 +57,6 @@ namespace DVOwnership
 
             jobChainController.AddJobDefinitionToChain(jobDefinition);
             jobChainController.FinalizeSetupAndGenerateFirstJob();
-
-            jobChainController.JobChainCompleted += GenerateDestinationSetter(destinationController.logicStation.ID);
-            jobChainController.JobChainCompleted += GenerateContinuationUnloadJob(originController, destinationController);
 
             return jobChainController;
         }
@@ -110,7 +108,8 @@ namespace DVOwnership
 
             var gameObject = new GameObject($"ChainJob[{JobType.ShuntingUnload}]: {originController.logicStation.ID} - {destinationController.logicStation.ID}");
             gameObject.transform.SetParent(destinationController.transform);
-            var jobChainController = new JobChainController(gameObject);
+            // This class is patched to do next-in-chain job generation
+            var jobChainController = new JobChainControllerWithEmptyHaulGeneration(gameObject);
             jobChainController.trainCarsForJobChain = Utilities.ConvertLogicCarsToTrainCars(carsForJob).ToList();
 
             var stationsChainData = new StationsChainData(originController.stationInfo.YardID, destinationController.stationInfo.YardID);
@@ -127,8 +126,6 @@ namespace DVOwnership
 
             jobChainController.AddJobDefinitionToChain(jobDefinition);
             jobChainController.FinalizeSetupAndGenerateFirstJob();
-
-            jobChainController.JobChainCompleted += GenerateDestinationSetter(null);
 
             return jobChainController;
         }
@@ -201,7 +198,8 @@ namespace DVOwnership
 
             var gameObject = new GameObject($"ChainJob[{JobType.ShuntingLoad}]: {originController.logicStation.ID} - {destinationController.logicStation.ID}");
             gameObject.transform.SetParent(originController.transform);
-            var jobChainController = new JobChainController(gameObject);
+            // This class is patched to do next-in-chain job generation
+            var jobChainController = new JobChainControllerWithEmptyHaulGeneration(gameObject);
             jobChainController.trainCarsForJobChain = Utilities.ConvertLogicCarsToTrainCars(carsForJob).ToList();
 
             var stationsChainData = new StationsChainData(originController.stationInfo.YardID, destinationController.stationInfo.YardID);
@@ -216,8 +214,6 @@ namespace DVOwnership
 
             jobChainController.AddJobDefinitionToChain(jobDefinition);
             jobChainController.FinalizeSetupAndGenerateFirstJob();
-
-            jobChainController.JobChainCompleted += GenerateContinuationTransportJob(originController, destinationController);
 
             return jobChainController;
         }
@@ -259,78 +255,69 @@ namespace DVOwnership
             return jobDefinition;
         }
 
-        private static Action<JobChainController> GenerateDestinationSetter(string destinationID)
+        public static void SetDestination(JobChainController controller, string destinationID)
         {
-            return (controller) =>
+            var rollingStock = SingletonBehaviour<RollingStockManager>.Instance;
+            var trainCars = controller.trainCarsForJobChain;
+            var equipments = from trainCar in trainCars select rollingStock.FindByTrainCar(trainCar);
+            foreach (var equipment in equipments)
             {
-                var rollingStock = SingletonBehaviour<RollingStockManager>.Instance;
-                var trainCars = controller.trainCarsForJobChain;
-                var equipments = from trainCar in trainCars select rollingStock.FindByTrainCar(trainCar);
-                foreach (var equipment in equipments)
-                {
-                    equipment.SetDestination(destinationID);
-                }
-            };
+                equipment.SetDestination(destinationID);
+            }
         }
 
-        public static Action<JobChainController> GenerateContinuationTransportJob(StationController originController, StationController destinationController)
+        public static void GenerateContinuationTransportJob(JobChainController jobChainController, StationController originController, StationController destinationController)
         {
-            return (JobChainController jobChainController) =>
+            var trainCars = jobChainController?.trainCarsForJobChain;
+            if (trainCars == null)
             {
-                var trainCars = jobChainController?.trainCarsForJobChain;
-                if (trainCars == null)
-                {
-                    DVOwnership.LogError($"Expected trainCarsForJobChain to exist, but it does not. Can't generate transport job.");
-                    return;
-                }
+                DVOwnership.LogError($"Expected trainCarsForJobChain to exist, but it does not. Can't generate transport job.");
+                return;
+            }
 
-                int tickCount = Environment.TickCount;
-                System.Random rng = new System.Random(tickCount);
-                var carsForJob = from trainCar in trainCars select trainCar.logicCar;
-                var completedJobID = jobChainController?.currentJobInChain?.ID;
-                var originYardID = originController.stationInfo.YardID;
-                var destinationYardID = destinationController.stationInfo.YardID;
+            int tickCount = Environment.TickCount;
+            System.Random rng = new System.Random(tickCount);
+            var carsForJob = from trainCar in trainCars select trainCar.logicCar;
+            var completedJobID = jobChainController?.currentJobInChain?.ID;
+            var originYardID = originController.stationInfo.YardID;
+            var destinationYardID = destinationController.stationInfo.YardID;
 
-                jobChainController = GenerateHaulChainJobForCars(rng, carsForJob.ToList(), originController, destinationController);
+            jobChainController = GenerateHaulChainJobForCars(rng, carsForJob.ToList(), originController, destinationController);
 
-                if (jobChainController == null)
-                {
-                    DVOwnership.LogError($"Couldn't generate a freight haul job to continue {completedJobID}!\n\torigin: {originYardID}\n\tdestination: {destinationYardID}\n\ttrain cars: {string.Join(", ", from trainCar in trainCars select trainCar.ID)}");
-                    return;
-                }
+            if (jobChainController == null)
+            {
+                DVOwnership.LogError($"Couldn't generate a freight haul job to continue {completedJobID}!\n\torigin: {originYardID}\n\tdestination: {destinationYardID}\n\ttrain cars: {string.Join(", ", from trainCar in trainCars select trainCar.ID)}");
+                return;
+            }
 
-                DVOwnership.Log($"Generated freight haul job {jobChainController.currentJobInChain.ID} as continuation of {completedJobID}.");
-            };
+            DVOwnership.Log($"Generated freight haul job {jobChainController.currentJobInChain.ID} as continuation of {completedJobID}.");
         }
 
-        public static Action<JobChainController> GenerateContinuationUnloadJob(StationController originController, StationController destinationController)
+        public static void GenerateContinuationUnloadJob(JobChainController jobChainController, StationController originController, StationController destinationController)
         {
-            return (JobChainController jobChainController) =>
+            var trainCars = jobChainController?.trainCarsForJobChain;
+            if (trainCars == null)
             {
-                var trainCars = jobChainController?.trainCarsForJobChain;
-                if (trainCars == null)
-                {
-                    DVOwnership.LogError($"Expected trainCarsForJobChain to exist, but it does not. Can't generate unload job.");
-                    return;
-                }
+                DVOwnership.LogError($"Expected trainCarsForJobChain to exist, but it does not. Can't generate unload job.");
+                return;
+            }
 
-                int tickCount = Environment.TickCount;
-                System.Random rng = new System.Random(tickCount);
-                var carsForJob = from trainCar in trainCars select trainCar.logicCar;
-                var completedJobID = jobChainController?.currentJobInChain?.ID;
-                var originYardID = originController.stationInfo.YardID;
-                var destinationYardID = destinationController.stationInfo.YardID;
+            int tickCount = Environment.TickCount;
+            System.Random rng = new System.Random(tickCount);
+            var carsForJob = from trainCar in trainCars select trainCar.logicCar;
+            var completedJobID = jobChainController?.currentJobInChain?.ID;
+            var originYardID = originController.stationInfo.YardID;
+            var destinationYardID = destinationController.stationInfo.YardID;
 
-                jobChainController = GenerateUnloadChainJobForCars(rng, carsForJob.ToList(), originController, destinationController);
+            jobChainController = GenerateUnloadChainJobForCars(rng, carsForJob.ToList(), originController, destinationController);
 
-                if (jobChainController == null)
-                {
-                    DVOwnership.LogError($"Couldn't generate an unload job to continue {completedJobID}!\n\torigin: {originYardID}\n\tdestination: {destinationYardID}\n\ttrain cars: {string.Join(", ", from trainCar in trainCars select trainCar.ID)}");
-                    return;
-                }
+            if (jobChainController == null)
+            {
+                DVOwnership.LogError($"Couldn't generate an unload job to continue {completedJobID}!\n\torigin: {originYardID}\n\tdestination: {destinationYardID}\n\ttrain cars: {string.Join(", ", from trainCar in trainCars select trainCar.ID)}");
+                return;
+            }
 
-                DVOwnership.Log($"Generated unload job {jobChainController.currentJobInChain.ID} as continuation of {completedJobID}.");
-            };
+            DVOwnership.Log($"Generated unload job {jobChainController.currentJobInChain.ID} as continuation of {completedJobID}.");
         }
     }
 }
