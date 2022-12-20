@@ -94,7 +94,7 @@ namespace DVOwnership
                 {
                     var task = taskQ.Dequeue();
                     var taskData = task.GetTaskData();
-                    var nestedTasks = taskData.nestedTasks;
+                    var nestedTasks = taskData.nestedTasks ?? new List<Task>();
                     foreach (var nestedTask in nestedTasks) { taskQ.Enqueue(nestedTask); }
 
                     if (taskData.type == TaskType.Transport)
