@@ -273,7 +273,7 @@ namespace DVOwnership
             };
         }
 
-        private static Action<JobChainController> GenerateContinuationTransportJob(StationController originController, StationController destinationController)
+        public static Action<JobChainController> GenerateContinuationTransportJob(StationController originController, StationController destinationController)
         {
             return (JobChainController jobChainController) =>
             {
@@ -303,7 +303,7 @@ namespace DVOwnership
             };
         }
 
-        private static Action<JobChainController> GenerateContinuationUnloadJob(StationController originController, StationController destinationController)
+        public static Action<JobChainController> GenerateContinuationUnloadJob(StationController originController, StationController destinationController)
         {
             return (JobChainController jobChainController) =>
             {

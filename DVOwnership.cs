@@ -1,12 +1,8 @@
 ﻿using DVOwnership.Patches;
 using Harmony12;
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
-using System.Text;
-using System.Threading.Tasks;
 using UnityEngine;
 using UnityModManagerNet;
 
@@ -56,6 +52,12 @@ namespace DVOwnership
 
             try { IdGenerator_Patches.Setup(); }
             catch (Exception e) { OnCriticalFailure(e, "patching IdGenerator"); }
+
+            try { JobChainControllerWithEmptyHaulGeneration_Patches.Setup(); }
+            catch (Exception e) { OnCriticalFailure(e, "patching JobChainControllerWithEmptyHaulGeneration"); }
+
+            try { JobSaveManager_Patches.Setup(); }
+            catch (Exception e) { OnCriticalFailure(e, "patching JobSaveManager"); }
 
             try { Preferences_Patches.Setup(); }
             catch (Exception e) { OnCriticalFailure(e, "patching Preferences"); }

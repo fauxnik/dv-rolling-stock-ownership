@@ -10,6 +10,7 @@
     <RootNamespace>DVOwnership</RootNamespace>
     <AssemblyName>DVOwnership</AssemblyName>
     <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
+    <LangVersion>8.0</LangVersion>
     <FileAlignment>512</FileAlignment>
     <Deterministic>true</Deterministic>
   </PropertyGroup>
@@ -89,6 +90,8 @@
     <Compile Include="CommsRadioEquipmentPurchaser.cs" />
     <Compile Include="DVOwnership.cs" />
     <Compile Include="Equipment.cs" />
+    <Compile Include="Patches\JobChainControllerWithEmptyHaulGeneration_Patches.cs" />
+    <Compile Include="Patches\JobSaveManager_Patches.cs" />
     <Compile Include="Patches\Track_Patches.cs" />
     <Compile Include="Utilities.cs" />
     <Compile Include="LogLevel.cs" />
