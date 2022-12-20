@@ -14,7 +14,6 @@ namespace DVOwnership
         private static Dictionary<StationController, ProceduralJobsController> instances = new Dictionary<StationController, ProceduralJobsController>();
 
         private StationController stationController;
-        private ProceduralJobGenerator procJobGenerator;
         private List<Track> stationTracks;
 
         public static ProceduralJobsController ForStation(StationController stationController)
@@ -32,7 +31,6 @@ namespace DVOwnership
         private ProceduralJobsController(StationController stationController)
         {
             this.stationController = stationController;
-            procJobGenerator = new ProceduralJobGenerator(stationController);
             stationTracks = GetTracksByStationID(stationController.logicStation.ID).ToList();
         }
 
@@ -160,7 +158,7 @@ namespace DVOwnership
                         if (carsForJob.Count >= minCarsPerJob)
                         {
                             yield return null;
-                            jobChainController = procJobGenerator.GenerateHaulChainJobForCars(rng, carsForJob.ToList(), cargoGroup);
+                            jobChainController = ProceduralJobGenerators.GenerateHaulChainJobForCars(rng, carsForJob.ToList(), cargoGroup, stationController);
                         }
                         else
                         {
@@ -185,7 +183,7 @@ namespace DVOwnership
                         if (carsForJob.Count >= minCarsPerJob)
                         {
                             yield return null;
-                            jobChainController = procJobGenerator.GenerateUnloadChainJobForCars(rng, carsForJob.ToList(), cargoGroup);
+                            jobChainController = ProceduralJobGenerators.GenerateUnloadChainJobForCars(rng, carsForJob.ToList(), cargoGroup, stationController);
                         }
                         else
                         {
@@ -270,7 +268,7 @@ namespace DVOwnership
                             var carSetsForJob =
                                 from equipmentSet in equipmentSetsForJob
                                 select (from equipment in equipmentSet select equipment.GetLogicCar()).ToList();
-                            jobChainController = procJobGenerator.GenerateLoadChainJobForCars(rng, carSetsForJob.ToList(), cargoGroup);
+                            jobChainController = ProceduralJobGenerators.GenerateLoadChainJobForCars(rng, carSetsForJob.ToList(), cargoGroup, stationController);
                         }
                         else
                         {

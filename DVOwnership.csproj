@@ -102,7 +102,7 @@
     <Compile Include="Patches\StationProceduralJobsController_Patches.cs" />
     <Compile Include="Patches\TrainCar_Patches.cs" />
     <Compile Include="Patches\UnusedTrainCarDeleter_Patches.cs" />
-    <Compile Include="ProceduralJobGenerator.cs" />
+    <Compile Include="ProceduralJobGenerators.cs" />
     <Compile Include="ProceduralJobsController.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SpawnStateManager.cs" />
