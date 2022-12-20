@@ -19,6 +19,11 @@ namespace DVOwnership
             TrainCarType.NotSet,
             // Crew vehicle types are added by the Awake method
         };
+        private static Dictionary<TrainCarType, TrainCarType> locomotiveForTender = new Dictionary<TrainCarType, TrainCarType>
+        {
+            { TrainCarType.Tender, TrainCarType.LocoSteamHeavy },
+            { TrainCarType.TenderBlue, TrainCarType.LocoSteamHeavyBlue },
+        };
 
         public ButtonBehaviourType ButtonBehaviour { get; private set; }
 
@@ -551,11 +556,16 @@ namespace DVOwnership
                               where !bannedTypes.Contains(carType) && !CarTypes.IsHidden(carType)
                               select carType;
             var licensedCarTypes = from carType in allowedCarTypes
-                                   where CarTypes.IsAnyLocomotiveOrTender(carType) ? LicenseManager_Patches.IsLicensedForLoco(carType) : LicenseManager_Patches.IsLicensedForCar(carType)
+                                   where CarTypes.IsAnyLocomotiveOrTender(carType) ? LicenseManager_Patches.IsLicensedForLoco(LocoForTender(carType)) : LicenseManager_Patches.IsLicensedForCar(carType)
                                    select carType;
             carTypesAvailableForPurchase = licensedCarTypes.ToList();
             selectedCarTypeIndex = carTypesAvailableForPurchase.FindIndex(carType => carType == prevSelectedCarType);
             if (selectedCarTypeIndex == -1) { selectedCarTypeIndex = 0; }
+        }
+
+        private TrainCarType LocoForTender(TrainCarType carType)
+        {
+            return locomotiveForTender.ContainsKey(carType) ? locomotiveForTender[carType] : carType;
         }
 
         private void OnLicenseAcquired(JobLicenses jobLicenses)
