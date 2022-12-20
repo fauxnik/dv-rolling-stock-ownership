@@ -297,8 +297,8 @@ namespace DVOwnership
 
             yield return null;
 
-            var attemptsUsed = MAX_JOB_GENERATION_ATTEMPTS - attemptsRemaining;
-            log.Append($"Generated a total of {jobsGenerated} jobs in {attemptsUsed}/{MAX_JOB_GENERATION_ATTEMPTS} attempt cycles.");
+            var attemptsUnsuccessful = MAX_JOB_GENERATION_ATTEMPTS - attemptsRemaining;
+            log.Append($"Generated a total of {jobsGenerated} jobs with {attemptsUnsuccessful}/{MAX_JOB_GENERATION_ATTEMPTS} unsuccessful attempts.");
             DVOwnership.Log(log.ToString());
             if (onComplete != null)
             {
