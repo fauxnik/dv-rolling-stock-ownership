@@ -66,7 +66,7 @@ namespace DVOwnership
         {
             get
             {
-                //.LogDebug(() => $"Getting rear coupling for {ID} / {CarGUID} (currently: {_carGuidCoupledFront})");
+                //DVOwnership.LogDebug(() => $"Getting rear coupling for {ID} / {CarGUID} (currently: {_carGuidCoupledRear})");
                 return _carGuidCoupledRear;
             }
             private set
