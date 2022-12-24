@@ -178,7 +178,8 @@ namespace DVOwnership
             isBogie2Derailed = bogie2.HasDerailed;
             // Coupler state is kept updated via event handlers.
             isExploded = trainCar.useExplodedModel;
-            loadedCargo = trainCar.logicCar.CurrentCargoTypeInCar;
+            // The cargo in a despawning train car gets dumped before this update method is called.
+            if (!isBeingDespawned) { UpdateCargo(trainCar); }
             carStateSave = carState?.GetCarStateSaveData();
             locoStateSave = locoState?.GetLocoStateSaveData();
             this.trainCar = isBeingDespawned ? null : trainCar;
@@ -187,6 +188,11 @@ namespace DVOwnership
             {
                 RemoveCouplerEventHandlers(trainCar);
             }
+        }
+
+        private void UpdateCargo(TrainCar trainCar)
+        {
+            loadedCargo = trainCar.logicCar.CurrentCargoTypeInCar;
         }
 
         private void SetupCouplerEventHandlers(TrainCar trainCar)
@@ -269,8 +275,11 @@ namespace DVOwnership
 
             DVOwnership.Log($"Preparing equipment record with ID {ID} for despawning.");
 
-            // We remove the coupler event handlers because the train cars will be decoupled as they despawn, but we want to keep their pre-despawn state.
+            // We remove the coupler event handlers because the train cars will be uncoupled as they despawn, but we want to preseve their pre-despawn state.
             RemoveCouplerEventHandlers(trainCar);
+
+            // We update cargo early because the train cars will be unloaded as the despawn, but we want to preserve their pre-despawn state.
+            UpdateCargo(trainCar);
 
             IsMarkedForDespawning = true;
             return true;
