@@ -157,6 +157,7 @@ namespace DVOwnership
                         // Generate the job, but only if it meets the minimum requirements
                         if (carsForJob.Count >= minCarsPerJob)
                         {
+                            DVOwnership.LogDebug(() => $"Generating freight haul job for {carsForJob.Count} cars: [{string.Join(", ", carsForJob.Select(car => car.ID))}]");
                             yield return null;
                             jobChainController = ProceduralJobGenerators.GenerateHaulChainJobForCars(rng, carsForJob.ToList(), cargoGroup, stationController);
                         }
@@ -182,6 +183,7 @@ namespace DVOwnership
                         // Generate the job, but only if it meets the minimum requirements
                         if (carsForJob.Count >= minCarsPerJob)
                         {
+                            DVOwnership.LogDebug(() => $"Generating shunting unload job for {carsForJob.Count} cars: [{string.Join(", ", carsForJob.Select(car => car.ID))}]");
                             yield return null;
                             jobChainController = ProceduralJobGenerators.GenerateUnloadChainJobForCars(rng, carsForJob.ToList(), cargoGroup, stationController);
                         }
@@ -264,6 +266,7 @@ namespace DVOwnership
                         // Generate the job, but only if it meets the minimum requirements
                         if (carsForJob.Count >= minCarsPerJob)
                         {
+                            DVOwnership.LogDebug(() => $"Generating shunting load job for {carsForJob.Count} cars: [{string.Join(", ", carsForJob.Select(car => car.ID))}]");
                             yield return null;
                             var carSetsForJob =
                                 from equipmentSet in equipmentSetsForJob
