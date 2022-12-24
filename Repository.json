@@ -2,8 +2,8 @@
   "Releases": [
     {
       "Id": "DVOwnership",
-      "Version": "0.0.0",
-      "DownloadUrl": "https://github.com/fauxnik/DVOwnership/releases/download/v0.0.0/DVOwnership.zip"
+      "Version": "1.0.0",
+      "DownloadUrl": "https://github.com/fauxnik/DVOwnership/releases/download/v1.0.0/DVOwnership.zip"
     }
   ]
 }
