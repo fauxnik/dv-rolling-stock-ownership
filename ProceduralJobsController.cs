@@ -330,10 +330,16 @@ namespace DVOwnership
                 if (!carsInYard.Contains(possibleMatchLogicCar) || !cargoGroup.cargoTypes.Contains(possibleMatchLogicCar.CurrentCargoTypeInCar)) { continue; }
 
                 cars.Add(possibleMatchLogicCar);
-                coupledEquipment = manager.FindByCarGUID(possibleMatch.CarGuidCoupledFront);
-                if (coupledEquipment != null && !seenEquipment.Contains(coupledEquipment)) { seekQ.Enqueue(coupledEquipment); }
-                coupledEquipment = manager.FindByCarGUID(possibleMatch.CarGuidCoupledRear);
-                if (coupledEquipment != null && !seenEquipment.Contains(coupledEquipment)) { seekQ.Enqueue(coupledEquipment); }
+                if (possibleMatch.IsCoupledFront)
+                {
+                    coupledEquipment = manager.FindByCarGUID(possibleMatch.CarGuidCoupledFront);
+                    if (coupledEquipment != null && !seenEquipment.Contains(coupledEquipment)) { seekQ.Enqueue(coupledEquipment); }
+                }
+                if (possibleMatch.IsCoupledRear)
+                {
+                    coupledEquipment = manager.FindByCarGUID(possibleMatch.CarGuidCoupledRear);
+                    if (coupledEquipment != null && !seenEquipment.Contains(coupledEquipment)) { seekQ.Enqueue(coupledEquipment); }
+                }
             }
 
             return cars;
