@@ -45,71 +45,74 @@ namespace DVOwnership
         {
             for (;;)
             {
-                var rollingStock = SingletonBehaviour<RollingStockManager>.Instance;
-                var seenGuids = new HashSet<string>();
-
-                foreach (var equipment in rollingStock.AllEquipment)
+                lock (RollingStockManager.syncLock)
                 {
-                    yield return null;
-                    if (seenGuids.Contains(equipment.CarGUID)) { continue; }
-                    var connectedEquipment = rollingStock.GetConnectedEquipment(equipment);
+                    var rollingStock = SingletonBehaviour<RollingStockManager>.Instance;
+                    var seenGuids = new HashSet<string>();
 
-                    yield return null;
-                    if (!connectedEquipment.All(eq => eq.IsSpawned == equipment.IsSpawned))
+                    foreach (var equipment in rollingStock.AllEquipment)
                     {
-                        DVOwnership.LogError($"Connected equipment contains both spawned and despawned items! This should never happen.");
-                    }
+                        yield return null;
+                        if (seenGuids.Contains(equipment.CarGUID)) { continue; }
+                        var connectedEquipment = rollingStock.GetConnectedEquipment(equipment);
 
-                    if (equipment.IsSpawned)
-                    {
-                        // Check if ALL connected equipment should be despawned
-                        
-                        var bestGuessLastDrivenTrainset = PlayerManager.LastLoco?.trainset;
-                        
-                        bool isDespawnable = !equipment.ExistsInTrainset(bestGuessLastDrivenTrainset);
-                        foreach (var eq in connectedEquipment)
+                        yield return null;
+                        if (!connectedEquipment.All(eq => eq.IsSpawned == equipment.IsSpawned))
                         {
-                            DVOwnership.LogDebug(() => $"Testing despawnability of {eq.ID} (from connected set of {connectedEquipment.Count})\n\tisDespawnable:{isDespawnable}\n\tIsStationary: {eq.IsStationary}\n\tSquaredDistanceFromPlayer: {eq.SquaredDistanceFromPlayer()}\n\tDESPAWN_SQR_DISTANCE: {DESPAWN_SQR_DISTANCE}\n\tJob: {JobChainController.GetJobOfCar(eq.GetTrainCar())?.ID}\n\tflag: {isDespawnable && (!eq.IsStationary || eq.SquaredDistanceFromPlayer() < DESPAWN_SQR_DISTANCE || JobChainController.GetJobOfCar(eq.GetTrainCar()) != null)}");
-                            yield return null;
-                            seenGuids.Add(eq.CarGUID);
-                            // Short circuit avoids doing expensive calculation unnecessarily
-                            if (isDespawnable && (!eq.IsStationary || eq.SquaredDistanceFromPlayer() < DESPAWN_SQR_DISTANCE || JobChainController.GetJobOfCar(eq.GetTrainCar()) != null))
+                            DVOwnership.LogError($"Connected equipment contains both spawned and despawned items! This should never happen.");
+                        }
+
+                        if (equipment.IsSpawned)
+                        {
+                            // Check if ALL connected equipment should be despawned
+
+                            var bestGuessLastDrivenTrainset = PlayerManager.LastLoco?.trainset;
+
+                            bool isDespawnable = !equipment.ExistsInTrainset(bestGuessLastDrivenTrainset);
+                            foreach (var eq in connectedEquipment)
                             {
-                                isDespawnable = false;
-                                // Can't break here b/c we need to add all the guids to the hash set
+                                DVOwnership.LogDebug(() => $"Testing despawnability of {eq.ID} (from connected set of {connectedEquipment.Count})\n\tisDespawnable:{isDespawnable}\n\tIsStationary: {eq.IsStationary}\n\tSquaredDistanceFromPlayer: {eq.SquaredDistanceFromPlayer()}\n\tDESPAWN_SQR_DISTANCE: {DESPAWN_SQR_DISTANCE}\n\tJob: {JobChainController.GetJobOfCar(eq.GetTrainCar())?.ID}\n\tflag: {isDespawnable && (!eq.IsStationary || eq.SquaredDistanceFromPlayer() < DESPAWN_SQR_DISTANCE || JobChainController.GetJobOfCar(eq.GetTrainCar()) != null)}");
+                                yield return null;
+                                seenGuids.Add(eq.CarGUID);
+                                // Short circuit avoids doing expensive calculation unnecessarily
+                                if (isDespawnable && (!eq.IsStationary || eq.SquaredDistanceFromPlayer() < DESPAWN_SQR_DISTANCE || JobChainController.GetJobOfCar(eq.GetTrainCar()) != null))
+                                {
+                                    isDespawnable = false;
+                                    // Can't break here b/c we need to add all the guids to the hash set
+                                }
                             }
-                        }
 
-                        if (isDespawnable)
-                        {
-                            yield return null;
-                            foreach (var eq in connectedEquipment) { eq.PrepareForDespawning(); }
-                        }
-                    }
-                    else
-                    {
-                        // Check if ANY connected equipment should be spawned
-
-                        bool isSpawnable = false;
-                        foreach (var eq in connectedEquipment)
-                        {
-                            DVOwnership.LogDebug(() => $"Testing spawnability of {eq.ID} (from connected set of {connectedEquipment.Count})\n\tisSpawnable: {isSpawnable}\n\tIsStationary: {eq.IsStationary}\n\tSquaredDistanceFromPlayer: {eq.SquaredDistanceFromPlayer()}\n\tSPAWN_SQR_DISTANCE: {SPAWN_SQR_DISTANCE}\n\tflag: {!isSpawnable && eq.SquaredDistanceFromPlayer() < SPAWN_SQR_DISTANCE}");
-                            yield return null;
-                            seenGuids.Add(eq.CarGUID);
-                            // Short circuit avoids doing expensive calculation unnecessarily
-                            if (!isSpawnable && eq.SquaredDistanceFromPlayer() < SPAWN_SQR_DISTANCE)
-                            {
-                                isSpawnable = true;
-                                // Can't break here b/c we need to add all the guids to the hash set
-                            }
-                        }
-
-                        if (isSpawnable)
-                        {
-                            foreach(var eq in connectedEquipment)
+                            if (isDespawnable)
                             {
                                 yield return null;
-                                eq.Spawn();
+                                foreach (var eq in connectedEquipment) { eq.PrepareForDespawning(); }
+                            }
+                        }
+                        else
+                        {
+                            // Check if ANY connected equipment should be spawned
+
+                            bool isSpawnable = false;
+                            foreach (var eq in connectedEquipment)
+                            {
+                                DVOwnership.LogDebug(() => $"Testing spawnability of {eq.ID} (from connected set of {connectedEquipment.Count})\n\tisSpawnable: {isSpawnable}\n\tIsStationary: {eq.IsStationary}\n\tSquaredDistanceFromPlayer: {eq.SquaredDistanceFromPlayer()}\n\tSPAWN_SQR_DISTANCE: {SPAWN_SQR_DISTANCE}\n\tflag: {!isSpawnable && eq.SquaredDistanceFromPlayer() < SPAWN_SQR_DISTANCE}");
+                                yield return null;
+                                seenGuids.Add(eq.CarGUID);
+                                // Short circuit avoids doing expensive calculation unnecessarily
+                                if (!isSpawnable && eq.SquaredDistanceFromPlayer() < SPAWN_SQR_DISTANCE)
+                                {
+                                    isSpawnable = true;
+                                    // Can't break here b/c we need to add all the guids to the hash set
+                                }
+                            }
+
+                            if (isSpawnable)
+                            {
+                                foreach (var eq in connectedEquipment)
+                                {
+                                    yield return null;
+                                    eq.Spawn();
+                                }
                             }
                         }
                     }

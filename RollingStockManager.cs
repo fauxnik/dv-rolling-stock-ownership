@@ -9,6 +9,7 @@ namespace DVOwnership
     public class RollingStockManager : SingletonBehaviour<RollingStockManager>
     {
         public static new string AllowAutoCreate() { return "[DVOwnership_RollingStockManager]"; }
+        public static readonly object syncLock = new object();
 
         private List<Equipment> registry = new List<Equipment>();
         public List<Equipment> AllEquipment { get { return new List<Equipment>(registry); } }
