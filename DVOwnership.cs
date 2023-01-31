@@ -125,12 +125,12 @@ namespace DVOwnership
         public static void OnCriticalFailure(Exception exception, string action)
         {
             // TODO: show floaty message (and offer to open log folder?) before quitting game
+            Debug.Log(exception);
 #if DEBUG
 #else
             modEntry.Enabled = false;
-#endif
-            Debug.Log(exception);
             modEntry.Logger.Critical("Deactivating mod DVOwnership due to unrecoverable failure!");
+#endif
             modEntry.Logger.Critical($"This happened while {action}.");
             modEntry.Logger.Critical($"You can reactivate DVOwnership by restarting the game, but this failure type likely indicates an incompatibility between the mod and a recent game update. Please search the mod's Github issue tracker for a relevant report. If none is found, please open one and include this log file.");
             Application.Quit();
