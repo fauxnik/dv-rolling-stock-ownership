@@ -12,13 +12,6 @@ namespace DVOwnership
 {
     public class CommsRadioEquipmentPurchaser : MonoBehaviour, ICommsRadioMode
     {
-        public static CommsRadioController controller;
-
-        private static HashSet<TrainCarType> bannedTypes = new HashSet<TrainCarType>
-        {
-            TrainCarType.NotSet,
-            // Crew vehicle types are added by the Awake method
-        };
         private static Dictionary<TrainCarType, TrainCarType> locomotiveForTender = new Dictionary<TrainCarType, TrainCarType>
         {
             { TrainCarType.Tender, TrainCarType.LocoSteamHeavy },
@@ -113,7 +106,7 @@ namespace DVOwnership
             try
             {
                 // Copy components from other radio modes
-                var summoner = controller.crewVehicleControl;
+                var summoner = CommsRadio.Controller.crewVehicleControl;
 
                 if (summoner == null) { throw new Exception("Crew vehicle radio mode could not be found!"); }
 
@@ -134,21 +127,6 @@ namespace DVOwnership
                 moneyRemovedSound = summoner.moneyRemovedSound;
             }
             catch (Exception e) { DVOwnership.OnCriticalFailure(e, "copying radio components"); }
-
-            try
-            {
-                // Crew vehicles use the vanilla crew vehicle summoning logic, so they can't be purchased.
-                var summoner = controller.crewVehicleControl;
-                var garageCarSpawners = AccessTools.Field(typeof(CommsRadioCrewVehicle), "garageCarSpawners").GetValue(summoner) as GarageCarSpawner[];
-                if (garageCarSpawners != null)
-                {
-                    foreach (var garageSpawner in garageCarSpawners)
-                    {
-                        bannedTypes.Add(garageSpawner.locoType);
-                    }
-                }
-            }
-            catch (Exception e) { DVOwnership.OnCriticalFailure(e, "banning crew vehicles from purchase"); }
 
             if (!signalOrigin)
             {
@@ -553,7 +531,7 @@ namespace DVOwnership
         {
             var prevSelectedCarType = carTypesAvailableForPurchase?.Count > 0 ? SelectedCarType : TrainCarType.NotSet;
             var allowedCarTypes = from carType in Enum.GetValues(typeof(TrainCarType)).Cast<TrainCarType>()
-                              where !bannedTypes.Contains(carType) && !CarTypes.IsHidden(carType)
+                              where !UnmanagedTrainCarTypes.UnmanagedTypes.Contains(carType) && !CarTypes.IsHidden(carType)
                               select carType;
             var licensedCarTypes = from carType in allowedCarTypes
                                    where CarTypes.IsAnyLocomotiveOrTender(carType) ? LicenseManager_Patches.IsLicensedForLoco(LocoForTender(carType)) : LicenseManager_Patches.IsLicensedForCar(carType)
@@ -657,26 +635,5 @@ namespace DVOwnership
         }
 
         #endregion
-
-        [HarmonyPatch(typeof(CommsRadioController), "Awake")]
-        class CommsRadioController_Awake_Patch
-        {
-            public static CommsRadioEquipmentPurchaser equipmentPurchaser = null;
-
-            static void Postfix(CommsRadioController __instance, List<ICommsRadioMode> ___allModes)
-            {
-                controller = __instance;
-
-                if (equipmentPurchaser == null) { equipmentPurchaser = controller.gameObject.AddComponent<CommsRadioEquipmentPurchaser>(); }
-
-                if (!___allModes.Contains(equipmentPurchaser))
-                {
-                    int spawnerIndex = ___allModes.FindIndex(mode => mode is CommsRadioCarSpawner);
-                    if (spawnerIndex != -1) { ___allModes.Insert(spawnerIndex, equipmentPurchaser); }
-                    else { ___allModes.Add(equipmentPurchaser); }
-                    controller.ReactivateModes();
-                }
-            }
-        }
     }
 }

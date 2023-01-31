@@ -87,12 +87,14 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="CommsRadio.cs" />
     <Compile Include="CommsRadioEquipmentPurchaser.cs" />
     <Compile Include="DVOwnership.cs" />
     <Compile Include="Equipment.cs" />
     <Compile Include="Patches\JobChainControllerWithEmptyHaulGeneration_Patches.cs" />
     <Compile Include="Patches\JobSaveManager_Patches.cs" />
     <Compile Include="Patches\Track_Patches.cs" />
+    <Compile Include="UnmanagedTrainCarTypes.cs" />
     <Compile Include="Utilities.cs" />
     <Compile Include="LogLevel.cs" />
     <Compile Include="Patches\CargoTypes_Patches.cs" />

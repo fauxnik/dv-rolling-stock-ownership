@@ -28,6 +28,14 @@ namespace DVOwnership.Patches
 
         static bool AreDeleteConditionsFulfilled_Prefix(ref bool __result, TrainCar trainCar)
         {
+            DVOwnership.LogDebug(() => $"Checking delete conditions for train car with ID {trainCar.ID} and type {trainCar.carType}.");
+
+            if (UnmanagedTrainCarTypes.UnmanagedTypes.Contains(trainCar.carType))
+            {
+                // Unmanaged train cars must use the vanilla logic
+                return true;
+            }
+
             __result = false;
 
             var equipment = SingletonBehaviour<RollingStockManager>.Instance.FindByTrainCar(trainCar);

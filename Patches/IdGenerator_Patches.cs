@@ -30,13 +30,15 @@ namespace DVOwnership.Patches
         }
 
         // We will skip both vanilla methods entirely and use our own implementations instead
-        static bool RegisterCarId_Prefix()
+        static bool RegisterCarId_Prefix(string carId)
         {
+            // TODO: how to get TrainCarType here so IDs of unmanaged car types can be registered?
             DVOwnership.LogDebug(() => "Skipping vanilla RegisterCarId.");
             return false;
         }
-        static bool UnregisterCarId_Prefix()
+        static bool UnregisterCarId_Prefix(string carId)
         {
+            // TODO: how to get TrainCarType here so IDs of unmanaged car types can be unregistered?
             DVOwnership.LogDebug(() => "Skipping vanilla UnregisterCarId.");
             return false;
         }
