@@ -33,13 +33,19 @@ namespace DVOwnership
             try
             {
                 customTypes = PullCustomTypes();
-                DVOwnership.Log($"Loaded {customTypes.Count()} custom cars.");
+                DVOwnership.Log($"Loaded {customTypes.Count()} custom car types.");
                 return true;
             }
-            catch
+            catch (System.IO.FileNotFoundException)
+            {
+                customTypes= null;
+                DVOwnership.Log("DVCustomCarLoader not installed, skipping.");
+                return false;
+            }
+            catch (Exception ex)
             {
                 customTypes = null;
-                DVOwnership.LogWarning("CustomCarLoader not present or encountered error, skipping.");
+                DVOwnership.LogError($"Unexpected exception thrown while loading custom car types:\n{ex}");
                 return false;
             }
         }
