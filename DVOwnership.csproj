@@ -48,6 +48,9 @@
     <Reference Include="DV.Utils">
       <HintPath>dv\DerailValley_Data\Managed\DV.Utils.dll</HintPath>
     </Reference>
+    <Reference Include="DVCustomCarLoader">
+      <HintPath>dv\Mods\DVCustomCarLoader\DVCustomCarLoader.dll</HintPath>
+    </Reference>
     <Reference Include="NAudio, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>dv\DerailValley_Data\Managed\NAudio.dll</HintPath>
@@ -94,6 +97,7 @@
     <Compile Include="Patches\JobChainControllerWithEmptyHaulGeneration_Patches.cs" />
     <Compile Include="Patches\JobSaveManager_Patches.cs" />
     <Compile Include="Patches\Track_Patches.cs" />
+    <Compile Include="TrainCarTypeIntegrator.cs" />
     <Compile Include="UnmanagedTrainCarTypes.cs" />
     <Compile Include="Utilities.cs" />
     <Compile Include="LogLevel.cs" />
