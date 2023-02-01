@@ -526,20 +526,7 @@ namespace DVOwnership
             carLength = trainCar.InterCouplerDistance;
         }
 
-        public Func<IEnumerable<TrainCarType>> OnRequestModdedCarTypes;
-        private IEnumerable<TrainCarType> GetAllCarTypes()
-        {
-            var carTypes = Enum.GetValues(typeof(TrainCarType)).Cast<TrainCarType>();
-            foreach(var getter in OnRequestModdedCarTypes.GetInvocationList().Cast<Func<IEnumerable<TrainCarType>>>())
-            {
-                var moddedCarTypes = getter();
-                if (moddedCarTypes != null)
-                {
-                    carTypes = carTypes.Concat(moddedCarTypes);
-                }
-            }
-            return carTypes;
-        }
+        private IEnumerable<TrainCarType> GetAllCarTypes() => Enum.GetValues(typeof(TrainCarType)).Cast<TrainCarType>();
         private IEnumerable<TrainCarType> allCarTypes = null;
         private IEnumerable<TrainCarType> AllCarTypes
         {
