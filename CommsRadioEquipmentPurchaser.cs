@@ -530,7 +530,7 @@ namespace DVOwnership
         public void UpdateCarTypesAvailableForPurchase()
         {
             var prevSelectedCarType = carTypesAvailableForPurchase?.Count > 0 ? SelectedCarType : TrainCarType.NotSet;
-            var allowedCarTypes = from carType in Enum.GetValues(typeof(TrainCarType)).Cast<TrainCarType>()
+            var allowedCarTypes = from carType in TrainCarTypeIntegrator.AllCarTypes
                               where !UnmanagedTrainCarTypes.UnmanagedTypes.Contains(carType) && !CarTypes.IsHidden(carType)
                               select carType;
             var licensedCarTypes = from carType in allowedCarTypes
