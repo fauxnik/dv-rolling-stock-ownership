@@ -32,13 +32,7 @@ namespace DVOwnership
 
             JobLicenses jobLicenses = LicenseManager.GetRequiredLicensesForCargoTypes(cargoTypes) | LicenseManager.GetRequiredLicenseForNumberOfTransportedCars(carsForJob.Count);
 
-            var possibleDestinationTracks = yto.FilterOutTracksWithoutRequiredFreeSpace(destinationController.logicStation.yard.TransferInTracks, approxLengthOfWholeTrain);
-            if (possibleDestinationTracks.Count < 1)
-            {
-                DVOwnership.LogWarning($"Station[{originController.logicStation.ID}] couldn't find an inbound track with enough free space for the job. ({approxLengthOfWholeTrain})");
-                return null;
-            }
-            var destinationTrack = Utilities.GetRandomFrom(rng, possibleDestinationTracks);
+            var destinationTrack = destinationController.logicStation.yard.WarehouseMachines[0].WarehouseTrack;
 
             var gameObject = new GameObject($"ChainJob[{JobType.Transport}]: {originController.logicStation.ID} - {destinationController.logicStation.ID}");
             gameObject.transform.SetParent(originController.transform);
@@ -99,13 +93,11 @@ namespace DVOwnership
             }
             var warehouseMachine = Utilities.GetRandomFrom(rng, warehouseMachinesThatSupportCargoTypes);
 
-            var randomSortingOfCarsOnTracks = Utilities.GetRandomSortingOfCarsOnTracks(rng, destinationController.logicStation.yard.StorageTracks, carsForJob, generationRuleset.maxShuntingStorageTracks);
-            if (randomSortingOfCarsOnTracks == null)
+            var jobFinishTracks = new List<CarsPerTrack>
             {
-                DVOwnership.LogDebug(() => $"Station[{destinationController.logicStation.ID}] couldn't assign cars to storage tracks.");
-                return null;
-            }
-
+                new CarsPerTrack(destinationController.logicStation.yard.WarehouseMachines[0].WarehouseTrack, new List<Car>(carsForJob))
+            };
+            
             var gameObject = new GameObject($"ChainJob[{JobType.ShuntingUnload}]: {originController.logicStation.ID} - {destinationController.logicStation.ID}");
             gameObject.transform.SetParent(destinationController.transform);
             // This class is patched to do next-in-chain job generation
@@ -114,7 +106,7 @@ namespace DVOwnership
 
             var stationsChainData = new StationsChainData(originController.stationInfo.YardID, destinationController.stationInfo.YardID);
 
-            int countTracks = randomSortingOfCarsOnTracks.Count;
+            int countTracks = jobFinishTracks.Count;
             float bonusTimeLimit = JobPaymentCalculator.CalculateShuntingBonusTimeLimit(countTracks);
             float distanceInMeters = 500f * countTracks;
             float baseWage = JobPaymentCalculator.CalculateJobPayment(JobType.ShuntingUnload, distanceInMeters, Utilities.ExtractPaymentCalculationData(carsForJob));
@@ -122,7 +114,7 @@ namespace DVOwnership
 
             var carsPerCargoType = Utilities.ExtractCarsPerCargoType(carsForJob);
 
-            var jobDefinition = PopulateShuntingUnloadJobDefinitionWithExistingCars(jobChainController.jobChainGO, destinationController.logicStation, startingTrack, warehouseMachine, carsPerCargoType, randomSortingOfCarsOnTracks, bonusTimeLimit, baseWage, stationsChainData, requiredLicenses);
+            var jobDefinition = PopulateShuntingUnloadJobDefinitionWithExistingCars(jobChainController.jobChainGO, destinationController.logicStation, startingTrack, warehouseMachine, carsPerCargoType, jobFinishTracks, bonusTimeLimit, baseWage, stationsChainData, requiredLicenses);
 
             jobChainController.AddJobDefinitionToChain(jobDefinition);
             jobChainController.FinalizeSetupAndGenerateFirstJob();
@@ -188,7 +180,7 @@ namespace DVOwnership
             var warehouseMachine = Utilities.GetRandomFrom(rng, warehouseMachinesThatSupportCargoTypes);
 
             var destinationController = Utilities.GetRandomFrom(rng, cargoGroup.stations);
-            var possibleDestinationTracks = yto.FilterOutTracksWithoutRequiredFreeSpace(originController.logicStation.yard.TransferOutTracks, approxLengthOfWholeTrain);
+            var possibleDestinationTracks = yto.FilterOutTracksWithoutRequiredFreeSpace(new List<Track>{originController.logicStation.yard.WarehouseMachines[0].WarehouseTrack}, approxLengthOfWholeTrain);
             if (possibleDestinationTracks.Count < 1)
             {
                 DVOwnership.LogWarning($"Station[{originController.logicStation.ID}] couldn't find an outbound track with enough free space for the job. ({approxLengthOfWholeTrain})");
