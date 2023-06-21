@@ -17,6 +17,7 @@ Below is an example of the necessary structure. When creating your targets file,
 		<ReferencePath>
 			X:\SteamLibrary\steamapps\common\Derail Valley\DerailValley_Data\Managed\;
 			X:\SteamLibrary\steamapps\common\Derail Valley\DerailValley_Data\Managed\UnityModManager\
+			X:\SteamLibrary\steamapps\common\Derail Valley\Mods\DVCustomCarLoader\
 		</ReferencePath>
 		<AssemblySearchPaths>$(AssemblySearchPaths);$(ReferencePath);</AssemblySearchPaths>
 	</PropertyGroup>
