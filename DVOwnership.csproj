@@ -32,4 +32,8 @@
     <Reference Include="UnityModManager" />
   </ItemGroup>
 
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+    <Exec Command="set &quot;BinPath=$(SolutionDir)$(OutDir)&quot;&#xD;&#xA;if not &quot;%BinPath%&quot;==&quot;%BinPath:$(TargetFramework)=%&quot; set &quot;BinPath=%BinPath%\..&quot;&#xD;&#xA;xcopy /d /y &quot;$(TargetPath)&quot; &quot;%BinPath%&quot;" />
+  </Target>
+
 </Project>
