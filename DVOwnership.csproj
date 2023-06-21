@@ -1,70 +1,35 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
+
   <PropertyGroup>
     <ProjectGuid>{74D5A61F-CF6D-41D5-97DD-8F74C2BE136D}</ProjectGuid>
-    <TargetFramework>net48</TargetFramework>
-    <LangVersion>8.0</LangVersion>
+    <TargetFramework>netframework4.8</TargetFramework>
     <AssemblyTitle>DVOwnership</AssemblyTitle>
     <Product>DVOwnership</Product>
     <Copyright>Copyright © Niko Fox 2022</Copyright>
     <OutputPath>bin\$(Configuration)\</OutputPath>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DebugType>full</DebugType>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType>pdbonly</DebugType>
-  </PropertyGroup>
+
   <ItemGroup>
-    <Reference Include="0Harmony12">
-      <HintPath>dv\DerailValley_Data\Managed\UnityModManager\0Harmony12.dll</HintPath>
-    </Reference>
-    <Reference Include="Assembly-CSharp">
-      <HintPath>dv\DerailValley_Data\Managed\Assembly-CSharp.dll</HintPath>
-    </Reference>
-    <Reference Include="Assembly-CSharp-firstpass">
-      <HintPath>dv\DerailValley_Data\Managed\Assembly-CSharp-firstpass.dll</HintPath>
-    </Reference>
-    <Reference Include="DV.PointSet, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>dv\DerailValley_Data\Managed\DV.PointSet.dll</HintPath>
-      <SpecificVersion>False</SpecificVersion>
-    </Reference>
-    <Reference Include="DV.Utils">
-      <HintPath>dv\DerailValley_Data\Managed\DV.Utils.dll</HintPath>
-    </Reference>
-    <Reference Include="DVCustomCarLoader">
-      <HintPath>dv\Mods\DVCustomCarLoader\DVCustomCarLoader.dll</HintPath>
-    </Reference>
-    <Reference Include="NAudio, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>dv\DerailValley_Data\Managed\NAudio.dll</HintPath>
-      <SpecificVersion>False</SpecificVersion>
-    </Reference>
-    <Reference Include="net.smkd.vector3d, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>dv\DerailValley_Data\Managed\net.smkd.vector3d.dll</HintPath>
-      <SpecificVersion>False</SpecificVersion>
-    </Reference>
-    <Reference Include="Newtonsoft.Json, Version=9.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
-      <HintPath>dv\DerailValley_Data\Managed\Newtonsoft.Json.dll</HintPath>
-      <SpecificVersion>False</SpecificVersion>
-    </Reference>
-    <Reference Include="System.Data.DataSetExtensions" />
-    <Reference Include="Microsoft.CSharp" />
-    <Reference Include="System.Net.Http" />
-    <Reference Include="UnityEngine">
-      <HintPath>dv\DerailValley_Data\Managed\UnityEngine.dll</HintPath>
-    </Reference>
-    <Reference Include="UnityEngine.AudioModule, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>dv\DerailValley_Data\Managed\UnityEngine.AudioModule.dll</HintPath>
-      <SpecificVersion>False</SpecificVersion>
-    </Reference>
-    <Reference Include="UnityEngine.CoreModule">
-      <HintPath>dv\DerailValley_Data\Managed\UnityEngine.CoreModule.dll</HintPath>
-    </Reference>
-    <Reference Include="UnityEngine.PhysicsModule, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>dv\DerailValley_Data\Managed\UnityEngine.PhysicsModule.dll</HintPath>
-      <SpecificVersion>False</SpecificVersion>
-    </Reference>
-    <Reference Include="UnityModManager">
-      <HintPath>dv\DerailValley_Data\Managed\UnityModManager\UnityModManager.dll</HintPath>
-    </Reference>
+    <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
   </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="0Harmony12" />
+    <Reference Include="Assembly-CSharp" />
+    <Reference Include="Assembly-CSharp-firstpass" />
+    <Reference Include="DV.PointSet" />
+    <Reference Include="DV.Utils" />
+    <Reference Include="DVCustomCarLoader" />
+    <Reference Include="NAudio" />
+    <Reference Include="net.smkd.vector3d" />
+    <Reference Include="Newtonsoft.Json" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="UnityEngine" />
+    <Reference Include="UnityEngine.AudioModule" />
+    <Reference Include="UnityEngine.CoreModule" />
+    <Reference Include="UnityEngine.PhysicsModule" />
+    <Reference Include="UnityModManager" />
+  </ItemGroup>
+
 </Project>
