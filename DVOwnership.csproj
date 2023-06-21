@@ -1,123 +1,39 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
-  <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{74D5A61F-CF6D-41D5-97DD-8F74C2BE136D}</ProjectGuid>
-    <OutputType>Library</OutputType>
-    <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>DVOwnership</RootNamespace>
-    <AssemblyName>DVOwnership</AssemblyName>
-    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
-    <LangVersion>8.0</LangVersion>
-    <FileAlignment>512</FileAlignment>
-    <Deterministic>true</Deterministic>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-  </PropertyGroup>
-  <ItemGroup>
-    <Reference Include="0Harmony12">
-      <HintPath>dv\DerailValley_Data\Managed\UnityModManager\0Harmony12.dll</HintPath>
-    </Reference>
-    <Reference Include="Assembly-CSharp">
-      <HintPath>dv\DerailValley_Data\Managed\Assembly-CSharp.dll</HintPath>
-    </Reference>
-    <Reference Include="Assembly-CSharp-firstpass">
-      <HintPath>dv\DerailValley_Data\Managed\Assembly-CSharp-firstpass.dll</HintPath>
-    </Reference>
-    <Reference Include="DV.PointSet, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>dv\DerailValley_Data\Managed\DV.PointSet.dll</HintPath>
-    </Reference>
-    <Reference Include="DV.Utils">
-      <HintPath>dv\DerailValley_Data\Managed\DV.Utils.dll</HintPath>
-    </Reference>
-    <Reference Include="DVCustomCarLoader">
-      <HintPath>dv\Mods\DVCustomCarLoader\DVCustomCarLoader.dll</HintPath>
-    </Reference>
-    <Reference Include="NAudio, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>dv\DerailValley_Data\Managed\NAudio.dll</HintPath>
-    </Reference>
-    <Reference Include="net.smkd.vector3d, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>dv\DerailValley_Data\Managed\net.smkd.vector3d.dll</HintPath>
-    </Reference>
-    <Reference Include="Newtonsoft.Json, Version=9.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>dv\DerailValley_Data\Managed\Newtonsoft.Json.dll</HintPath>
-    </Reference>
-    <Reference Include="System" />
-    <Reference Include="System.Core" />
-    <Reference Include="System.Xml.Linq" />
-    <Reference Include="System.Data.DataSetExtensions" />
-    <Reference Include="Microsoft.CSharp" />
-    <Reference Include="System.Data" />
-    <Reference Include="System.Net.Http" />
-    <Reference Include="System.Xml" />
-    <Reference Include="UnityEngine">
-      <HintPath>dv\DerailValley_Data\Managed\UnityEngine.dll</HintPath>
-    </Reference>
-    <Reference Include="UnityEngine.AudioModule, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>dv\DerailValley_Data\Managed\UnityEngine.AudioModule.dll</HintPath>
-    </Reference>
-    <Reference Include="UnityEngine.CoreModule">
-      <HintPath>dv\DerailValley_Data\Managed\UnityEngine.CoreModule.dll</HintPath>
-    </Reference>
-    <Reference Include="UnityEngine.PhysicsModule, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>dv\DerailValley_Data\Managed\UnityEngine.PhysicsModule.dll</HintPath>
-    </Reference>
-    <Reference Include="UnityModManager">
-      <HintPath>dv\DerailValley_Data\Managed\UnityModManager\UnityModManager.dll</HintPath>
-    </Reference>
-  </ItemGroup>
-  <ItemGroup>
-    <Compile Include="CommsRadio.cs" />
-    <Compile Include="CommsRadioEquipmentPurchaser.cs" />
-    <Compile Include="DVOwnership.cs" />
-    <Compile Include="Equipment.cs" />
-    <Compile Include="Patches\JobChainControllerWithEmptyHaulGeneration_Patches.cs" />
-    <Compile Include="Patches\JobSaveManager_Patches.cs" />
-    <Compile Include="Patches\Track_Patches.cs" />
-    <Compile Include="TrainCarTypeIntegrator.cs" />
-    <Compile Include="UnmanagedTrainCarTypes.cs" />
-    <Compile Include="Utilities.cs" />
-    <Compile Include="LogLevel.cs" />
-    <Compile Include="Patches\CargoTypes_Patches.cs" />
-    <Compile Include="Patches\CommsRadioCarDeleter_Patches.cs" />
-    <Compile Include="Patches\IdGenerator_Patches.cs" />
-    <Compile Include="Patches\LicenseManager_Patches.cs" />
-    <Compile Include="Patches\PlayerManager_Patches.cs" />
-    <Compile Include="Patches\Preferences_Patches.cs" />
-    <Compile Include="Patches\StationLocoSpawner_Patches.cs" />
-    <Compile Include="Patches\StationProceduralJobsController_Patches.cs" />
-    <Compile Include="Patches\TrainCar_Patches.cs" />
-    <Compile Include="Patches\UnusedTrainCarDeleter_Patches.cs" />
-    <Compile Include="ProceduralJobGenerators.cs" />
-    <Compile Include="ProceduralJobsController.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="SpawnStateManager.cs" />
-    <Compile Include="SaveManager.cs" />
-    <Compile Include="RollingStockManager.cs" />
-    <Compile Include="Settings.cs" />
-  </ItemGroup>
-  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<ProjectGuid>{74D5A61F-CF6D-41D5-97DD-8F74C2BE136D}</ProjectGuid>
+		<AssemblyTitle>DVOwnership</AssemblyTitle>
+		<Product>DVOwnership</Product>
+		<Copyright>Copyright © Niko Fox 2022</Copyright>
+		<TargetFramework>netframework4.8</TargetFramework>
+		<LangVersion>8.0</LangVersion>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Reference Include="0Harmony12" />
+		<Reference Include="Assembly-CSharp" />
+		<Reference Include="Assembly-CSharp-firstpass" />
+		<Reference Include="DV.PointSet" />
+		<Reference Include="DV.Utils" />
+		<Reference Include="DVCustomCarLoader" />
+		<Reference Include="NAudio" />
+		<Reference Include="net.smkd.vector3d" />
+		<Reference Include="Newtonsoft.Json" />
+		<Reference Include="System.Data.DataSetExtensions" />
+		<Reference Include="System.Net.Http" />
+		<Reference Include="UnityEngine" />
+		<Reference Include="UnityEngine.AudioModule" />
+		<Reference Include="UnityEngine.CoreModule" />
+		<Reference Include="UnityEngine.PhysicsModule" />
+		<Reference Include="UnityModManager" />
+	</ItemGroup>
+
+	<Target Name="PostBuild" AfterTargets="PostBuildEvent">
+		<Exec Command="set &quot;BinPath=$(SolutionDir)$(OutDir)&quot;&#xD;&#xA;if not &quot;%BinPath%&quot;==&quot;%BinPath:$(TargetFramework)=%&quot; set &quot;BinPath=%BinPath%\..&quot;&#xD;&#xA;xcopy /d /y &quot;$(TargetPath)&quot; &quot;%BinPath%&quot;" />
+	</Target>
+
 </Project>
