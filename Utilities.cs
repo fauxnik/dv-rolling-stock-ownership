@@ -15,18 +15,20 @@ namespace DVOwnership
 			return enumerable.ElementAt(index);
 		}
 
-		public static List<CarsPerTrack> GetRandomSortingOfCarsOnTracks(System.Random rng, List<Track> tracks, List<Car> allCarsForJobChain, int maxNumberOfStorageTracks)
+		public static List<CarsPerTrack> GetRandomSortingOfCarsOnTracks(System.Random rng, List<Track> tracks, List<Car> allCarsForJobChain, int maxNumberOfStorageTracks, int minNumberOfCarsPerTrack)
 		{
 			if (tracks == null || tracks.Count == 0) { return null; }
 
 			int numCars = allCarsForJobChain.Count;
+			int minCarsPerTrack = Math.Min(numCars, Math.Max(1, minNumberOfCarsPerTrack));
+			int maxTracks = numCars / minCarsPerTrack;
 			int numTracks = Mathf.Min(new int[]
 			{
 				rng.Next(1, maxNumberOfStorageTracks + 1),
 				tracks.Count,
-				numCars
+				maxTracks
 			});
-			int averageNumCarsPerTrack = Mathf.FloorToInt((float)numCars / (float)numTracks);
+			int avgCarsPerTrack = numCars / numTracks;
 
 			List<int> numCarsPerTracks = new List<int>();
 			int numCarsAccountedFor = 0;
@@ -39,7 +41,7 @@ namespace DVOwnership
 				}
 				else
 				{
-					numCarsForCurrentTrack = rng.Next(1, averageNumCarsPerTrack + 1);
+					numCarsForCurrentTrack = rng.Next(minCarsPerTrack, avgCarsPerTrack + 1);
 				}
 				if (numCarsForCurrentTrack < 1)
 				{
@@ -48,7 +50,7 @@ namespace DVOwnership
 				numCarsPerTracks.Add(numCarsForCurrentTrack);
 				numCarsAccountedFor += numCarsForCurrentTrack;
 			}
-			numCarsPerTracks.Sort((a, b) => b - a); // reverse sort
+			numCarsPerTracks.Sort((a, b) => b - a); // sort in descending order
 
 			YardTracksOrganizer yto = SingletonBehaviour<YardTracksOrganizer>.Instance;
 			List<CarsPerTrack> carsPerTracks = new List<CarsPerTrack>();
