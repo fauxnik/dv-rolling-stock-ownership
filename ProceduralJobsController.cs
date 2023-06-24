@@ -232,7 +232,7 @@ namespace DVOwnership
 								contiguousSet.Add(currentEquipment);
 							}
 
-							DVOwnership.LogDebug(() => $"Contiguous Equipment: [{contiguousEquipment.Select(set => $"[{set.Aggregate("", (str, eq) => (string.IsNullOrEmpty(str) ? eq.ID : $"{str}, {eq.ID}"))}]").Aggregate("", (str, setStr) => (string.IsNullOrEmpty(str) ? setStr : $"{str}, {setStr}"))}]");
+							LogContiguousEquipment(contiguousEquipment);
 
 							yield return null;
 
@@ -353,6 +353,13 @@ namespace DVOwnership
 		{
 			var allTracks = RailTrackRegistry.AllTracks;
 			return from railTrack in allTracks where railTrack.logicTrack.ID.yardId == stationId select railTrack.logicTrack;
+		}
+
+		private static void LogContiguousEquipment(List<HashSet<Equipment>> contiguousEquipment)
+		{
+			static string joinEquipmentIDsFromHashSet(HashSet<Equipment> set) => string.Join(", ", set.Select(eq => eq.ID));
+			var contiguousEquipmentIDs = string.Join(", ", contiguousEquipment.Select(set => $"[{joinEquipmentIDsFromHashSet(set)}]"));
+			DVOwnership.LogDebug(() => $"Contiguous Equipment: [{contiguousEquipmentIDs}]");
 		}
 	}
 }
