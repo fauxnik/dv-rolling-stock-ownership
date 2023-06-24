@@ -1,4 +1,4 @@
-﻿using DV.Logic.Job;
+using DV.Logic.Job;
 using DVOwnership.Patches;
 using System;
 using System.Collections;
@@ -34,7 +34,7 @@ namespace DVOwnership
 			stationTracks = GetTracksByStationID(stationController.logicStation.ID).ToList();
 		}
 
-		public IEnumerator GenerateJobsCoro(Action onComplete)
+		public IEnumerator GenerateJobsCoro(Action onComplete, IEnumerable<Car> carsToUse = null)
 		{
 			var log = new StringBuilder();
 			int tickCount = Environment.TickCount;
@@ -46,36 +46,44 @@ namespace DVOwnership
 
 			lock (RollingStockManager.syncLock)
 			{
-				// get all (logic) cars in the yard
-				var carsInYard = new HashSet<Car>();
-				foreach (var track in stationTracks)
+				HashSet<Car> carsInYard;
+				if (carsToUse != null)
 				{
-					yield return null;
-
-					// respawn equipment on track
-					foreach (var equipment in manager.GetEquipmentOnTrack(track, false))
+					carsInYard = carsToUse.ToHashSet();
+				}
+				else
+				{
+					// get all (logic) cars in the yard
+					carsInYard = new HashSet<Car>();
+					foreach (var track in stationTracks)
 					{
 						yield return null;
-						equipment.Spawn();
+
+						// respawn equipment on track
+						foreach (var equipment in manager.GetEquipmentOnTrack(track, false))
+						{
+							yield return null;
+							equipment.Spawn();
+						}
+
+						foreach (var car in track.GetCarsFullyOnTrack())
+						{
+							if (Utilities.IsAnySpecialCar(car.carType)) { continue; }
+							carsInYard.Add(car);
+						}
+
+						foreach (var car in track.GetCarsPartiallyOnTrack())
+						{
+							if (Utilities.IsAnySpecialCar(car.carType)) { continue; }
+							carsInYard.Add(car);
+						}
 					}
 
-					foreach (var car in track.GetCarsFullyOnTrack())
-					{
-						if (Utilities.IsAnySpecialCar(car.carType)) { continue; }
-						carsInYard.Add(car);
-					}
-
-					foreach (var car in track.GetCarsPartiallyOnTrack())
-					{
-						if (Utilities.IsAnySpecialCar(car.carType)) { continue; }
-						carsInYard.Add(car);
-					}
+					// get all (logic) cars from player's train
+					var playerTrainCars = PlayerManager.Car?.trainset?.cars ?? new List<TrainCar>();
+					var playerCars = from trainCar in playerTrainCars where !trainCar.IsLoco select trainCar.logicCar;
+					foreach (var car in playerCars) { carsInYard.Add(car); }
 				}
-
-				// get all (logic) cars from player's train
-				var playerTrainCars = PlayerManager.Car?.trainset?.cars ?? new List<TrainCar>();
-				var playerCars = from trainCar in playerTrainCars where !trainCar.IsLoco select trainCar.logicCar;
-				foreach (var car in playerCars) { carsInYard.Add(car); }
 
 				// get all (logic) cars with active jobs
 				var carsWithJobs = new HashSet<Car>();
