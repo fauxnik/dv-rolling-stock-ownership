@@ -288,7 +288,7 @@ namespace DVOwnership
 						jobsGenerated++;
 						var trainCarsForJob = jobChainController.trainCarsForJobChain;
 						carsInYard.ExceptWith(from trainCar in trainCarsForJob select trainCar.logicCar);
-						log.Append($"Generated {jobType} job with cars {string.Join(", ", trainCarsForJob.Select(tc => tc.ID))}.\n			  ");
+						log.Append($"Generated {jobType} job with cars {string.Join(", ", trainCarsForJob.Select(tc => tc.ID))}.\n");
 					}
 					else
 					{
