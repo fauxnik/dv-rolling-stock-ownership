@@ -126,23 +126,26 @@ namespace DVOwnership
 
 		public static void OnCriticalFailure(Exception exception, string action)
 		{
-			// TODO: show floaty message (and offer to open log folder?) before quitting game
 			Debug.Log(exception);
+			string message = $"DVOwnership encountered an unrecoverable error while {action}";
 #if DEBUG
+			message += ".";
 #else
 			modEntry.Enabled = false;
-			modEntry.Logger.Critical("Deactivating mod DVOwnership due to unrecoverable failure!");
+			message += " and has been deactivated.";
 #endif
-			modEntry.Logger.Critical($"This happened while {action}.");
-			modEntry.Logger.Critical($"You can reactivate DVOwnership by restarting the game, but this failure type likely indicates an incompatibility between the mod and a recent game update. Please search the mod's Github issue tracker for a relevant report. If none is found, please open one and include this log file.");
-			Application.Quit();
+			modEntry.Logger.Critical(message);
+			modEntry.Logger.Critical($"You can reactivate DVOwnership from the UMM Settings menu, but this failure type likely indicates an incompatibility between the mod and a recent game update. Please search the mod's Github issue tracker for a relevant report. If none is found, please open one and include this log file.");
+			MessageBox.ShowMessage(message + " View the Player.log file for more details.\n\nThe game will exit after this message is closed.", true);
+			MessageBox.OnClosed(() => { Application.Quit(); });
 		}
 
 		private static void NeedsUpdate()
 		{
-			// TODO: show floaty message before quitting game
-			modEntry.Logger.Critical($"There is a new version of DVOwnership available. Please install it to continue using the mod.\nInstalled: {modEntry.Version}\nLatest: {modEntry.NewestVersion}");
-			Application.Quit();
+			var message = $"There is a new version of DVOwnership available. Please install it to continue using the mod.\nInstalled: {modEntry.Version}\nLatest: {modEntry.NewestVersion}";
+			modEntry.Logger.Critical(message);
+			MessageBox.ShowMessage(message + "\n\nThe game will exit after this message is closed.", true);
+			MessageBox.OnClosed(() => { Application.Quit(); });
 		}
 	}
 }
