@@ -1,4 +1,4 @@
-using DVOwnership.Patches;
+﻿using DVOwnership.Patches;
 using Harmony12;
 using System;
 using System.Reflection;
@@ -36,6 +36,8 @@ namespace DVOwnership
 				LogWarning("Unabled to load mod settings. Using defaults instead.");
 				Settings = new Settings();
 			}
+			modEntry.OnGUI = Settings.Draw;
+			modEntry.OnSaveGUI = Settings.Save;
 
 			try
 			{
