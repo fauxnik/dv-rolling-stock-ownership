@@ -2,7 +2,7 @@
 	"Id": "DVOwnership",
 	"DisplayName": "Rolling Stock Ownership",
 	"Author": "fauxnik",
-	"Version": "1.1.0",
+	"Version": "1.2.0",
 	"AssemblyName": "DVOwnership.dll",
 	"EntryMethod": "DVOwnership.DVOwnership.OnLoad",
 	"LoadAfter": [],
