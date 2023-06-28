@@ -1,4 +1,3 @@
-#nullable enable
 using Harmony12;
 using System;
 using System.Collections;

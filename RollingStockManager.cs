@@ -1,6 +1,7 @@
 ﻿using DV.Logic.Job;
 using DVOwnership.Patches;
 using Newtonsoft.Json.Linq;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -37,7 +38,7 @@ namespace DVOwnership
 			return equipment.FirstOrDefault();
 		}
 
-		public Equipment FindByCarGUID(string carGuid)
+		public Equipment? FindByCarGUID(string? carGuid)
 		{
 			//DVOwnership.LogDebug(() => $"Looking up equipment record from the rolling stock registry by car GUID {carGuid}.");
 			var equipment = from eq in registry where eq.CarGUID == carGuid select eq;
@@ -60,10 +61,16 @@ namespace DVOwnership
 				seenGuids.Add(next.CarGUID);
 
 				var frontGuid = next.CarGuidCoupledFront;
-				if (next.IsCoupledFront && !seenGuids.Contains(frontGuid)) { q.Enqueue(FindByCarGUID(frontGuid)); }
+				if (next.IsCoupledFront && !seenGuids.Contains(frontGuid!) && FindByCarGUID(frontGuid) is Equipment frontCar) // IsCoupledFront checks for null car guid
+				{
+					q.Enqueue(frontCar);
+				}
 
 				var rearGuid = next.CarGuidCoupledRear;
-				if (next.IsCoupledRear && !seenGuids.Contains(rearGuid)) { q.Enqueue(FindByCarGUID(rearGuid)); }
+				if (next.IsCoupledRear && !seenGuids.Contains(rearGuid!) && FindByCarGUID(rearGuid) is Equipment rearCar) // IsCoupledRear checks for null car guid
+				{
+					q.Enqueue(rearCar);
+				}
 			}
 
 			return connectedEquipment;
@@ -87,8 +94,16 @@ namespace DVOwnership
 			{
 				if (token.Type != JTokenType.Object) { continue; }
 
-				Add(Equipment.FromSaveData((JObject)token));
-				countLoaded++;
+				try
+				{
+					Add(Equipment.FromSaveData((JObject)token));
+					countLoaded++;
+				}
+				catch (Exception exception)
+				{
+					// log the exception, but continue trying to load
+					DVOwnership.LogWarning(exception);
+				}
 			}
 			DVOwnership.Log($"Loaded {countLoaded} equipment records into the rolling stock registry.");
 		}

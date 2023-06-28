@@ -43,7 +43,7 @@ namespace DVOwnership.Patches
 			return false;
 		}
 
-		public static StationProceduralJobsController JobsControllerForStation(StationController stationController)
+		public static StationProceduralJobsController? JobsControllerForStation(StationController stationController)
 		{
 			if (instances.TryGetValue(stationController, out StationProceduralJobsController jobsController))
 			{
@@ -62,7 +62,7 @@ namespace DVOwnership.Patches
 			return true;
 		}
 
-		private static void StartJobGenerationCoroutine(StationProceduralJobsController instance, StationController stationController, IEnumerable<Car> carsToUse = null)
+		private static void StartJobGenerationCoroutine(StationProceduralJobsController instance, StationController stationController, IEnumerable<Car>? carsToUse = null)
 		{
 			instance.StopJobGeneration();
 			ProceduralJobsController jobsController = ProceduralJobsController.ForStation(stationController);

@@ -6,13 +6,13 @@ namespace DVOwnership
 {
 	public class CommsRadio
 	{
-		public static CommsRadioController Controller => controller;
-		private static CommsRadioController controller;
+		public static CommsRadioController? Controller => controller;
+		private static CommsRadioController? controller;
 
 		[HarmonyPatch(typeof(CommsRadioController), "Awake")]
 		class CommsRadioController_Awake_Patch
 		{
-			public static CommsRadioEquipmentPurchaser equipmentPurchaser = null;
+			public static CommsRadioEquipmentPurchaser? equipmentPurchaser = null;
 
 			static void Postfix(CommsRadioController __instance, List<ICommsRadioMode> ___allModes)
 			{

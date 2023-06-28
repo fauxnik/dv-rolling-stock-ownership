@@ -34,7 +34,7 @@ namespace DVOwnership
 			stationTracks = GetTracksByStationID(stationController.logicStation.ID).ToList();
 		}
 
-		public IEnumerator GenerateJobsCoro(Action onComplete, IEnumerable<Car> carsToUse = null)
+		public IEnumerator GenerateJobsCoro(Action onComplete, IEnumerable<Car>? carsToUse = null)
 		{
 			var log = new StringBuilder();
 			int tickCount = Environment.TickCount;
@@ -141,8 +141,8 @@ namespace DVOwnership
 
 					DVOwnership.LogDebug(() => $"Attempting to generate job for car {thisCar.ID}.");
 
-					JobChainController jobChainController = null;
-					var thisEquipment = manager.FindByCarGUID(thisCar.carGuid);
+					JobChainController? jobChainController = null;
+					if (!(manager.FindByCarGUID(thisCar.carGuid) is Equipment thisEquipment)) { continue; }
 					var carsForJob = new HashSet<Car> { thisCar };
 
 					string jobType = "unknown";
@@ -159,7 +159,7 @@ namespace DVOwnership
 							var indexInCargoGroups = rng.Next(countCargoGroups);
 							var cargoGroup = potentialCargoGroups.ElementAt(indexInCargoGroups);
 
-							DVOwnership.LogDebug(() => $"Attempting to generate freight haul job using cargo group {indexInCargoGroups + 1} of {countCargoGroups} possible groups.");
+							DVOwnership.LogDebug(() => $"Attempting to generate freight haul job using cargo group {cargoGroup}, {indexInCargoGroups + 1} of {countCargoGroups} possible groups.");
 
 							yield return null;
 							carsForJob.UnionWith(GetMatchingCoupledCars(thisEquipment, cargoGroup, carsInYard, maxCarsPerJob));
@@ -176,7 +176,7 @@ namespace DVOwnership
 								DVOwnership.LogDebug(() => $"Didn't meet the minimum number of cars per job ({minCarsPerJob}).");
 							}
 						}
-						else if (unloadStartingJobSupported && thisEquipment.DestinationID == stationId && inputCargoGroups.Any(group => group.cargoTypes.Contains(cargoTypeInCar)))
+						else if (unloadStartingJobSupported && thisEquipment?.DestinationID == stationId && inputCargoGroups.Any(group => group.cargoTypes.Contains(cargoTypeInCar)))
 						{
 							// Player previously hauled car here, generate shunting unload job
 							jobType = JobType.ShuntingUnload.ToString();
@@ -228,6 +228,8 @@ namespace DVOwnership
 							var contiguousEquipment = new List<HashSet<Equipment>>();
 							foreach (var currentEquipment in potentialEquipment)
 							{
+								if (currentEquipment == null) { continue; }
+
 								var currentCarGUID = currentEquipment.CarGUID;
 								var contiguousSet = contiguousEquipment.Find(set => set.Any(equipmentFromSet => equipmentFromSet.IsCoupledTo(currentCarGUID)));
 
@@ -245,7 +247,7 @@ namespace DVOwnership
 							yield return null;
 
 							// Get the train set that includes the original car (and remove it from the list to avoid double processing)
-							var thisEquipmentSet = contiguousEquipment.Find(set => set.Contains(thisEquipment));
+							var thisEquipmentSet = thisEquipment != null ? contiguousEquipment.Find(set => set.Contains(thisEquipment)) : new HashSet<Equipment>();
 							contiguousEquipment.Remove(thisEquipmentSet);
 
 							yield return null;
@@ -268,8 +270,8 @@ namespace DVOwnership
 							{
 								foreach (var equipment in equipmentSet)
 								{
-									var car = equipment.GetLogicCar();
-									carsForJob.Add(car);
+									if (equipment.GetLogicCar() is Car car) { carsForJob.Add(car); }
+									else { DVOwnership.LogError($"Logic car for equipment with ID {equipment.ID} not found. This shouldn't happen."); }
 								}
 							}
 
@@ -324,11 +326,12 @@ namespace DVOwnership
 		{
 			var manager = SingletonBehaviour<RollingStockManager>.Instance;
 			var cars = new HashSet<Car>();
+			if (manager == null) { return cars; }
 
 			// Move outward from car, seeking adjacent coupled cars that match the cargo group
 			var seekQ = new Queue<Equipment>();
 			var seenEquipment = new HashSet<Equipment>();
-			Equipment coupledEquipment;
+			Equipment? coupledEquipment;
 			coupledEquipment = manager.FindByCarGUID(equipment.CarGuidCoupledFront);
 			if (coupledEquipment != null) { seekQ.Enqueue(coupledEquipment); }
 			coupledEquipment = manager.FindByCarGUID(equipment.CarGuidCoupledRear);
@@ -339,7 +342,10 @@ namespace DVOwnership
 				seenEquipment.Add(possibleMatch);
 
 				var possibleMatchLogicCar = possibleMatch.GetLogicCar();
-				if (!carsInYard.Contains(possibleMatchLogicCar) || !cargoGroup.cargoTypes.Contains(possibleMatchLogicCar.CurrentCargoTypeInCar)) { continue; }
+				if (possibleMatchLogicCar == null || !carsInYard.Contains(possibleMatchLogicCar) || !cargoGroup.cargoTypes.Contains(possibleMatchLogicCar.CurrentCargoTypeInCar))
+				{
+					continue;
+				}
 
 				cars.Add(possibleMatchLogicCar);
 				if (possibleMatch.IsCoupledFront)

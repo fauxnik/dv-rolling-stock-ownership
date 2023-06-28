@@ -27,9 +27,8 @@ namespace DVOwnership
 			try
 			{
 				// Crew vehicles use the vanilla crew vehicle summoning logic, so they can't be purchased.
-				var summoner = CommsRadio.Controller.crewVehicleControl;
-				var garageCarSpawners = AccessTools.Field(typeof(CommsRadioCrewVehicle), "garageCarSpawners").GetValue(summoner) as GarageCarSpawner[];
-				if (garageCarSpawners != null)
+				if (!(CommsRadio.Controller?.crewVehicleControl is CommsRadioCrewVehicle summoner)) { throw new Exception("Crew vehicle radio mode could not be found!"); }
+				if (AccessTools.Field(typeof(CommsRadioCrewVehicle), "garageCarSpawners").GetValue(summoner) is GarageCarSpawner[] garageCarSpawners)
 				{
 					foreach (var garageSpawner in garageCarSpawners)
 					{

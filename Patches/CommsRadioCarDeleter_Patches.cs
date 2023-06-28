@@ -1,17 +1,12 @@
 ﻿using DV;
 using Harmony12;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace DVOwnership.Patches
 {
 	public class CommsRadioCarDeleter_Patches
 	{
 		private static bool isSetup = false;
-		private static string carToMaybeDeleteGuid;
+		private static string? carToMaybeDeleteGuid;
 
 		public static void Setup()
 		{
@@ -57,7 +52,7 @@ namespace DVOwnership.Patches
 
 			DVOwnership.Log($"Removing equipment with ID {equipment.ID} from the rolling stock registry.");
 
-			manager.Remove(equipment);
+			manager?.Remove(equipment);
 			carToMaybeDeleteGuid = null;
 		}
 	}

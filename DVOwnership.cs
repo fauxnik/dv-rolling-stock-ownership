@@ -10,10 +10,12 @@ namespace DVOwnership
 {
 	public static class DVOwnership
 	{
+#nullable disable // these are set or created when the mod loads
 		private static UnityModManager.ModEntry modEntry;
 		private static HarmonyInstance harmony;
 
 		public static Settings Settings { get; private set; }
+#nullable restore
 		public static Version Version { get { return modEntry.Version; } }
 		public static string DisplayName { get { return modEntry.Info.DisplayName; } }
 		public static string Id { get { return modEntry.Info.Id; } }
@@ -31,7 +33,7 @@ namespace DVOwnership
 			//	return;
 			//}
 
-			try { Settings = Settings.Load<Settings>(modEntry); }
+			try { Settings = UnityModManager.ModSettings.Load<Settings>(modEntry); }
 			catch {
 				LogWarning("Unabled to load mod settings. Using defaults instead.");
 				Settings = new Settings();
@@ -80,7 +82,7 @@ namespace DVOwnership
 			catch (Exception e) { OnCriticalFailure(e, "patching UnusedTrainCarDeleter"); }
 		}
 
-		public static DynamicMethod Patch(MethodBase original, HarmonyMethod prefix = null, HarmonyMethod postfix = null, HarmonyMethod transpiler = null)
+		public static DynamicMethod Patch(MethodBase original, HarmonyMethod? prefix = null, HarmonyMethod? postfix = null, HarmonyMethod? transpiler = null)
 		{
 			return harmony.Patch(original, prefix, postfix, transpiler);
 		}

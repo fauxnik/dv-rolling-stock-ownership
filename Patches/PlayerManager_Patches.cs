@@ -37,7 +37,7 @@ namespace DVOwnership.Patches
 			if (nextLoco != prevLoco && isNextLocoStationary && isPrevLocoMoving)
 			{
 				DVOwnership.Log($"Restoring {prevLoco} as Player's last loco, because it is moving and {nextLoco} is not.");
-				___LastLoco = prevLoco;
+				___LastLoco = prevLoco!; // isPrevLocoMoving can't be true if prevLoco is null
 			}
 		}
 	}
