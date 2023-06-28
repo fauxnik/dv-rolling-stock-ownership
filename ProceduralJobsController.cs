@@ -120,7 +120,7 @@ namespace DVOwnership
 				carsInYard.ExceptWith(carsWithJobs);
 
 				var minCarsPerJob = Math.Min(proceduralRuleset.minCarsPerJob, carsInYard.Count);
-				var maxCarsPerJob = proceduralRuleset.maxCarsPerJob;
+				var maxCarsPerJob = Math.Min(proceduralRuleset.maxCarsPerJob, LicenseManager.GetMaxNumberOfCarsPerJobWithAcquiredJobLicenses());
 				var maxShuntingStorageTracks = proceduralRuleset.maxShuntingStorageTracks;
 				var haulStartingJobSupported = proceduralRuleset.haulStartingJobSupported;
 				var unloadStartingJobSupported = proceduralRuleset.unloadStartingJobSupported;
@@ -162,14 +162,18 @@ namespace DVOwnership
 							DVOwnership.LogDebug(() => $"Attempting to generate freight haul job using cargo group {indexInCargoGroups + 1} of {countCargoGroups} possible groups.");
 
 							yield return null;
-							carsForJob.UnionWith(GetMatchingCoupledCars(thisEquipment, cargoGroup, carsInYard, maxCarsPerJob));
+							carsForJob.UnionWith(GetMatchingCoupledCars(thisEquipment, cargoGroup, carsInYard, maxCarsPerJob - carsForJob.Count));
 
-							// Generate the job, but only if it meets the minimum requirements
-							if (carsForJob.Count >= minCarsPerJob)
+							// Generate the job, but only if it meets the length requirements
+							if (carsForJob.Count >= minCarsPerJob && carsForJob.Count <= maxCarsPerJob)
 							{
 								DVOwnership.LogDebug(() => $"Generating freight haul job for {carsForJob.Count} cars: [{string.Join(", ", carsForJob.Select(car => car.ID))}]");
 								yield return null;
 								jobChainController = ProceduralJobGenerators.GenerateHaulChainJobForCars(rng, carsForJob.ToList(), cargoGroup, stationController);
+							}
+							else if (carsForJob.Count > maxCarsPerJob)
+							{
+								DVOwnership.LogDebug(() => $"Exceeded the maximum number of cars per job ({maxCarsPerJob}).");
 							}
 							else
 							{
@@ -188,14 +192,18 @@ namespace DVOwnership
 							DVOwnership.LogDebug(() => $"Attempting to generate shunting unload job using cargo group {indexInCargoGroups + 1} of {countCargoGroups} possible groups.");
 
 							yield return null;
-							carsForJob.UnionWith(GetMatchingCoupledCars(thisEquipment, cargoGroup, carsInYard, maxCarsPerJob));
+							carsForJob.UnionWith(GetMatchingCoupledCars(thisEquipment, cargoGroup, carsInYard, maxCarsPerJob - carsForJob.Count));
 
-							// Generate the job, but only if it meets the minimum requirements
-							if (carsForJob.Count >= minCarsPerJob)
+							// Generate the job, but only if it meets the length requirements
+							if (carsForJob.Count >= minCarsPerJob && carsForJob.Count <= maxCarsPerJob)
 							{
 								DVOwnership.LogDebug(() => $"Generating shunting unload job for {carsForJob.Count} cars: [{string.Join(", ", carsForJob.Select(car => car.ID))}]");
 								yield return null;
 								jobChainController = ProceduralJobGenerators.GenerateUnloadChainJobForCars(rng, carsForJob.ToList(), cargoGroup, stationController);
+							}
+							else if (carsForJob.Count > maxCarsPerJob)
+							{
+								DVOwnership.LogDebug(() => $"Exceeded the maximum number of cars per job ({maxCarsPerJob}).");
 							}
 							else
 							{
@@ -273,8 +281,8 @@ namespace DVOwnership
 								}
 							}
 
-							// Generate the job, but only if it meets the minimum requirements
-							if (carsForJob.Count >= minCarsPerJob)
+							// Generate the job, but only if it meets the length requirements
+							if (carsForJob.Count >= minCarsPerJob && carsForJob.Count <= maxCarsPerJob)
 							{
 								DVOwnership.LogDebug(() => $"Generating shunting load job for {carsForJob.Count} cars: [{string.Join(", ", carsForJob.Select(car => car.ID))}]");
 								yield return null;
@@ -282,6 +290,10 @@ namespace DVOwnership
 									from equipmentSet in equipmentSetsForJob
 									select (from equipment in equipmentSet select equipment.GetLogicCar()).ToList();
 								jobChainController = ProceduralJobGenerators.GenerateLoadChainJobForCars(rng, carSetsForJob.ToList(), cargoGroup, stationController);
+							}
+							else if (carsForJob.Count > maxCarsPerJob)
+							{
+								DVOwnership.LogDebug(() => $"Exceeded the maximum number of cars per job ({maxCarsPerJob}).");
 							}
 							else
 							{
@@ -320,7 +332,7 @@ namespace DVOwnership
 			yield break;
 		}
 
-		private static HashSet<Car> GetMatchingCoupledCars(Equipment equipment, CargoGroup cargoGroup, HashSet<Car> carsInYard, int maxCarsPerJob)
+		private static HashSet<Car> GetMatchingCoupledCars(Equipment equipment, CargoGroup cargoGroup, HashSet<Car> carsInYard, int maxCarsToReturn)
 		{
 			var manager = SingletonBehaviour<RollingStockManager>.Instance;
 			var cars = new HashSet<Car>();
@@ -333,7 +345,7 @@ namespace DVOwnership
 			if (coupledEquipment != null) { seekQ.Enqueue(coupledEquipment); }
 			coupledEquipment = manager.FindByCarGUID(equipment.CarGuidCoupledRear);
 			if (coupledEquipment != null) { seekQ.Enqueue(coupledEquipment); }
-			while (seekQ.Count > 0 && cars.Count < maxCarsPerJob)
+			while (seekQ.Count > 0 && cars.Count < maxCarsToReturn)
 			{
 				var possibleMatch = seekQ.Dequeue();
 				seenEquipment.Add(possibleMatch);
