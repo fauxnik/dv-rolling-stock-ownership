@@ -1,5 +1,3 @@
 {
-	"dotnet.defaultSolution": "DVOwnership.sln",
-	"editor.insertSpaces": false,
-	"editor.detectIndentation": false
+    "dotnet.defaultSolution": "DVOwnership.sln"
 }

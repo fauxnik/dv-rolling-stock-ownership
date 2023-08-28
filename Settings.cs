@@ -2,24 +2,19 @@
 
 namespace DVOwnership
 {
-	public class Settings : UnityModManager.ModSettings, IDrawable
-	{
-		[Draw("Log level")]
-		public LogLevel selectedLogLevel =
+    public class Settings : UnityModManager.ModSettings, IDrawable
+    {
+        [Draw("Log level")]
+        public LogLevel selectedLogLevel =
 #if DEBUG
-			LogLevel.Debug;
+            LogLevel.Info;
 #else
-			LogLevel.Warn;
+            LogLevel.Warn;
 #endif
 
-		[Draw("Scale equipment price with career difficulty")]
-		public bool isPriceScaledWithDifficulty = false;
+        [Draw("Scale equipment price with career difficulty")]
+        public bool isPriceScaledWithDifficulty = false;
 
-		public void OnChange() { }
-
-		public override void Save(UnityModManager.ModEntry modEntry)
-		{
-			Save<Settings>(this, modEntry);
-		}
-	}
+        public void OnChange() { }
+    }
 }

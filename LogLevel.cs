@@ -1,10 +1,10 @@
 ﻿namespace DVOwnership
 {
-	public enum LogLevel
-	{
-		Debug,
-		Info,
-		Warn,
-		Error,
-	}
+    public enum LogLevel
+    {
+        Debug,
+        Info,
+        Warn,
+        Error,
+    }
 }
