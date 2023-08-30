@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 
 namespace DVOwnership
@@ -10,25 +11,24 @@ namespace DVOwnership
 		{
 			get
 			{
-				if (memoCarTypes == null) { memoCarTypes = GetAllCarTypes(); }
+				memoCarTypes ??= GetAllCarTypes();
 				return memoCarTypes;
 			}
 		}
 
-		private static IEnumerable<TrainCarType> memoCarTypes;
+		private static IEnumerable<TrainCarType>? memoCarTypes;
 
 		private static IEnumerable<TrainCarType> GetAllCarTypes()
 		{
 			var vanillaTypes = Enum.GetValues(typeof(TrainCarType)).Cast<TrainCarType>();
-			IEnumerable<TrainCarType> customTypes;
-			if (TryPullCustomTypes(out customTypes))
+			if (TryPullCustomTypes(out var customTypes))
 			{
 				return vanillaTypes.Concat(customTypes);
 			}
 			return vanillaTypes;
 		}
 
-		private static bool TryPullCustomTypes(out IEnumerable<TrainCarType> customTypes)
+		private static bool TryPullCustomTypes([MaybeNullWhen(false)] out IEnumerable<TrainCarType> customTypes)
 		{
 			try
 			{
@@ -38,7 +38,7 @@ namespace DVOwnership
 			}
 			catch (System.IO.FileNotFoundException)
 			{
-				customTypes= null;
+				customTypes = null;
 				DVOwnership.Log("DVCustomCarLoader not installed, skipping.");
 				return false;
 			}

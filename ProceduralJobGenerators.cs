@@ -8,12 +8,12 @@ namespace DVOwnership
 {
 	public static class ProceduralJobGenerators
 	{
-		public static JobChainController GenerateHaulChainJobForCars(System.Random rng, List<Car> carsForJob, CargoGroup cargoGroup, StationController originController)
+		public static JobChainController? GenerateHaulChainJobForCars(System.Random rng, List<Car> carsForJob, CargoGroup cargoGroup, StationController originController)
 		{
 			return GenerateHaulChainJobForCars(rng, carsForJob, originController, Utilities.GetRandomFrom(rng, cargoGroup.stations));
 		}
 
-		private static JobChainController GenerateHaulChainJobForCars(System.Random rng, List<Car> carsForJob, StationController originController, StationController destinationController)
+		private static JobChainController? GenerateHaulChainJobForCars(System.Random rng, List<Car> carsForJob, StationController originController, StationController destinationController)
 		{
 			var yto = YardTracksOrganizer.Instance;
 
@@ -61,12 +61,12 @@ namespace DVOwnership
 			return jobChainController;
 		}
 
-		public static JobChainController GenerateUnloadChainJobForCars(System.Random rng, List<Car> carsForJob, CargoGroup cargoGroup, StationController destinationController)
+		public static JobChainController? GenerateUnloadChainJobForCars(System.Random rng, List<Car> carsForJob, CargoGroup cargoGroup, StationController destinationController)
 		{
 			return GenerateUnloadChainJobForCars(rng, carsForJob, Utilities.GetRandomFrom(rng, cargoGroup.stations), destinationController);
 		}
 
-		private static JobChainController GenerateUnloadChainJobForCars(System.Random rng, List<Car> carsForJob, StationController originController, StationController destinationController)
+		private static JobChainController? GenerateUnloadChainJobForCars(System.Random rng, List<Car> carsForJob, StationController originController, StationController destinationController)
 		{
 			var yto = YardTracksOrganizer.Instance;
 			var generationRuleset = destinationController.proceduralJobsRuleset;
@@ -130,7 +130,7 @@ namespace DVOwnership
 			return jobChainController;
 		}
 
-		public static JobChainController GenerateLoadChainJobForCars(System.Random rng, List<List<Car>> carSetsForJob, CargoGroup cargoGroup, StationController originController)
+		public static JobChainController? GenerateLoadChainJobForCars(System.Random rng, List<List<Car>> carSetsForJob, CargoGroup cargoGroup, StationController originController)
 		{
 			var yto = YardTracksOrganizer.Instance;
 
@@ -255,7 +255,7 @@ namespace DVOwnership
 			return jobDefinition;
 		}
 
-		public static void SetDestination(JobChainController controller, string destinationID)
+		public static void SetDestination(JobChainController controller, string? destinationID)
 		{
 			var rollingStock = SingletonBehaviour<RollingStockManager>.Instance;
 			var trainCars = controller.trainCarsForJobChain;
@@ -266,7 +266,7 @@ namespace DVOwnership
 			}
 		}
 
-		public static void GenerateContinuationTransportJob(JobChainController jobChainController, StationController originController, StationController destinationController)
+		public static void GenerateContinuationTransportJob(JobChainController? jobChainController, StationController originController, StationController destinationController)
 		{
 			var trainCars = jobChainController?.trainCarsForJobChain;
 			if (trainCars == null)
@@ -293,7 +293,7 @@ namespace DVOwnership
 			DVOwnership.Log($"Generated freight haul job {jobChainController.currentJobInChain.ID} as continuation of {completedJobID}.");
 		}
 
-		public static void GenerateContinuationUnloadJob(JobChainController jobChainController, StationController originController, StationController destinationController)
+		public static void GenerateContinuationUnloadJob(JobChainController? jobChainController, StationController originController, StationController destinationController)
 		{
 			var trainCars = jobChainController?.trainCarsForJobChain;
 			if (trainCars == null)

@@ -42,34 +42,38 @@ namespace DVOwnership
 		private const string ACTION_CONFIRM_PURCHASE = "confirm";
 		private const string ACTION_CANCEL = "cancel";
 
-		public Transform signalOrigin;
 		public void OverrideSignalOrigin(Transform signalOrigin) { this.signalOrigin = signalOrigin; }
 
+#nullable disable // the mod logs a critical failure if these don't exist
+		public Transform signalOrigin;
 		public CommsRadioDisplay display;
 		public Material validMaterial;
 		public Material invalidMaterial;
 		public ArrowLCD lcdArrow;
+#nullable restore
 
 		[Header("Sounds")]
-		public AudioClip spawnModeEnterSound;
-		public AudioClip spawnVehicleSound;
-		public AudioClip confirmSound;
-		public AudioClip cancelSound;
-		public AudioClip hoverOverCar;
-		public AudioClip warningSound;
-		public AudioClip moneyRemovedSound;
+		public AudioClip? spawnModeEnterSound;
+		public AudioClip? spawnVehicleSound;
+		public AudioClip? confirmSound;
+		public AudioClip? cancelSound;
+		public AudioClip? hoverOverCar;
+		public AudioClip? warningSound;
+		public AudioClip? moneyRemovedSound;
 
 		[Header("Highlighters")]
+#nullable disable // the mod logs a critical failure if these don't exist
 		public GameObject destinationHighlighterGO;
 		public GameObject directionArrowsHighlighterGO;
 		private CarDestinationHighlighter destinationHighlighter;
+#nullable restore
 		private RaycastHit hit;
 		private LayerMask trackMask;
 		private LayerMask laserPointerMask;
 
-		private List<TrainCarType> carTypesAvailableForPurchase;
+		private List<TrainCarType>? carTypesAvailableForPurchase;
 		private int selectedCarTypeIndex = 0;
-		private GameObject carPrefabToSpawn;
+		private GameObject? carPrefabToSpawn;
 		private Bounds carBounds;
 		private float carLength;
 		private float carPrice;
@@ -77,9 +81,9 @@ namespace DVOwnership
 		private bool spawnWithTrackDirection = true;
 		private List<RailTrack> potentialTracks = new List<RailTrack>();
 		private bool canSpawnAtPoint;
-		private RailTrack destinationTrack;
+		private RailTrack? destinationTrack;
 		private EquiPointSet.Point? closestPointOnDestinationTrack;
-		private Coroutine trackUpdateCoro;
+		private Coroutine? trackUpdateCoro;
 
 		private bool isPurchaseConfirmed = true;
 
@@ -106,17 +110,15 @@ namespace DVOwnership
 			try
 			{
 				// Copy components from other radio modes
-				var summoner = CommsRadio.Controller.crewVehicleControl;
-
-				if (summoner == null) { throw new Exception("Crew vehicle radio mode could not be found!"); }
+				var summoner = (CommsRadio.Controller?.crewVehicleControl) ?? throw new Exception("Crew vehicle radio mode could not be found!");
 
 				signalOrigin = summoner.signalOrigin;
-				display = summoner.display;
-				validMaterial = summoner.validMaterial;
-				invalidMaterial = summoner.invalidMaterial;
-				lcdArrow = summoner.lcdArrow;
-				destinationHighlighterGO = summoner.destinationHighlighterGO;
-				directionArrowsHighlighterGO = summoner.directionArrowsHighlighterGO;
+				display = summoner.display ?? throw new Exception("Comms radio display could not be found!");
+				validMaterial = summoner.validMaterial ?? throw new Exception("Material for valid placement could not be found!");
+				invalidMaterial = summoner.invalidMaterial ?? throw new Exception("Material for invalid placement could not be found!");
+				lcdArrow = summoner.lcdArrow ?? throw new Exception("LCD arrow could not be found!");
+				destinationHighlighterGO = summoner.destinationHighlighterGO ?? throw new Exception("Destination highlighter game object could not be found!");
+				directionArrowsHighlighterGO = summoner.directionArrowsHighlighterGO ?? throw new Exception("Direction arrows highlighter game object could not be found!");
 
 				spawnModeEnterSound = summoner.spawnModeEnterSound;
 				spawnVehicleSound = summoner.spawnVehicleSound;
@@ -134,27 +136,7 @@ namespace DVOwnership
 				signalOrigin = transform;
 			}
 
-			if (display == null)
-			{
-				DVOwnership.LogError("display is missing. Can't function properly!");
-			}
-
-			if (validMaterial == null || invalidMaterial == null)
-			{
-				DVOwnership.LogWarning("Some of the required materials are missing. Visuals won't be correct!");
-			}
-
-			if (destinationHighlighterGO == null)
-			{
-				DVOwnership.LogError("destinationHighlighterGO is missing. Can't function properly!");
-			}
-
-			if (directionArrowsHighlighterGO == null)
-			{
-				DVOwnership.LogError("directionArrowsHighlighterGO is missing. Can't function properly!");
-			}
-
-			if (spawnModeEnterSound == null || spawnVehicleSound == null || confirmSound == null || cancelSound == null || hoverOverCar == null || warningSound == null || moneyRemovedSound == null)
+			if (!spawnModeEnterSound || !spawnVehicleSound || !confirmSound || !cancelSound || !hoverOverCar || !warningSound || !moneyRemovedSound)
 			{
 				DVOwnership.LogWarning("Some audio clips are missing. Some sounds won't be played!");
 			}
@@ -407,7 +389,8 @@ namespace DVOwnership
 
 		private void DisplayCarTypeAndPrice()
 		{
-			var content = string.Format(CONTENT_SELECT_CAR, SelectedCarType.DisplayName(), carPrice.ToString("F0"), CanAfford ? "" : CONTENT_FRAGMENT_INSUFFICIENT_FUNDS);
+			if (!(SelectedCarType is TrainCarType carType)) { return; }
+			var content = string.Format(CONTENT_SELECT_CAR, carType.DisplayName(), carPrice.ToString("F0"), CanAfford ? "" : CONTENT_FRAGMENT_INSUFFICIENT_FUNDS);
 			var action = CanAfford ? ACTION_CONFIRM_SELECTION : ACTION_CANCEL;
 			display.SetContentAndAction(content, action);
 			lcdArrow.TurnOff();
@@ -415,7 +398,8 @@ namespace DVOwnership
 
 		private void DisplayCarTypeAndLength()
 		{
-			var content = string.Format(CONTENT_SELECT_DESTINATION, SelectedCarType.DisplayName(), carLength.ToString("F"), CanAfford ? "" : CONTENT_FRAGMENT_INSUFFICIENT_FUNDS);
+			if (!(SelectedCarType is TrainCarType carType)) { return; }
+			var content = string.Format(CONTENT_SELECT_DESTINATION, carType.DisplayName(), carLength.ToString("F"), CanAfford ? "" : CONTENT_FRAGMENT_INSUFFICIENT_FUNDS);
 			var action = CanAfford && canSpawnAtPoint ? ACTION_CONFIRM_DESTINATION : ACTION_CANCEL;
 			display.SetContentAndAction(content, action);
 			if (canSpawnAtPoint) { UpdateLCDRerailDirectionArrow(); }
@@ -424,7 +408,8 @@ namespace DVOwnership
 
 		private void DisplayPurchaseConfirmation()
 		{
-			var content = string.Format(CONTENT_CONFIRM_PURCHASE, SelectedCarType.DisplayName(), carPrice.ToString("F0"), CanAfford ? "" : CONTENT_FRAGMENT_INSUFFICIENT_FUNDS);
+			if (!(SelectedCarType is TrainCarType carType)) { return; }
+			var content = string.Format(CONTENT_CONFIRM_PURCHASE, carType.DisplayName(), carPrice.ToString("F0"), CanAfford ? "" : CONTENT_FRAGMENT_INSUFFICIENT_FUNDS);
 			var action = CanAfford && isPurchaseConfirmed ? ACTION_CONFIRM_PURCHASE : ACTION_CANCEL;
 			display.SetContentAndAction(content , action);
 			lcdArrow.TurnOff();
@@ -432,6 +417,11 @@ namespace DVOwnership
 
 		private void UpdateLCDRerailDirectionArrow()
 		{
+			if (!closestPointOnDestinationTrack.HasValue)
+			{
+				DVOwnership.OnCriticalFailure(new Exception("CommsRadioEquipmentPurchaser is missing closestPointOnDestinationTrack!"), "updating LCD rerail direction arrow");
+				return;
+			}
 			bool flag = Mathf.Sin(Vector3.SignedAngle(spawnWithTrackDirection ? closestPointOnDestinationTrack.Value.forward : (-closestPointOnDestinationTrack.Value.forward), signalOrigin.forward, Vector3.up) * 0.0174532924f) <= 0f;
 			lcdArrow.TurnOn(!flag);
 		}
@@ -473,21 +463,18 @@ namespace DVOwnership
 
 		private float ScalePriceBasedOnDifficulty(float price, bool isLoco)
 		{
-			switch (GamePreferences.Get<CareerDifficultyValues>(Preferences.CareerDifficulty))
+			return GamePreferences.Get<CareerDifficultyValues>(Preferences.CareerDifficulty) switch
 			{
-				case CareerDifficultyValues.HARDCORE:
-					return Mathf.Pow(price / 10_000f, 1.1f) * 10_000f;
-				case CareerDifficultyValues.CASUAL:
-					return price / (isLoco ? 100f : 10f);
-				default:
-					return price;
-			}
+				CareerDifficultyValues.HARDCORE => Mathf.Pow(price / 10_000f, 1.1f) * 10_000f,
+				CareerDifficultyValues.CASUAL => price / (isLoco ? 100f : 10f),
+				_ => price,
+			};
 		}
 
 		private void DeductFunds(float price)
 		{
 			SingletonBehaviour<Inventory>.Instance.RemoveMoney(price);
-			if (moneyRemovedSound != null) { moneyRemovedSound.Play2D(1f, false); }
+			moneyRemovedSound?.Play2D(1f, false);
 		}
 
 		#endregion
@@ -497,20 +484,20 @@ namespace DVOwnership
 		private void SelectNextCar()
 		{
 			selectedCarTypeIndex++;
-			if (selectedCarTypeIndex >= carTypesAvailableForPurchase.Count) { selectedCarTypeIndex = 0; }
+			if (selectedCarTypeIndex >= (carTypesAvailableForPurchase?.Count ?? 0)) { selectedCarTypeIndex = 0; }
 		}
 
 		private void SelectPrevCar()
 		{
 			selectedCarTypeIndex--;
-			if (selectedCarTypeIndex < 0) { selectedCarTypeIndex = carTypesAvailableForPurchase.Count - 1; }
+			if (selectedCarTypeIndex < 0) { selectedCarTypeIndex = (carTypesAvailableForPurchase?.Count ?? 1) - 1; }
 		}
 
-		private TrainCarType SelectedCarType { get { return carTypesAvailableForPurchase[selectedCarTypeIndex]; } }
+		private TrainCarType? SelectedCarType { get { return carTypesAvailableForPurchase?[selectedCarTypeIndex]; } }
 
 		private void UpdateCarToSpawn()
 		{
-			var carType = SelectedCarType;
+			if (!(SelectedCarType is TrainCarType carType)) { return; }
 
 			carPrice = CalculateCarPrice(carType);
 
@@ -588,6 +575,11 @@ namespace DVOwnership
 
 		private void HighlightClosestPointOnDestinationTrack()
 		{
+			if (!closestPointOnDestinationTrack.HasValue)
+			{
+				DVOwnership.OnCriticalFailure(new Exception("CommsRadioEquipmentPurchaser is missing closestPointOnDestinationTrack!"), "highlighting closest point on destination track");
+				return;
+			}
 			var position = (Vector3)closestPointOnDestinationTrack.Value.position + WorldMover.currentMove;
 			var vector = closestPointOnDestinationTrack.Value.forward;
 			if (!spawnWithTrackDirection) { vector *= -1f; }
@@ -607,6 +599,11 @@ namespace DVOwnership
 		private void SpawnCar()
 		{
 			if (!canSpawnAtPoint) { return; }
+			if (!closestPointOnDestinationTrack.HasValue)
+			{
+				DVOwnership.OnCriticalFailure(new Exception("CommsRadioEquipmentPurchaser is missing closestPointOnDestinationTrack!"), "spawning car");
+				return;
+			}
 
 			var position = (Vector3)closestPointOnDestinationTrack.Value.position + WorldMover.currentMove;
 			var vector = closestPointOnDestinationTrack.Value.forward;

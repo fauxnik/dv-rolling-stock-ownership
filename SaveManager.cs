@@ -60,7 +60,7 @@ namespace DVOwnership
 
 					var rollingStockSaveData = saveData[ROLLING_STOCK_SAVE_KEY];
 					if (rollingStockSaveData == null) { DVOwnership.Log($"Not loading rolling stock; data is null."); }
-					else if (!(rollingStockSaveData.Type == JTokenType.Array)) { throw new Exception($"Tried to load rolling stock, but data type is {rollingStockSaveData.Type}; expected {JTokenType.Array}."); }
+					else if (!(rollingStockSaveData is JArray rollingStockJArray)) { throw new Exception($"Tried to load rolling stock, but data type is {rollingStockSaveData.Type} instead of {JTokenType.Array}."); }
 					else if (loadedTracksHash != tracksHash)
 					{
 						// TODO: handle tracks hash change
@@ -68,7 +68,7 @@ namespace DVOwnership
 					else
 					{
 						var rollingStockManager = SingletonBehaviour<RollingStockManager>.Instance;
-						rollingStockManager.LoadSaveData(rollingStockSaveData as JArray);
+						rollingStockManager.LoadSaveData(rollingStockJArray);
 					}
 
 					// TODO: load more data

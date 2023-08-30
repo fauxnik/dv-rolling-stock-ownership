@@ -15,7 +15,7 @@ namespace DVOwnership
 			return enumerable.ElementAt(index);
 		}
 
-		public static List<CarsPerTrack> GetRandomSortingOfCarsOnTracks(System.Random rng, List<Track> tracks, List<Car> allCarsForJobChain, int maxNumberOfStorageTracks, int minNumberOfCarsPerTrack)
+		public static List<CarsPerTrack>? GetRandomSortingOfCarsOnTracks(System.Random rng, List<Track> tracks, List<Car> allCarsForJobChain, int maxNumberOfStorageTracks, int minNumberOfCarsPerTrack)
 		{
 			if (tracks == null || tracks.Count == 0) { return null; }
 
@@ -111,28 +111,24 @@ namespace DVOwnership
 			return ExtractCarsPerCargoType(cars, (from car in cars select car.CurrentCargoTypeInCar).ToList(), (from car in cars select car.LoadedCargoAmount).ToList());
 		}
 
-		public static List<CarsPerCargoType> ExtractCarsPerCargoType(List<Car> cars, List<CargoType> cargoTypes, List<float> cargoAmounts = null)
+		public static List<CarsPerCargoType> ExtractCarsPerCargoType(List<Car> cars, List<CargoType> cargoTypes, List<float>? cargoAmounts = null)
 		{
-			var hasCargoAmounts = cargoAmounts != null;
-			if (cars.Count != cargoTypes.Count || (hasCargoAmounts && cars.Count != cargoAmounts.Count))
+			if (cars.Count != cargoTypes.Count || (cargoAmounts != null && cars.Count != cargoAmounts.Count))
 			{
 				var messageBuilder = new StringBuilder("Expected lists of the same length, but got ");
 				messageBuilder.Append($"List<Car> of length {cars.Count}");
-				if (hasCargoAmounts)
+				if (cargoAmounts != null)
 					messageBuilder.Append(", ");
 				else
 					messageBuilder.Append(" and ");
 				messageBuilder.Append($"List<CargoType> of length {cargoTypes.Count}");
-				if (hasCargoAmounts)
+				if (cargoAmounts != null)
 					messageBuilder.Append($", and List<float> of length {cargoAmounts.Count}");
 				messageBuilder.Append(".");
 				throw new ArgumentException(messageBuilder.ToString());
 			}
 
-			if (!hasCargoAmounts)
-			{
-				cargoAmounts = (from car in cars select 1f).ToList(); // this may break if the way cargo amounts work gets changed
-			}
+			cargoAmounts ??= (from car in cars select 1f).ToList(); // this may break if the way cargo amounts work gets changed
 
 			var cargoTypeToCarAmountTuples = new Dictionary<CargoType, List<(Car, float)>>();
 

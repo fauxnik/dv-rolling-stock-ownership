@@ -10,7 +10,7 @@ namespace DVOwnership
 	{
 		public static new string AllowAutoCreate() { return "[DVOwnership_ProximityChecker]"; }
 
-		private Coroutine proximityCoro;
+		private Coroutine? proximityCoro;
 
 		private static readonly float DELAY_SECONDS_BETWEEN_CHECK_CYCLES = 5f;
 		private static readonly float SPAWN_SQR_DISTANCE = 360_000f;

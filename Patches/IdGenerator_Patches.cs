@@ -7,7 +7,7 @@ namespace DVOwnership.Patches
 	public class IdGenerator_Patches
 	{
 		private static bool isSetup = false;
-		private static IdGenerator idGenerator;
+		private static IdGenerator? idGenerator;
 
 		public static void Setup()
 		{
@@ -47,7 +47,7 @@ namespace DVOwnership.Patches
 		{
 			DVOwnership.LogDebug(() => $"Registering car ID {carId}.");
 
-			HashSet<string> existingCarIds = AccessTools.Field(typeof(IdGenerator), "existingCarIds").GetValue(idGenerator) as HashSet<string>;
+			HashSet<string>? existingCarIds = AccessTools.Field(typeof(IdGenerator), "existingCarIds").GetValue(idGenerator) as HashSet<string>;
 			if (existingCarIds == null)
 			{
 				DVOwnership.LogError("Couldn't retrieve existingCarIds field from IdGenerator!");
@@ -64,7 +64,7 @@ namespace DVOwnership.Patches
 		{
 			DVOwnership.LogDebug(() => $"Unregistering car ID {carId}.");
 
-			HashSet<string> existingCarIds = AccessTools.Field(typeof(IdGenerator), "existingCarIds").GetValue(idGenerator) as HashSet<string>;
+			HashSet<string>? existingCarIds = AccessTools.Field(typeof(IdGenerator), "existingCarIds").GetValue(idGenerator) as HashSet<string>;
 			if (existingCarIds == null)
 			{
 				DVOwnership.LogError("Couldn't retrieve existingCarIds field from IdGenerator!");
