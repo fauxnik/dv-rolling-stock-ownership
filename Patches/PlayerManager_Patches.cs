@@ -28,17 +28,17 @@ namespace DVOwnership.Patches
             __state = PlayerManager.LastLoco;
         }
 
-        static void SetCar_Postfix(TrainCar __state, ref TrainCar ___LastLoco)
-        {
-            var prevLoco = __state;
-            var nextLoco = PlayerManager.LastLoco;
-            var isNextLocoStationary = nextLoco == null || nextLoco.isStationary;
-            var isPrevLocoMoving = prevLoco != null && !prevLoco.isStationary;
-            if (nextLoco != prevLoco && isNextLocoStationary && isPrevLocoMoving)
-            {
-                DVOwnership.Log($"Restoring {prevLoco} as Player's last loco, because it is moving and {nextLoco} is not.");
-                ___LastLoco = prevLoco;
-            }
-        }
-    }
+		static void SetCar_Postfix(TrainCar __state, ref TrainCar ___LastLoco)
+		{
+			var prevLoco = __state;
+			var nextLoco = PlayerManager.LastLoco;
+			var isNextLocoStationary = nextLoco == null || nextLoco.isStationary;
+			var isPrevLocoMoving = prevLoco != null && !prevLoco.isStationary;
+			if (nextLoco != prevLoco && isNextLocoStationary && isPrevLocoMoving)
+			{
+				DVOwnership.Log($"Restoring {prevLoco} as Player's last loco, because it is moving and {nextLoco} is not.");
+				___LastLoco = prevLoco!; // isPrevLocoMoving can't be true if prevLoco is null
+			}
+		}
+	}
 }

@@ -1,52 +1,52 @@
-﻿using DV.Logic.Job;
-using DV;
+﻿using DV;
 using DV.ThingTypes;
-using HarmonyLib;
 using System.Collections.Generic;
 using System.Linq;
+using System;
 
 namespace DVOwnership.Patches
 {
-    public class CargoTypes_Patches
-    {
-        private static bool isSetup = false;
+	public class CargoTypes_Patches
+	{
+		private static bool isSetup = false;
 
-        public static void Setup()
-        {
-            if (isSetup)
-            {
-                DVOwnership.LogWarning("Trying to setup cargo types patches, but they've already been set up!");
-                return;
-            }
+		public static void Setup()
+		{
+			if (isSetup)
+			{
+				DVOwnership.LogWarning("Trying to setup cargo types patches, but they've already been set up!");
+				return;
+			}
 
-            DVOwnership.Log("Setting up CargoTypes patches.");
+			DVOwnership.Log("Setting up CargoTypes patches.");
 
-            isSetup = true;
-            /*CargoTypes.CarTypeToContainerType[TrainCarType.GondolaGray] = CargoContainerType.Gondola;
-            CargoTypes.CarTypeToContainerType[TrainCarType.GondolaGreen] = CargoContainerType.Gondola;*/
-        }
+			isSetup = true;
+		}
 
-        public static bool CanCarContainOnlyTheseCargoTypes(TrainCarType carType, HashSet<CargoType> cargoTypes)
-        {
-            DVObjectModel types = Globals.G.Types;
-            List<CargoType_v2> supportedCargo = new List<CargoType_v2>();
-            bool loadable = false;
-           foreach(CargoType cargoType in cargoTypes)
-            {
-               if (types.CargoType_to_v2[cargoType].IsLoadableOnCarType(types.TrainCarType_to_v2[carType].parentType))
-                {
-                    DVOwnership.LogError($"CarType[{carType}] does not exist in CarTypeToContainerType map! Returning false.");
-                    supportedCargo.Add(types.CargoType_to_v2[cargoType]);
-                    loadable = true;
-                }
-            }
-            if (!loadable)
-            {
-                return false;
-            }
-            var supportedCargoTypes = supportedCargo;
+		private static Dictionary<TrainCarType, HashSet<CargoType>> loadableCargoTypesPerTrainCarType = new ();
+		private static HashSet<CargoType> GetLoadableCargoTypesForCarType(TrainCarType carType)
+		{
+			DVObjectModel types = Globals.G.Types;
 
-            return supportedCargoTypes.Count() == supportedCargoTypes.Count();
-        }
-    }
+			if (!loadableCargoTypesPerTrainCarType.TryGetValue(carType, out HashSet<CargoType> loadableCargoTypes))
+			{
+				loadableCargoTypes = loadableCargoTypesPerTrainCarType[carType] = new ();
+				foreach (CargoType cargoType in Enum.GetValues(typeof(CargoType)))
+				{
+					if (types.CargoType_to_v2[cargoType].IsLoadableOnCarType(types.TrainCarType_to_v2[carType].parentType))
+					{
+						loadableCargoTypes.Add(cargoType);
+					}
+				}
+			}
+
+			return loadableCargoTypes;
+		}
+
+		public static bool CanCarContainOnlyTheseCargoTypes(TrainCarType carType, HashSet<CargoType> cargoTypes)
+		{
+			IEnumerable<CargoType> supportedCargoTypes = GetLoadableCargoTypesForCarType(carType);
+			return supportedCargoTypes.Count() == supportedCargoTypes.Intersect(cargoTypes).Count();
+		}
+	}
 }

@@ -1,73 +1,64 @@
-#nullable enable
-using Harmony12;
-using System;
+using DV;
+using DV.UI;
+using DV.UIFramework;
+using DV.Utils;
 using System.Collections;
-
-// Copyright 2020 Miles Spielberg
-
-// Permission is hereby granted, free of charge, to any person obtaining
-// a copy of this software and associated documentation files (the
-// "Software"), to deal in the Software without restriction, including
-// without limitation the rights to use, copy, modify, merge, publish,
-// distribute, sublicense, and/or sell copies of the Software, and to
-// permit persons to whom the Software is furnished to do so, subject
-// to the following conditions:
-
-// The above copyright notice and this permission notice shall be
-// included in all copies or substantial portions of the Software.
-
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-// IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR
-// ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
-// CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 namespace DVOwnership
 {
 	public static class MessageBox
 	{
-		public static void ShowMessage(string message, bool pauseGame)
+		public static void ShowPopupOk(string message, string title = "", PopupClosedDelegate? onClose = null)
+		{
+			ShowPopup(uiReferences.popupOk, new PopupLocalizationKeys { titleKey = title, labelKey = message }, onClose);
+		}
+
+		public static void ShowPopupYesNo(string message, string title = "", PopupClosedDelegate? onClose = null)
+		{
+			ShowPopup(uiReferences.popupYesNo, new PopupLocalizationKeys { titleKey = title, labelKey = message }, onClose);
+		}
+
+		public static void ShowPopup3Buttons(string message, string title = "", string positive = "Yes", string negative = "No", string abort = "Abort", PopupClosedDelegate? onClose = null)
+		{
+			ShowPopup(uiReferences.popup3Buttons, new PopupLocalizationKeys {
+				titleKey = title,
+				labelKey = message,
+				positiveKey = positive,
+				negativeKey = negative,
+				abortionKey = abort,
+			}, onClose);
+		}
+
+		private static void ShowPopup(Popup prefab, PopupLocalizationKeys locKeys, PopupClosedDelegate? onClose)
 		{
 			if (WorldStreamingInit.IsLoaded)
 			{
-				StartCoro(message, pauseGame);
+				SingletonBehaviour<CoroutineManager>.Instance.Run(Coro(prefab, locKeys, onClose));
 			}
 			else
 			{
-				WorldStreamingInit.LoadingFinished += () => StartCoro(message, pauseGame);
+				WorldStreamingInit.LoadingFinished += () => SingletonBehaviour<CoroutineManager>.Instance.Run(Coro(prefab, locKeys, onClose));
 			}
 		}
 
-		private static void StartCoro(string message, bool pauseGame)
+		private static IEnumerator Coro(Popup prefab, PopupLocalizationKeys locKeys, PopupClosedDelegate? onClose)
 		{
-			SingletonBehaviour<CanvasSpawner>.Instance.StartCoroutine(Coro(message, pauseGame));
+			while (SingletonBehaviour<AppUtil>.Instance.IsTimePaused)
+				yield return null;
+			while (!PopupManager.CanShowPopup())
+				yield return null;
+			Popup popup = PopupManager.ShowPopup(prefab, locKeys, keepLiteralData: true);
+			if (onClose != null) { popup.Closed += onClose; }
 		}
 
-		private static IEnumerator Coro(string message, bool pauseGame)
+		private static PopupManager PopupManager
 		{
-			while (!SingletonBehaviour<CanvasSpawner>.Instance.MenuLoaded)
-				yield return null;
-			while (DV.AppUtil.IsPaused)
-				yield return null;
-			while (SingletonBehaviour<CanvasSpawner>.Instance.IsOpen)
-				yield return null;
-			yield return WaitFor.Seconds(1f);
-			MenuScreen? menuScreen = SingletonBehaviour<CanvasSpawner>.Instance.CanvasGO.transform.Find("TutorialPrompt")?.GetComponent<MenuScreen>();
-			TutorialPrompt? tutorialPrompt = menuScreen?.GetComponentInChildren<TutorialPrompt>(includeInactive: true);
-			if (menuScreen != null && tutorialPrompt != null)
-			{
-				tutorialPrompt.SetText(message);
-				SingletonBehaviour<CanvasSpawner>.Instance.Open(menuScreen, pauseGame);
-			}
+			get => SingletonBehaviour<ACanvasController<CanvasController.ElementType>>.Instance.PopupManager;
 		}
 
-		public static void OnClosed(Action action)
+		private static PopupNotificationReferences uiReferences
 		{
-			var canvasSpawner = SingletonBehaviour<CanvasSpawner>.Instance;
-			var screenSwitcher = AccessTools.Field(typeof(CanvasSpawner), "screenSwitcher").GetValue(canvasSpawner) as MenuScreenSwitcher;
-			if (screenSwitcher != null) { screenSwitcher.MenuClosed += action; }
+			get => SingletonBehaviour<ACanvasController<CanvasController.ElementType>>.Instance.uiReferences;
 		}
 	}
 }
