@@ -5,6 +5,7 @@ using DV.Utils;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using DV.ThingTypes.TransitionHelpers;
 using System.Linq;
 using UnityEngine;
 
@@ -19,6 +20,7 @@ namespace DVOwnership
 
         private static JobChainController GenerateHaulChainJobForCars(System.Random rng, List<Car> carsForJob, StationController originController, StationController destinationController)
         {
+            DVObjectModel types = Globals.G.Types;
             var yto = YardTracksOrganizer.Instance;
             var carSpawn = CarSpawner.Instance;
             var licenseManager = SingletonBehaviour<LicenseManager>.Instance;
@@ -60,9 +62,13 @@ namespace DVOwnership
             float baseWage = JobPaymentCalculator.CalculateJobPayment(JobType.Transport, distanceBetweenStations, Utilities.ExtractPaymentCalculationData(carsForJob));
             HashSet<JobLicenseType_v2> requiredLicenses = jobLicenses;
             foreach (JobLicenseType_v2 license in licenseManager.GetRequiredLicensesForJobType(JobType.Transport)) { requiredLicenses.Add(license); }
-                
+            JobLicenses licenses = JobLicenses.Basic;
+            foreach (JobLicenseType_v2 license in requiredLicenses)
+            {
+                licenses |= types.JobLicenses_to_v2.FirstOrDefault(x => x.Value == license).Key;
+            }
 
-            var jobDefinition = PopulateHaulJobDefinitionWithExistingCars(jobChainController.jobChainGO, originController.logicStation, startingTrack, destinationTrack, carsForJob, cargoTypes, cargoAmounts, bonusTimeLimit, baseWage, stationsChainData, JobLicenseType_v2.ListToFlags(requiredLicenses));
+            var jobDefinition = PopulateHaulJobDefinitionWithExistingCars(jobChainController.jobChainGO, originController.logicStation, startingTrack, destinationTrack, carsForJob, cargoTypes, cargoAmounts, bonusTimeLimit, baseWage, stationsChainData, licenses);
 
             jobChainController.AddJobDefinitionToChain(jobDefinition);
             jobChainController.FinalizeSetupAndGenerateFirstJob();
@@ -152,8 +158,8 @@ namespace DVOwnership
         public static JobChainController GenerateLoadChainJobForCars(System.Random rng, List<List<Car>> carSetsForJob, CargoGroup cargoGroup, StationController originController)
         {
 
-            var yto = YardTracksOrganizer.Instance;
-            var carSpawn = CarSpawner.Instance;
+            var yto = SingletonBehaviour<YardTracksOrganizer>.Instance;
+            var carSpawn = SingletonBehaviour<CarSpawner>.Instance;
             var licenseManager = SingletonBehaviour<LicenseManager>.Instance;
 
             List<CarsPerTrack> carsPerStartingTrack = new List<CarsPerTrack>();
@@ -163,7 +169,7 @@ namespace DVOwnership
             DVObjectModel types = Globals.G.Types;
             foreach (CargoType cargotype in cargoGroup.cargoTypes)
             {
-                DVOwnership.Log($"Cargo : {cargotype.ToString()}");
+                DVOwnership.LogDebug(() => $"Cargo : {cargotype.ToString()}");
                 cargoTypes_V2.Add(types.CargoType_to_v2[cargotype]);
             }
             
@@ -194,7 +200,7 @@ namespace DVOwnership
                     cargoTypes.Add(types.CargoType_to_v2.FirstOrDefault(x => x.Value == selectedCargoType).Key);
                 }
             }
-            List<CarsPerCargoType> carsPerCargoTypes = Utilities.ExtractCarsPerCargoType(carsForJob);
+            List<CarsPerCargoType> carsPerCargoTypes = Utilities.ExtractCarsPerCargoType(carsForJob, cargoTypes_V2);
 
             float approxLengthOfWholeTrain = carSpawn.GetTotalCarsLength(carsForJob) + carSpawn.GetSeparationLengthBetweenCars(carsForJob.Count);
 
@@ -238,17 +244,14 @@ namespace DVOwnership
             float baseWage = JobPaymentCalculator.CalculateJobPayment(JobType.ShuntingLoad, distanceInMeters, Utilities.ExtractPaymentCalculationData(carsForJob));
             HashSet<JobLicenseType_v2> requiredLicenses = jobLicenses;
             foreach (JobLicenseType_v2 license in licenseManager.GetRequiredLicensesForJobType(JobType.ShuntingLoad)) { requiredLicenses.Add(license); }
-            DVOwnership.Log($" Nb license req : {requiredLicenses.Count}");
+            DVOwnership.LogDebug(() =>$" Nb license req : {requiredLicenses.Count}");
             JobLicenses licenses = JobLicenses.Basic;
             foreach (JobLicenseType_v2 license in requiredLicenses) {
                 licenses |= types.JobLicenses_to_v2.FirstOrDefault(x => x.Value == license).Key;
              }
             var jobDefinition = PopulateShuntingLoadJobDefinitionWithExistingCars(jobChainController.jobChainGO, originController.logicStation, carsPerStartingTrack, warehouseMachine, carsPerCargoTypes, destinationTrack, bonusTimeLimit, baseWage, stationsChainData, licenses);
-            DVOwnership.Log("After populate job def");
             jobChainController.AddJobDefinitionToChain(jobDefinition);
-            DVOwnership.Log("After job job def");
             jobChainController.FinalizeSetupAndGenerateFirstJob();
-            DVOwnership.Log("Finalizing job def");
             return jobChainController;
         }
 
@@ -286,7 +289,7 @@ namespace DVOwnership
             jobDefinition.loadData = carsPerCargoType;
             jobDefinition.destinationTrack = destinationTrack;
             jobDefinition.forceCorrectCargoStateOnCars = true;
-            return jobDefinition;
+           return jobDefinition;
         }
 
         public static void SetDestination(JobChainController controller, string destinationID)

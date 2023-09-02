@@ -111,13 +111,14 @@ namespace DVOwnership
             return new PaymentCalculationData(countEachCarType, countEachCargoType);
         }
 
-        public static List<CarsPerCargoType> ExtractCarsPerCargoType(List<Car> cars)
+        public static List<CarsPerCargoType> ExtractCarsPerCargoType(List<Car> cars, List<CargoType_v2> cargoType_V2 = null)
         {
-            return ExtractCarsPerCargoType(cars, (from car in cars select car.CurrentCargoTypeInCar).ToList(), (from car in cars select car.LoadedCargoAmount).ToList());
+            return ExtractCarsPerCargoType(cars, (from car in cars select car.CurrentCargoTypeInCar).ToList(), (from car in cars select car.LoadedCargoAmount).ToList(), cargoType_V2);
         }
 
-        public static List<CarsPerCargoType> ExtractCarsPerCargoType(List<Car> cars, List<CargoType> cargoTypes, List<float> cargoAmounts = null)
+        public static List<CarsPerCargoType> ExtractCarsPerCargoType(List<Car> cars, List<CargoType> cargoTypes, List<float> cargoAmounts = null , List<CargoType_v2> lstCargoV2 = null)
         {
+            DVObjectModel types = Globals.G.Types;
             var hasCargoAmounts = cargoAmounts != null;
             if (cars.Count != cargoTypes.Count || (hasCargoAmounts && cars.Count != cargoAmounts.Count))
             {
@@ -133,19 +134,39 @@ namespace DVOwnership
                 messageBuilder.Append(".");
                 throw new ArgumentException(messageBuilder.ToString());
             }
-
             if (!hasCargoAmounts)
             {
                 cargoAmounts = (from car in cars select 1f).ToList(); // this may break if the way cargo amounts work gets changed
             }
-
             var cargoTypeToCarAmountTuples = new Dictionary<CargoType, List<(Car, float)>>();
-
             for (var index = 0; index < cars.Count; ++index)
             {
                 var car = cars[index];
                 var cargoType = cargoTypes[index];
-                var cargoAmount = cargoAmounts[index];
+                var cargoAmount = 0f;
+                if (cargoType == CargoType.None)
+                {
+                    cargoAmount = 1f;
+                }
+                else
+                {
+                    cargoAmount = cargoAmounts[index];
+                }
+                foreach (CargoType cargo in Enum.GetValues(typeof(CargoType)))
+                {
+                    if (cargoType.ToString().Equals(cargo.ToString()))
+                    {
+                        cargoType = cargo;
+                        if(lstCargoV2 != null && cargoType == CargoType.None)
+                        {
+                            foreach(CargoType_v2 cargoV2 in lstCargoV2)
+                            {
+                                cargoType = types.CargoType_to_v2.FirstOrDefault(x => x.Value == cargoV2).Key;
+                            }
+                        }
+                    }
+                }
+                
                 if (!cargoTypeToCarAmountTuples.ContainsKey(cargoType))
                 {
                     cargoTypeToCarAmountTuples.Add(cargoType, new List<(Car, float)>());
@@ -158,7 +179,6 @@ namespace DVOwnership
                                     let carsForCargoType = (from tuple in kv.Value select tuple.Item1).ToList()
                                     let cargoAmount = (from tuple in kv.Value select tuple.Item2).Sum()
                                     select new CarsPerCargoType(cargoType, carsForCargoType, cargoAmount);
-
             return carsPerCargoTypes.ToList();
         }
 
@@ -168,7 +188,7 @@ namespace DVOwnership
             var trainCars = new List<TrainCar>();
 
             if (cars == null || cars.Count() == 0) { return trainCars; }
-            var allTrainCars = CarSpawner.Instance.AllCars;
+            var allTrainCars = SingletonBehaviour<CarSpawner>.Instance.AllCars;
             var trainCarsByLogicCar = new Dictionary<Car, TrainCar>();
 
             foreach(var trainCar in allTrainCars)

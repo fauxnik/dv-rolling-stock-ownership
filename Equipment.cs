@@ -2,6 +2,11 @@
 using DV.JObjectExtstensions;
 using DV.ThingTypes;
 using DV.Utils;
+using LocoSim.Implementations;
+using LocoSim.Attributes;
+using LocoSim.Definitions;
+using LocoSim.DVExtensions;
+using LocoSim.Resources;
 using UnityEngine;
 using Newtonsoft.Json.Linq;
 using System.Collections.Generic;
@@ -165,7 +170,10 @@ namespace DVOwnership
             var bogie1 = trainCar.Bogies[0];
             var bogie2 = trainCar.Bogies[1];
             var carState = trainCar.GetComponent<CarStateSave>();
-           // var locoState = trainCar.GetComponent<LocoStateSave>();
+           /* if(trainCar.IsLoco)
+            {
+                List<SimComponent> lstLocoSimComponent;
+            }*/
             ID = trainCar.ID;
             CarGUID = trainCar.CarGUID;
             CarType = trainCar.carType;
@@ -182,7 +190,7 @@ namespace DVOwnership
             // The cargo in a despawning train car gets dumped before this update method is called.
             if (!isBeingDespawned) { UpdateCargo(trainCar); }
             carStateSave = carState?.GetCarStateSaveData();
-            //locoStateSave = locoState?.GetLocoStateSaveData();
+            //locoStateSave = carState?.GetLocoStateSaveData();
             this.trainCar = isBeingDespawned ? null : trainCar;
 
             if (isBeingDespawned)

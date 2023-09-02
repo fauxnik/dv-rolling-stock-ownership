@@ -64,7 +64,6 @@ namespace DVOwnership
                         {
                             DVOwnership.LogError($"Connected equipment contains both spawned and despawned items! This should never happen.");
                         }
-
                         if (equipment.IsSpawned)
                         {
                             // Check if ALL connected equipment should be despawned

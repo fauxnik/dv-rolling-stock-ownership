@@ -2,9 +2,9 @@
 using DV.InventorySystem;
 using DV.PointSet;
 using DV.ThingTypes;
+using DV.ThingTypes.TransitionHelpers;
 using DV.Utils;
 using DVOwnership.Patches;
-using HarmonyLib;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -105,6 +105,7 @@ namespace DVOwnership
 
         public void Awake()
         {
+            CheckForStartingCondition();
             try
             {
                 // Copy components from other radio modes
@@ -185,8 +186,18 @@ namespace DVOwnership
         #endregion
 
         #region ICommsRadioMode
-
-        public void Enable() { TransitionToState(State.MainMenu); }
+        private void CheckForStartingCondition()
+        {
+            LicenseManager lm = MonoBehaviour.FindObjectOfType<LicenseManager>();
+            if(!lm.IsJobLicenseAcquired(TransitionHelpers.ToV2(JobLicenses.Shunting)))
+            {
+                lm.AcquireJobLicense(TransitionHelpers.ToV2(JobLicenses.Shunting));
+                SingletonBehaviour<Inventory>.Instance.AddMoney(CalculateCarPrice(TrainCarType.LocoShunter));
+            }
+        }
+        public void Enable() {
+            TransitionToState(State.MainMenu); 
+        }
 
         public void Disable() { TransitionToState(State.NotActive); }
 
@@ -219,8 +230,8 @@ namespace DVOwnership
                                 var flag = closestSpawnablePoint != null;
                                 if (canSpawnAtPoint != flag) { isDisplayUpdateNeeded = true; }
                                 canSpawnAtPoint = flag;
-                                if (canSpawnAtPoint) { closestPointOnDestinationTrack = closestSpawnablePoint; }
-                                else { closestPointOnDestinationTrack = pointWithinRangeWithYOffset; }
+                                if (canSpawnAtPoint) { this.closestPointOnDestinationTrack = closestSpawnablePoint; }
+                                else { this.closestPointOnDestinationTrack = pointWithinRangeWithYOffset; }
                                 HighlightClosestPointOnDestinationTrack();
                                 goto default;
                             }
@@ -466,8 +477,7 @@ namespace DVOwnership
             var price = ResourceTypes.GetFullUnitPriceOfResource(ResourceType.Car_DMG, types.TrainCarType_to_v2[carType]);
             if (isLoco) { price = ScaleLocoPrice(price); }
             if (DVOwnership.Settings.isPriceScaledWithDifficulty) { price = ScalePriceBasedOnDifficulty(price, isLoco); }
-            return 0;
-            //return Mathf.Round(price);
+            return Mathf.Round(price);
         }
 
         private float ScaleLocoPrice(float price)
@@ -477,16 +487,16 @@ namespace DVOwnership
 
         private float ScalePriceBasedOnDifficulty(float price, bool isLoco)
         {
-            return price;
-            /*switch (GamePreferences.Get<CareerDifficultyValues>(Preferences.CareerDifficulty))
+            TestSceneDifficultySetter diff = FindObjectOfType<TestSceneDifficultySetter>();
+            switch (diff.difficulty)
             {
-                case CareerDifficultyValues.HARDCORE:
+                case TestSceneDifficultySetter.Difficulty.Realistic:
                     return Mathf.Pow(price / 10_000f, 1.1f) * 10_000f;
-                case CareerDifficultyValues.CASUAL:
+                case TestSceneDifficultySetter.Difficulty.Comfort:
                     return price / (isLoco ? 100f : 10f);
                 default:
                     return price;
-            }*/
+            }
         }
 
         private void DeductFunds(float price)
@@ -535,17 +545,22 @@ namespace DVOwnership
 
         public void UpdateCarTypesAvailableForPurchase()
         {
-            DVObjectModel types = Globals.G.Types;
-            var prevSelectedCarType = carTypesAvailableForPurchase?.Count > 0 ? SelectedCarType : TrainCarType.NotSet;
-            var allowedCarTypes = from carType in TrainCarTypeIntegrator.AllCarTypes
-                                  //where !UnmanagedTrainCarTypes.UnmanagedTypes.Contains(carType)
-                                  select carType;
-            var licensedCarTypes = from carType in allowedCarTypes
-                                   //where CarTypes.IsAnyLocomotiveOrTender(types.TrainCarType_to_v2[carType]) ? LicenseManager_Patches.IsLicensedForLoco(LocoForTender(carType)) : LicenseManager_Patches.IsLicensedForCar(carType)
-                                   select carType;
-            carTypesAvailableForPurchase = licensedCarTypes.ToList();
-            selectedCarTypeIndex = carTypesAvailableForPurchase.FindIndex(carType => carType == prevSelectedCarType);
-            if (selectedCarTypeIndex == -1) { selectedCarTypeIndex = 0; }
+                DVObjectModel types = Globals.G.Types;
+            LicenseManager lm = SingletonBehaviour<LicenseManager>.Instance; 
+                var prevSelectedCarType = carTypesAvailableForPurchase?.Count > 0 ? SelectedCarType : TrainCarType.NotSet;
+                
+                var allowedCarTypes = from carType in TrainCarTypeIntegrator.AllCarTypes
+                                      where !UnmanagedTrainCarTypes.UnmanagedTypes.Contains(carType)
+                                      select carType;
+
+                var licensedCarTypes = from allowedCar in allowedCarTypes
+                                       where CarTypes.IsAnyLocomotiveOrTender(TransitionHelpers.ToV2(allowedCar)) ? LicenseManager_Patches.IsLicensedForLoco(LocoForTender(allowedCar)) : LicenseManager_Patches.IsLicensedForCar(allowedCar)
+                                       select allowedCar;
+
+                
+                carTypesAvailableForPurchase = licensedCarTypes.ToList();
+                selectedCarTypeIndex = carTypesAvailableForPurchase.FindIndex(carType => carType == prevSelectedCarType);
+                if (selectedCarTypeIndex == -1) { selectedCarTypeIndex = 0; }
         }
 
         private TrainCarType LocoForTender(TrainCarType carType)
@@ -595,8 +610,8 @@ namespace DVOwnership
 
         private void HighlightClosestPointOnDestinationTrack()
         {
-            Vector3 position = (Vector3)this.closestPointOnDestinationTrack.Value.forward + WorldMover.currentMove;
-            var vector = closestPointOnDestinationTrack.Value.forward;
+            Vector3 position = (Vector3)closestPointOnDestinationTrack.Value.position + WorldMover.currentMove;
+            var vector = (Vector3) closestPointOnDestinationTrack.Value.forward;
             if (!spawnWithTrackDirection) { vector *= -1f; }
 
             destinationHighlighter.Highlight(position, vector, carBounds, CanAfford && canSpawnAtPoint ? validMaterial : invalidMaterial);
@@ -614,9 +629,8 @@ namespace DVOwnership
         private void SpawnCar()
         {
             if (!canSpawnAtPoint) { return; }
-
-            Vector3 position = (Vector3) this.closestPointOnDestinationTrack.Value.forward + WorldMover.currentMove;
-            var vector = closestPointOnDestinationTrack.Value.forward;
+            Vector3 position = (Vector3)closestPointOnDestinationTrack.Value.position + WorldMover.currentMove;
+            var vector = (Vector3) closestPointOnDestinationTrack.Value.forward;
             vector = spawnWithTrackDirection ? vector : -vector;
 
             var trainCar = CarSpawner.Instance.SpawnCar(carPrefabToSpawn, destinationTrack, position, vector);
