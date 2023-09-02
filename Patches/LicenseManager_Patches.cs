@@ -116,7 +116,7 @@ namespace DVOwnership.Patches
                                       where !IsLicensedForCargoType(new HashSet<CargoType>() { cargoType })
                                        select cargoType;
 
-            foreach (CargoType cargo in unlisencedCargoType)
+            /*foreach (CargoType cargo in unlisencedCargoType)
             {
                 if(!(carType.Equals(TrainCarType.LocoRailbus))){
                     if (TransitionHelpers.ToV2(cargo).IsLoadableOnCarType(TransitionHelpers.ToV2(carType).parentType))
@@ -124,7 +124,7 @@ namespace DVOwnership.Patches
                         return false;
                     }
                 }
-            }
+            }*/
 
             /*var unlicensedCargoTypes = from cargoTypes in cargoTypesRequiringLicense
                                         where !IsLicensedForCargoTypes(cargoTypes.ToList())
@@ -132,7 +132,7 @@ namespace DVOwnership.Patches
                                         select cargoType;*/
             if (!(carType.Equals(TrainCarType.LocoRailbus)))
             {
-                if (CargoTypes_Patches.CanCarContainOnlyTheseCargoTypes(carType, unlisencedCargoType.ToHashSet()))
+                if (CargoTypes_Patches.CanCarContainOnlyTheseCargoTypes(carType, unlisencedCargoType.ToHashSet(), cargoTypesRequiringLicense))
                 {
                     // Not licensed for cargo types
                     return false;
