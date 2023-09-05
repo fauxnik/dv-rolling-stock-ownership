@@ -4,6 +4,7 @@ using DV.PointSet;
 using DV.ThingTypes;
 using DV.ThingTypes.TransitionHelpers;
 using DV.Utils;
+using DV.Common;
 using DVOwnership.Patches;
 using System;
 using System.Collections;
@@ -19,6 +20,15 @@ namespace DVOwnership
         {
             { TrainCarType.Tender, TrainCarType.LocoSteamHeavy }
         };
+
+        private List<TrainCarLivery> startingCars = new List<TrainCarLivery>()
+        { TrainCarType.LocoShunter.ToV2(),
+            TrainCarType.FlatbedStakes.ToV2(),
+            TrainCarType.FlatbedStakes.ToV2(),
+            TrainCarType.FlatbedStakes.ToV2()
+        };
+
+        private static String difficulty = null;
 
         public ButtonBehaviourType ButtonBehaviour { get; private set; }
 
@@ -192,7 +202,18 @@ namespace DVOwnership
             if(!lm.IsJobLicenseAcquired(TransitionHelpers.ToV2(JobLicenses.Shunting)))
             {
                 lm.AcquireJobLicense(TransitionHelpers.ToV2(JobLicenses.Shunting));
-                SingletonBehaviour<Inventory>.Instance.AddMoney(CalculateCarPrice(TrainCarType.LocoShunter));
+                CarSpawner carSpawner = SingletonBehaviour<CarSpawner>.Instance;
+                RailTrack selectedTrack = null;
+                foreach(RailTrack rt in RailTrackRegistry.Instance.AllTracks)
+                {
+                    if (rt.logicTrack.ID.FullDisplayID.Equals("SM-B1O")) { selectedTrack = rt; }
+                }
+                List<TrainCar> spawnedCars = carSpawner.SpawnCarTypesOnTrackRandomOrientation(startingCars, selectedTrack,false,true);
+                foreach(TrainCar trainCar in spawnedCars)
+                {
+                    SingletonBehaviour<RollingStockManager>.Instance.Add(Equipment.FromTrainCar(trainCar));
+                    SingletonBehaviour<UnusedTrainCarDeleter>.Instance.MarkForDelete(trainCar);
+                }
             }
         }
         public void Enable() {
@@ -472,9 +493,8 @@ namespace DVOwnership
 
         private float CalculateCarPrice(TrainCarType carType)
         {
-            DVObjectModel types = Globals.G.Types;
-            var isLoco = CarTypes.IsLocomotive(types.TrainCarType_to_v2[carType]);
-            var price = ResourceTypes.GetFullUnitPriceOfResource(ResourceType.Car_DMG, types.TrainCarType_to_v2[carType]);
+            var isLoco = CarTypes.IsLocomotive(TransitionHelpers.ToV2(carType));
+            var price = ResourceTypes.GetFullUnitPriceOfResource(ResourceType.Car_DMG, TransitionHelpers.ToV2(carType));
             if (isLoco) { price = ScaleLocoPrice(price); }
             if (DVOwnership.Settings.isPriceScaledWithDifficulty) { price = ScalePriceBasedOnDifficulty(price, isLoco); }
             return Mathf.Round(price);
@@ -487,13 +507,17 @@ namespace DVOwnership
 
         private float ScalePriceBasedOnDifficulty(float price, bool isLoco)
         {
-            TestSceneDifficultySetter diff = FindObjectOfType<TestSceneDifficultySetter>();
-            switch (diff.difficulty)
+            if(difficulty == null)
             {
-                case TestSceneDifficultySetter.Difficulty.Realistic:
-                    return Mathf.Pow(price / 10_000f, 1.1f) * 10_000f;
-                case TestSceneDifficultySetter.Difficulty.Comfort:
-                    return price / (isLoco ? 100f : 10f);
+                SaveGameManager saveGameManager = SingletonBehaviour<SaveGameManager>.Instance;
+                difficulty = saveGameManager.FindStartGameData().DifficultyToUse.Name;
+            }
+            switch (difficulty)
+            {
+                case "Realistic":
+                    return Mathf.Pow(price / 100f, 1.1f) * 10_000f;
+                case "Standard":
+                    return price * 10f;
                 default:
                     return price;
             }
