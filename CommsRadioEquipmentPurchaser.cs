@@ -449,7 +449,7 @@ namespace DVOwnership
 			}
 		}
 
-		private float CalculateCarPrice(TrainCarType carType)
+		internal static float CalculateCarPrice(TrainCarType carType)
 		{
 			var isLoco = CarTypes.IsLocomotive(TransitionHelpers.ToV2(carType));
 			var price = ResourceTypes.GetFullUnitPriceOfResource(ResourceType.Car_DMG, TransitionHelpers.ToV2(carType));
@@ -462,12 +462,12 @@ namespace DVOwnership
 #endif
 		}
 
-		private float ScaleLocoPrice(float price)
+		private static float ScaleLocoPrice(float price)
 		{
 			return price * 10f;
 		}
 
-		private float ScalePriceBasedOnDifficulty(float price, bool isLoco)
+		private static float ScalePriceBasedOnDifficulty(float price, bool isLoco)
 		{
 			return price;
 			// return GamePreferences.Get<CareerDifficultyValues>(Preferences.CareerDifficulty) switch

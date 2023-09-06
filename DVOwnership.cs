@@ -1,4 +1,5 @@
-﻿using DVOwnership.Patches;
+﻿using DV.Utils;
+using DVOwnership.Patches;
 using HarmonyLib;
 using System;
 using System.Reflection;
@@ -80,6 +81,8 @@ namespace DVOwnership
 
 			try { UnusedTrainCarDeleter_Patches.Setup(); }
 			catch (Exception e) { OnCriticalFailure(e, "patching UnusedTrainCarDeleter"); }
+
+			WorldStreamingInit.LoadingFinished += StartingConditions.Verify;
 		}
 
 		public static MethodInfo Patch(MethodBase original, HarmonyMethod? prefix = null, HarmonyMethod? postfix = null, HarmonyMethod? transpiler = null)
