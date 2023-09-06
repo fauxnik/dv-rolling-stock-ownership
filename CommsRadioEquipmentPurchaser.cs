@@ -625,7 +625,6 @@ namespace DVOwnership
 
 			CommsRadioController.PlayAudioFromCar(spawnVehicleSound, trainCar);
 			SingletonBehaviour<RollingStockManager>.Instance.Add(Equipment.FromTrainCar(trainCar));
-			SingletonBehaviour<UnusedTrainCarDeleter>.Instance.MarkForDelete(trainCar);
 		}
 
 		private void ReverseSpawnDirection()

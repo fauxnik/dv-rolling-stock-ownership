@@ -133,6 +133,7 @@ namespace DVOwnership
 		public static Equipment FromTrainCar(TrainCar trainCar)
 		{
 			DVOwnership.Log($"Creating equipment record from train car {trainCar.ID}.");
+			SingletonBehaviour<UnusedTrainCarDeleter>.Instance.MarkForDelete(trainCar);
 			var bogie1 = trainCar.Bogies[0];
 			var bogie2 = trainCar.Bogies[1];
 			var carState = trainCar.GetComponent<CarStateSave>();
