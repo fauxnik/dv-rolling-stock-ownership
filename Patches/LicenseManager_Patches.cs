@@ -41,8 +41,7 @@ namespace DVOwnership.Patches
 
 		public static bool IsLicensedForCargoType(CargoType cargoType)
 		{
-			LicenseManager licenseManager = SingletonBehaviour<LicenseManager>.Instance;
-			return licenseManager.IsLicensedForJob(licenseManager.GetRequiredLicensesForCargoTypes(new List<CargoType> { cargoType }));
+			return IsLicensedForCargoTypes(new List<CargoType> { cargoType });
 		}
 
 		public static bool IsLicensedForCar(TrainCarType carType)
