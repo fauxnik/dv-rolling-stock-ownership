@@ -54,7 +54,7 @@ namespace DVOwnership
 		// needs to be a separate method for try block to catch dll load exceptions when DVCustomCarLoader is not installed
 		private static IEnumerable<TrainCarType> PullCustomTypes()
 		{
-			throw new System.IO.FileNotFoundException("TODO: restore integration with Custom Car Loader");
+			throw new NotImplementedException("TODO: restore integration with Custom Car Loader");
 			// return DVCustomCarLoader.CustomCarManager.CustomCarTypes.Select(car => car.CarType);
 		}
 	}
