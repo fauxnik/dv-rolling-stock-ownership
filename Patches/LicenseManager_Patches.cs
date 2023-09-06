@@ -1,8 +1,8 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-using DV.ThingTypes;
+﻿using DV.ThingTypes;
+using DV.ThingTypes.TransitionHelpers;
 using DV.Utils;
-using DV;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace DVOwnership.Patches
 {
@@ -46,8 +46,6 @@ namespace DVOwnership.Patches
 
 		public static bool IsLicensedForCar(TrainCarType carType)
 		{
-			DVObjectModel types = Globals.G.Types;
-
 			var unlicensedCargoTypes = from cargoType in cargoTypesRequiringLicense
 									   where !IsLicensedForCargoType(cargoType)
 									   select cargoType;
@@ -62,9 +60,8 @@ namespace DVOwnership.Patches
 
 		public static bool IsLicensedForLoco(TrainCarType carType)
 		{
-			DVObjectModel types = Globals.G.Types;
 			LicenseManager licenseManager = SingletonBehaviour<LicenseManager>.Instance;
-			return CarTypes.IsTender(types.TrainCarType_to_v2[carType]) && licenseManager.IsGeneralLicenseAcquired(types.GeneralLicenseType_to_v2[GeneralLicenseType.SH282]) || licenseManager.IsLicensedForCar(types.TrainCarType_to_v2[carType]);
+			return CarTypes.IsTender(TransitionHelpers.ToV2(carType)) && licenseManager.IsGeneralLicenseAcquired(TransitionHelpers.ToV2(GeneralLicenseType.SH282)) || licenseManager.IsLicensedForCar(TransitionHelpers.ToV2(carType));
 		}
 	}
 }

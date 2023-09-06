@@ -1,6 +1,6 @@
-﻿using DV;
-using DV.Logic.Job;
+﻿using DV.Logic.Job;
 using DV.ThingTypes;
+using DV.ThingTypes.TransitionHelpers;
 using DV.Utils;
 using System;
 using System.Collections.Generic;
@@ -81,7 +81,6 @@ namespace DVOwnership
 			var yto = YardTracksOrganizer.Instance;
 			var carSpawn = CarSpawner.Instance;
 			var licenseManager = SingletonBehaviour<LicenseManager>.Instance;
-			DVObjectModel types = Globals.G.Types;
 			var generationRuleset = destinationController.proceduralJobsRuleset;
 
 			List<CargoType> cargoTypes = (from car in carsForJob select car.CurrentCargoTypeInCar).ToList();
@@ -164,11 +163,10 @@ namespace DVOwnership
 			List<Car> carsForJob = new List<Car>();
 			List<CargoType> cargoTypes = new List<CargoType>();
 			List<CargoType_v2> cargoTypes_V2 = new List<CargoType_v2>();
-			DVObjectModel types = Globals.G.Types;
 			foreach (CargoType cargotype in cargoGroup.cargoTypes)
 			{
 				DVOwnership.LogDebug(() => $"Cargo : {cargotype.ToString()}");
-				cargoTypes_V2.Add(types.CargoType_to_v2[cargotype]);
+				cargoTypes_V2.Add(TransitionHelpers.ToV2(cargotype));
 			}
 
 			foreach (var carSet in carSetsForJob)
@@ -198,7 +196,7 @@ namespace DVOwnership
 						return null;
 					}
 					var selectedCargoType = Utilities.GetRandomFrom(rng, potentialCargoTypes);
-					cargoTypes.Add(types.CargoType_to_v2.FirstOrDefault(x => x.Value == selectedCargoType).Key);
+					cargoTypes.Add(selectedCargoType.v1);
 				}
 			}
 			List<CarsPerCargoType> carsPerCargoTypes = Utilities.ExtractCarsPerCargoType(carsForJob);

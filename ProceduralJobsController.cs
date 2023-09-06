@@ -1,6 +1,6 @@
-﻿using DV;
-using DV.Logic.Job;
+﻿using DV.Logic.Job;
 using DV.ThingTypes;
+using DV.ThingTypes.TransitionHelpers;
 using DV.Utils;
 using DVOwnership.Patches;
 using System;
@@ -46,8 +46,6 @@ namespace DVOwnership
 			var proceduralRuleset = stationController.proceduralJobsRuleset;
 			var licensedOutputCargoGroups = (from cargoGroup in proceduralRuleset.outputCargoGroups where LicenseManager_Patches.IsLicensedForCargoTypes(cargoGroup.cargoTypes) select cargoGroup).ToList();
 			var manager = SingletonBehaviour<RollingStockManager>.Instance;
-
-			DVObjectModel types = Globals.G.Types;
 
 			lock (RollingStockManager.syncLock)
 			{
@@ -221,11 +219,11 @@ namespace DVOwnership
 					}
 					else
 					{
-						if (loadStartingJobSupported && licensedOutputCargoGroups.Any(group => group.cargoTypes.Any(cargoType => types.CargoType_to_v2[cargoType].IsLoadableOnCarType(carType.parentType))))
+						if (loadStartingJobSupported && licensedOutputCargoGroups.Any(group => group.cargoTypes.Any(cargoType => TransitionHelpers.ToV2(cargoType).IsLoadableOnCarType(carType.parentType))))
 						{
 							// Station can load cargo into this car & player is licensed to do so, generate shunting load job
 							jobType = JobType.ShuntingLoad.ToString();
-							var potentialCargoGroups = licensedOutputCargoGroups.Where(group => group.cargoTypes.Any(cargoType => types.CargoType_to_v2[cargoType].IsLoadableOnCarType(carType.parentType)));
+							var potentialCargoGroups = licensedOutputCargoGroups.Where(group => group.cargoTypes.Any(cargoType => TransitionHelpers.ToV2(cargoType).IsLoadableOnCarType(carType.parentType)));
 							var countCargoGroups = potentialCargoGroups.Count();
 							var indexInCargoGroups = rng.Next(countCargoGroups);
 							var cargoGroup = potentialCargoGroups.ElementAt(indexInCargoGroups);
@@ -235,7 +233,7 @@ namespace DVOwnership
 							yield return null;
 
 							// Find all equipment that matches the selected cargo group
-							var potentialEmptyCars = carsInYard.Where(car => car.CurrentCargoTypeInCar == CargoType.None && cargoGroup.cargoTypes.Any(cargoType => types.CargoType_to_v2[cargoType].IsLoadableOnCarType(carType.parentType))).ToList();
+							var potentialEmptyCars = carsInYard.Where(car => car.CurrentCargoTypeInCar == CargoType.None && cargoGroup.cargoTypes.Any(cargoType => TransitionHelpers.ToV2(cargoType).IsLoadableOnCarType(carType.parentType))).ToList();
 							var potentialEquipment = potentialEmptyCars.Select(car => manager.FindByCarGUID(car.carGuid)).ToList();
 
 							yield return null;

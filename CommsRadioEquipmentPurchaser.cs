@@ -2,9 +2,9 @@
 using DV.InventorySystem;
 using DV.PointSet;
 using DV.ThingTypes;
+using DV.ThingTypes.TransitionHelpers;
 using DV.Utils;
 using DVOwnership.Patches;
-using HarmonyLib;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -451,9 +451,8 @@ namespace DVOwnership
 
 		private float CalculateCarPrice(TrainCarType carType)
 		{
-			DVObjectModel types = Globals.G.Types;
-			var isLoco = CarTypes.IsLocomotive(types.TrainCarType_to_v2[carType]);
-			var price = ResourceTypes.GetFullUnitPriceOfResource(ResourceType.Car_DMG, types.TrainCarType_to_v2[carType]);
+			var isLoco = CarTypes.IsLocomotive(TransitionHelpers.ToV2(carType));
+			var price = ResourceTypes.GetFullUnitPriceOfResource(ResourceType.Car_DMG, TransitionHelpers.ToV2(carType));
 			if (isLoco) { price = ScaleLocoPrice(price); }
 			if (DVOwnership.Settings.isPriceScaledWithDifficulty) { price = ScalePriceBasedOnDifficulty(price, isLoco); }
 #if DEBUG
@@ -505,12 +504,11 @@ namespace DVOwnership
 
 		private void UpdateCarToSpawn()
 		{
-			DVObjectModel types = Globals.G.Types;
 			if (!(SelectedCarType is TrainCarType carType)) { return; }
 
 			carPrice = CalculateCarPrice(carType);
 
-			carPrefabToSpawn = types.TrainCarType_to_v2[carType].prefab;
+			carPrefabToSpawn = TransitionHelpers.ToV2(carType).prefab;
 			if (carPrefabToSpawn == null)
 			{
 				carPrice = float.PositiveInfinity;
@@ -525,13 +523,12 @@ namespace DVOwnership
 
 		public void UpdateCarTypesAvailableForPurchase()
 		{
-			DVObjectModel types = Globals.G.Types;
 			var prevSelectedCarType = carTypesAvailableForPurchase?.Count > 0 ? SelectedCarType : TrainCarType.NotSet;
 			var allowedCarTypes = from carType in TrainCarTypeIntegrator.AllCarTypes
 								  where !UnmanagedTrainCarTypes.UnmanagedTypes.Contains(carType)
 								  select carType;
 			var licensedCarTypes = from carType in allowedCarTypes
-								   where CarTypes.IsAnyLocomotiveOrTender(types.TrainCarType_to_v2[carType]) ? LicenseManager_Patches.IsLicensedForLoco(LocoForTender(carType)) : LicenseManager_Patches.IsLicensedForCar(carType)
+								   where CarTypes.IsAnyLocomotiveOrTender(TransitionHelpers.ToV2(carType)) ? LicenseManager_Patches.IsLicensedForLoco(LocoForTender(carType)) : LicenseManager_Patches.IsLicensedForCar(carType)
 								   select carType;
 			carTypesAvailableForPurchase = licensedCarTypes.ToList();
 			selectedCarTypeIndex = carTypesAvailableForPurchase.FindIndex(carType => carType == prevSelectedCarType);

@@ -1,7 +1,7 @@
-﻿using DV;
-using DV.Logic.Job;
-using DV.Utils;
+﻿using DV.Logic.Job;
 using DV.ThingTypes;
+using DV.ThingTypes.TransitionHelpers;
+using DV.Utils;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -88,19 +88,17 @@ namespace DVOwnership
 		}
 		public static PaymentCalculationData ExtractPaymentCalculationData(List<Car> cars, List<CargoType> cargoTypes)
 		{
-			DVObjectModel types = Globals.G.Types;
-			return ExtractPaymentCalculationData(cars.Select(car => types.TrainCarType_to_v2.FirstOrDefault(x => x.Value == car.carType).Key).ToList(), cargoTypes);
+			return ExtractPaymentCalculationData(cars.Select(car => car.carType.v1).ToList(), cargoTypes);
 		}
 		public static PaymentCalculationData ExtractPaymentCalculationData(List<TrainCarType> carTypes, List<CargoType> cargoTypes)
 		{
-			DVObjectModel types = Globals.G.Types;
 			Dictionary<TrainCarLivery, int> countEachCarType = new Dictionary<TrainCarLivery, int>();
 			Dictionary<CargoType, int> countEachCargoType = new Dictionary<CargoType, int>();
 
 			foreach (var carType in carTypes)
 			{
-				if (!countEachCarType.ContainsKey(types.TrainCarType_to_v2[carType])) { countEachCarType.Add(types.TrainCarType_to_v2[carType], 0); }
-				countEachCarType[types.TrainCarType_to_v2[carType]]++;
+				if (!countEachCarType.ContainsKey(TransitionHelpers.ToV2(carType))) { countEachCarType.Add(TransitionHelpers.ToV2(carType), 0); }
+				countEachCarType[TransitionHelpers.ToV2(carType)]++;
 			}
 
 			foreach (var cargoType in cargoTypes)
@@ -178,8 +176,7 @@ namespace DVOwnership
 
 		public static bool IsAnySpecialCar(TrainCarType carType)
 		{
-			DVObjectModel types = Globals.G.Types;
-			return CarTypes.IsAnyLocomotiveOrTender(types.TrainCarType_to_v2[carType]) || CarTypes.IsCaboose(types.TrainCarType_to_v2[carType]);
+			return CarTypes.IsAnyLocomotiveOrTender(TransitionHelpers.ToV2(carType)) || CarTypes.IsCaboose(TransitionHelpers.ToV2(carType));
 		}
 	}
 }

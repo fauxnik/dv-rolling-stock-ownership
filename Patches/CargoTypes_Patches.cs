@@ -1,5 +1,5 @@
-﻿using DV;
-using DV.ThingTypes;
+﻿using DV.ThingTypes;
+using DV.ThingTypes.TransitionHelpers;
 using System.Collections.Generic;
 using System.Linq;
 using System;
@@ -26,14 +26,12 @@ namespace DVOwnership.Patches
 		private static Dictionary<TrainCarType, HashSet<CargoType>> loadableCargoTypesPerTrainCarType = new ();
 		private static HashSet<CargoType> GetLoadableCargoTypesForCarType(TrainCarType carType)
 		{
-			DVObjectModel types = Globals.G.Types;
-
 			if (!loadableCargoTypesPerTrainCarType.TryGetValue(carType, out HashSet<CargoType> loadableCargoTypes))
 			{
 				loadableCargoTypes = loadableCargoTypesPerTrainCarType[carType] = new ();
 				foreach (CargoType cargoType in Enum.GetValues(typeof(CargoType)))
 				{
-					if (types.CargoType_to_v2[cargoType].IsLoadableOnCarType(types.TrainCarType_to_v2[carType].parentType))
+					if (TransitionHelpers.ToV2(cargoType).IsLoadableOnCarType(TransitionHelpers.ToV2(carType).parentType))
 					{
 						loadableCargoTypes.Add(cargoType);
 					}
