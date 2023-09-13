@@ -112,7 +112,10 @@ namespace DVOwnership
 			try
 			{
 				// Copy components from other radio modes
-				var summoner = (CommsRadio.Controller?.crewVehicleControl) ?? throw new Exception("Crew vehicle radio mode could not be found!");
+				if (!(CommsRadioAPI.ControllerAPI.GetVanillaMode(CommsRadioAPI.VanillaMode.SummonCrewVehicle) is CommsRadioCrewVehicle summoner))
+				{
+					throw new Exception("Crew vehicle radio mode could not be found!");
+				}
 
 				signalOrigin = summoner.signalOrigin;
 				display = summoner.display ?? throw new Exception("Comms radio display could not be found!");

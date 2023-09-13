@@ -1,4 +1,5 @@
-﻿using DV;
+﻿using CommsRadioAPI;
+using DV;
 using DV.ThingTypes;
 using HarmonyLib;
 using System;
@@ -28,7 +29,7 @@ namespace DVOwnership
 			try
 			{
 				// Crew vehicles use the vanilla crew vehicle summoning logic, so they can't be purchased.
-				if (!(CommsRadio.Controller?.crewVehicleControl is CommsRadioCrewVehicle summoner)) { throw new Exception("Crew vehicle radio mode could not be found!"); }
+				if (!(ControllerAPI.GetVanillaMode(VanillaMode.SummonCrewVehicle) is CommsRadioCrewVehicle summoner)) { throw new Exception("Crew vehicle radio mode could not be found!"); }
 				if (AccessTools.Field(typeof(CommsRadioCrewVehicle), "garageCarSpawners").GetValue(summoner) is GarageCarSpawner[] garageCarSpawners)
 				{
 					foreach (var garageSpawner in garageCarSpawners)

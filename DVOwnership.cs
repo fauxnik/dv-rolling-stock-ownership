@@ -82,6 +82,8 @@ namespace DVOwnership
 			try { UnusedTrainCarDeleter_Patches.Setup(); }
 			catch (Exception e) { OnCriticalFailure(e, "patching UnusedTrainCarDeleter"); }
 
+			CommsRadioAPI.ControllerAPI.Ready += CommsRadio.EquipmentPurchaserMode.Create;
+
 			WorldStreamingInit.LoadingFinished += StartingConditions.Verify;
 		}
 
