@@ -26,12 +26,18 @@ namespace DVOwnership.Patches
 		private static Dictionary<TrainCarType, HashSet<CargoType>> loadableCargoTypesPerTrainCarType = new ();
 		private static HashSet<CargoType> GetLoadableCargoTypesForCarType(TrainCarType carType)
 		{
+
 			if (!loadableCargoTypesPerTrainCarType.TryGetValue(carType, out HashSet<CargoType> loadableCargoTypes))
 			{
 				loadableCargoTypes = loadableCargoTypesPerTrainCarType[carType] = new ();
+
+				TrainCarType_v2? carType_v2 = TransitionHelpers.ToV2(carType)?.parentType;
+				if (carType_v2 == null) { return loadableCargoTypes; }
+
 				foreach (CargoType cargoType in Enum.GetValues(typeof(CargoType)))
 				{
-					if (TransitionHelpers.ToV2(cargoType).IsLoadableOnCarType(TransitionHelpers.ToV2(carType).parentType))
+					CargoType_v2? cargoType_v2 = TransitionHelpers.ToV2(cargoType);
+					if (cargoType_v2 != null && cargoType_v2.IsLoadableOnCarType(carType_v2))
 					{
 						loadableCargoTypes.Add(cargoType);
 					}

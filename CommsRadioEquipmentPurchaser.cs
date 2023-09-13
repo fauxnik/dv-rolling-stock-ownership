@@ -612,15 +612,21 @@ namespace DVOwnership
 				return;
 			}
 
-			Vector3 position = (Vector3) this.closestPointOnDestinationTrack.Value.forward + WorldMover.currentMove;
+			Vector3 position = (Vector3) closestPointOnDestinationTrack.Value.position + WorldMover.currentMove;
 			var vector = closestPointOnDestinationTrack.Value.forward;
 			vector = spawnWithTrackDirection ? vector : -vector;
+
+			DVOwnership.Log($"Spawning {SelectedCarType} on track {destinationTrack?.logicTrack.ID.FullID}");
 
 			var trainCar = CarSpawner.Instance.SpawnCar(carPrefabToSpawn, destinationTrack, position, vector);
 			if (trainCar == null)
 			{
 				DVOwnership.LogError($"Couldn't spawn {SelectedCarType}!");
 				return;
+			}
+			if (!trainCar.trainset.cars.Any(car => car.brakeSystem.brakeset.anyHandbrakeApplied))
+			{
+				trainCar.brakeSystem.handbrakePosition = 1f;
 			}
 
 			CommsRadioController.PlayAudioFromCar(spawnVehicleSound, trainCar);

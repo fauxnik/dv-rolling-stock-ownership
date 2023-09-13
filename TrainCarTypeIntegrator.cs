@@ -8,6 +8,11 @@ namespace DVOwnership
 {
 	internal static class TrainCarTypeIntegrator
 	{
+		private static readonly HashSet<TrainCarType> bannedTypes = new HashSet<TrainCarType> {
+			TrainCarType.NotSet,
+			TrainCarType.LocoRailbus,
+		};
+
 		public static IEnumerable<TrainCarType> AllCarTypes
 		{
 			get
@@ -21,7 +26,8 @@ namespace DVOwnership
 
 		private static IEnumerable<TrainCarType> GetAllCarTypes()
 		{
-			var vanillaTypes = Enum.GetValues(typeof(TrainCarType)).Cast<TrainCarType>();
+			IEnumerable<TrainCarType> vanillaTypes = Enum.GetValues(typeof(TrainCarType)).Cast<TrainCarType>();
+			vanillaTypes = vanillaTypes.Where(type => !bannedTypes.Contains(type));
 			if (TryPullCustomTypes(out var customTypes))
 			{
 				return vanillaTypes.Concat(customTypes);

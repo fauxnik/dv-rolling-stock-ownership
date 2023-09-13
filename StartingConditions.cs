@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using DV.InventorySystem;
 using DV.ThingTypes;
 using DV.ThingTypes.TransitionHelpers;
@@ -8,7 +9,7 @@ namespace DVOwnership;
 
 internal static class StartingConditions
 {
-	private static readonly string playerHomeTrackID = "#Y-#S-405-#T";
+	private static readonly string playerHomeTrackID = "#Y-#S-392-#T";
 	private static readonly TrainCarLivery[] startingWagons = {
 		TrainCarType.FlatbedStakes.ToV2(),
 		TrainCarType.FlatbedStakes.ToV2(),
@@ -34,7 +35,13 @@ internal static class StartingConditions
 			CarSpawner carSpawner = SingletonBehaviour<CarSpawner>.Instance;
 			TrainCarLivery starterLoco = TrainCarType.LocoShunter.ToV2();
 			carSpawner.SpawnCarTypesOnTrackRandomOrientation(new List<TrainCarLivery> { starterLoco }, playerHomeTrack, true, true)
-				.ForEach(car => rollingStockManager.Add(Equipment.FromTrainCar(car)));
+				.ForEach(car => {
+					rollingStockManager.Add(Equipment.FromTrainCar(car));
+					if (!car.trainset.cars.Any(car => car.brakeSystem.brakeset.anyHandbrakeApplied))
+					{
+						car.brakeSystem.handbrakePosition = 1f;
+					}
+				});
 
 			foreach(TrainCarLivery livery in startingWagons)
 			{
