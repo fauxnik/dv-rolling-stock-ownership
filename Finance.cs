@@ -4,7 +4,7 @@ using DV.ThingTypes;
 using DV.ThingTypes.TransitionHelpers;
 using DV.Utils;
 
-namespace DVOwnership.CommsRadio.EquipmentPurchaser;
+namespace DVOwnership;
 
 internal static class Finance
 {
