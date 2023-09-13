@@ -452,7 +452,7 @@ namespace DVOwnership
 		internal static float CalculateCarPrice(TrainCarType carType)
 		{
 			var isLoco = CarTypes.IsLocomotive(TransitionHelpers.ToV2(carType));
-			var price = ResourceTypes.GetFullUnitPriceOfResource(ResourceType.Car_DMG, TransitionHelpers.ToV2(carType));
+			var price = ResourceTypes.GetFullUnitPriceOfResource(ResourceType.Car_DMG, TransitionHelpers.ToV2(carType), gameParams: Globals.G.GameParams.ResourcesParams);
 			if (isLoco) { price = ScaleLocoPrice(price); }
 			if (DVOwnership.Settings.isPriceScaledWithDifficulty) { price = ScalePriceBasedOnDifficulty(price, isLoco); }
 #if DEBUG
