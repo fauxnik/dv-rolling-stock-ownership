@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using CommsRadioAPI;
 using DV;
+using DV.InventorySystem;
 using DV.PointSet;
 using DV.ThingTypes;
 using DV.ThingTypes.TransitionHelpers;
@@ -89,6 +90,9 @@ internal class PurchaseConfirmer : AStateBehaviour
 					{
 						trainCar.brakeSystem.handbrakePosition = 1f;
 					}
+
+					Inventory.Instance.RemoveMoney(Finance.CalculateCarPrice(selectedCarType));
+					utility.PlaySound(VanillaSoundCommsRadio.MoneyRemoved);
 
 					utility.PlaySound(VanillaSoundCommsRadio.Confirm);
 					utility.PlayVehicleSound(VanillaSoundVehicle.SpawnVehicle, trainCar);
