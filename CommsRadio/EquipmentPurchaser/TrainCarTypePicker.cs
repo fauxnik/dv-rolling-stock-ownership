@@ -6,6 +6,7 @@ using DV;
 using DV.ThingTypes;
 using DV.ThingTypes.TransitionHelpers;
 using DVOwnership.Patches;
+using UnityEngine;
 
 namespace DVOwnership.CommsRadio.EquipmentPurchaser;
 
@@ -20,7 +21,7 @@ internal class TrainCarTypePicker : AStateBehaviour
 		new CommsRadioState(
 			titleText: "Rolling Stock",
 			contentText: ContentFromIndex(selectedIndex),
-			actionText: Finance.CanAfford(availableCarTypes[selectedIndex]) ? "Buy" : "Cancel",
+			actionText: Finance.CanAfford(availableCarTypes[selectedIndex]) ? "buy" : "cancel",
 			buttonBehaviour: ButtonBehaviourType.Override
 		)
 	) {
@@ -32,10 +33,15 @@ internal class TrainCarTypePicker : AStateBehaviour
 		switch(action)
 		{
 			case InputAction.Activate:
-				if (Finance.CanAfford(availableCarTypes[selectedIndex]))
+				TrainCarType selectedCarType = availableCarTypes[selectedIndex];
+				GameObject? prefab = TransitionHelpers.ToV2(selectedCarType).prefab;
+				TrainCar? trainCar = prefab?.GetComponent<TrainCar>();
+				Bounds? carBounds = trainCar?.Bounds;
+				if (Finance.CanAfford(selectedCarType))
 				{
+					if (!carBounds.HasValue) { throw new Exception($"Can't find car bounds for car type: {selectedCarType}"); }
 					utility.PlaySound(VanillaSoundCommsRadio.Confirm);
-					// TODO: transition to destination picker
+					return new DestinationPicker(selectedCarType, carBounds.Value, utility.SignalOrigin);
 				}
 				utility.PlaySound(VanillaSoundCommsRadio.Cancel);
 				return new MainMenu();
