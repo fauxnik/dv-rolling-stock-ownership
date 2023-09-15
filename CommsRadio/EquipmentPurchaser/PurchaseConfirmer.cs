@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Linq;
 using CommsRadioAPI;
 using DV;
@@ -47,16 +48,18 @@ internal class PurchaseConfirmer : AStateBehaviour
 		confirmPurchase = buy;
 	}
 
-	public override void OnEnter(CommsRadioUtility utility)
+	public override void OnEnter(CommsRadioUtility utility, AStateBehaviour? previous)
 	{
-		base.OnEnter(utility);
-		destinationHighlighter.TurnOn();
+		base.OnEnter(utility, previous);
+		if (!(previous is PurchaseConfirmer))
+			destinationHighlighter.TurnOn();
 	}
 
-	public override void OnLeave(CommsRadioUtility utility)
+	public override void OnLeave(CommsRadioUtility utility, AStateBehaviour? next)
 	{
-		base.OnLeave(utility);
-		destinationHighlighter.TurnOff();
+		base.OnLeave(utility, next);
+		if (!(next is PurchaseConfirmer))
+			destinationHighlighter.TurnOff();
 	}
 
 	public override AStateBehaviour OnAction(CommsRadioUtility utility, InputAction action)
@@ -86,10 +89,7 @@ internal class PurchaseConfirmer : AStateBehaviour
 						return new ErrorViewer("Unable to deliver requested equipment.");
 					}
 
-					if (!trainCar.trainset.cars.Any(car => car.brakeSystem.brakeset.anyHandbrakeApplied))
-					{
-						trainCar.brakeSystem.handbrakePosition = 1f;
-					}
+					utility.StartCoroutine(CheckHandbrakeNextFrame(trainCar));
 
 					Inventory.Instance.RemoveMoney(Finance.CalculateCarPrice(selectedCarType));
 					utility.PlaySound(VanillaSoundCommsRadio.MoneyRemoved);
@@ -126,5 +126,14 @@ internal class PurchaseConfirmer : AStateBehaviour
 		float price = Finance.CalculateCarPrice(carType);
 		string addendum = Finance.CanAfford(price) ? "" : "\n\nInsufficient funds.";
 		return $"Buy {name} for ${price}?{addendum}";
+	}
+
+	private static IEnumerator CheckHandbrakeNextFrame(TrainCar trainCar)
+	{
+		yield return null;
+		if (!trainCar.trainset.cars.Any(car => car.brakeSystem.brakeset.anyHandbrakeApplied))
+		{
+			trainCar.brakeSystem.handbrakePosition = 1f;
+		}
 	}
 }

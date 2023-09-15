@@ -8,9 +8,9 @@ internal class MainMenu : AStateBehaviour
 {
 	public MainMenu() : base(new CommsRadioState(titleText: "Rolling Stock", contentText: "Buy equipment?", buttonBehaviour: ButtonBehaviourType.Regular)) {}
 
-	public override void OnEnter(CommsRadioUtility utility)
+	public override void OnEnter(CommsRadioUtility utility, AStateBehaviour? previous)
 	{
-		base.OnEnter(utility);
+		base.OnEnter(utility, previous);
 		TrainCarTypePicker.UpdateAvailableCarTypes();
 	}
 

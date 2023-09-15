@@ -13,6 +13,7 @@ namespace DVOwnership.CommsRadio.EquipmentPurchaser;
 
 internal class DestinationPicker : AStateBehaviour
 {
+	private static Coroutine? PotentialTracksUpdateCoroutine;
 	private static CarDestinationHighlighter? cachedDestinationHighlighter;
 	private static List<RailTrack> potentialTracks = new List<RailTrack>();
 	private static LayerMask trackMask = LayerMask.GetMask(new string[] { "Default" });
@@ -65,17 +66,31 @@ internal class DestinationPicker : AStateBehaviour
 		}
     }
 
-	public override void OnEnter(CommsRadioUtility utility)
+	public override void OnEnter(CommsRadioUtility utility, AStateBehaviour? previous)
 	{
-		base.OnEnter(utility);
-		utility.StartCoroutine(PotentialTracksUpdateCoro());
+		base.OnEnter(utility, previous);
 		HighlightSpawnPoint(utility);
+		if (!(previous is DestinationPicker))
+		{
+			if (PotentialTracksUpdateCoroutine != null)
+				DVOwnership.LogError("Attempting to start potential track update coroutine when it's already running.");
+			else
+				PotentialTracksUpdateCoroutine = utility.StartCoroutine(StartPotentialTracksUpdateCoroutine());
+		}
 	}
 
-	public override void OnLeave(CommsRadioUtility utility)
+	public override void OnLeave(CommsRadioUtility utility, AStateBehaviour? next)
 	{
-		base.OnLeave(utility);
+		base.OnLeave(utility, next);
 		destinationHighlighter.TurnOff();
+		if (!(next is DestinationPicker))
+		{
+			if (PotentialTracksUpdateCoroutine == null)
+				DVOwnership.LogError("Attempting to stop potential track update coroutine when it's not running.");
+			else
+				utility.StopCoroutine(PotentialTracksUpdateCoroutine);
+			PotentialTracksUpdateCoroutine = null;
+		}
 	}
 
 	public override AStateBehaviour OnAction(CommsRadioUtility utility, InputAction action)
@@ -146,7 +161,7 @@ internal class DestinationPicker : AStateBehaviour
 		if (potentialTracks.Count == 0) { DVOwnership.LogError("No nearby tracks found. Can't spawn rolling stock!"); }
 	}
 
-	private IEnumerator PotentialTracksUpdateCoro()
+	private IEnumerator StartPotentialTracksUpdateCoroutine()
 	{
 		Vector3 lastUpdatedTracksWorldPosition = Vector3.positiveInfinity;
 		while (true)
