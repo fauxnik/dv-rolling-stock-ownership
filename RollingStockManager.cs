@@ -112,7 +112,7 @@ namespace DVOwnership
 		public JArray GetSaveData()
 		{
 			var serializedRecords = from eq in registry select eq.GetSaveData();
-			//DVOwnership.Log($"Serialized {serializedRecords.Count()} equipment records from the rolling stock registry.");
+			DVOwnership.Log($"Serialized {serializedRecords.Count()} equipment records from the rolling stock registry.");
 			return new JArray(serializedRecords.ToArray());
 		}
 
