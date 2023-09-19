@@ -1,4 +1,5 @@
-﻿using DV.JObjectExtstensions;
+﻿using DV;
+using DV.JObjectExtstensions;
 using DV.Utils;
 using HarmonyLib;
 using Newtonsoft.Json.Linq;
@@ -21,21 +22,25 @@ namespace DVOwnership
 
 				try
 				{
-					var tracksHash = "trackHash";
+					var tracksHash = WorldData.Instance.TracksHash;
 					var rollingStockManager = SingletonBehaviour<RollingStockManager>.Instance;
 					SaveGameManager saveGameManager = SingletonBehaviour<SaveGameManager>.Instance;
-						// TODO: save more data
 
-						JObject saveData = new JObject(
+					// TODO: is there any more data that needs to be saved?
+
+					JObject saveData = new JObject(
 						new JProperty(VERSION_SAVE_KEY, DVOwnership.Version.ToString()),
 						new JProperty(TRACKS_HASH_SAVE_KEY, tracksHash),
 						new JProperty(ROLLING_STOCK_SAVE_KEY, rollingStockManager.GetSaveData()));
+
 					saveGameManager.data.SetJObject(PRIMARY_SAVE_KEY, saveData);
 				}
 				catch (Exception e) { DVOwnership.OnCriticalFailure(e, "saving mod data"); }
 			}
 		}
 
+		// TODO: WorldData.Instance.TracksHash is the new version of CarsSaveManager.TracksHash,
+		//       and it exists from the start. Should this be updated to patch a different method now?
 		// CarsSaveManager.TracksHash, which is required, may not exist until CarsSaveManager.Load is finished
 		// thus we patch it instead of another savegame data loading method
 		[HarmonyPatch(typeof(CarsSaveManager), "Load")]
@@ -58,7 +63,7 @@ namespace DVOwnership
 #endif
 						return;
 					}
-					var tracksHash = "trackHash";
+					var tracksHash = WorldData.Instance.TracksHash;
 					var loadedTracksHash = saveData.GetString(TRACKS_HASH_SAVE_KEY);
 
 					var rollingStockSaveData = saveData[ROLLING_STOCK_SAVE_KEY];
