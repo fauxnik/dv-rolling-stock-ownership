@@ -148,7 +148,7 @@ namespace DVOwnership
 
 			destinationHighlighter = new CarDestinationHighlighter(destinationHighlighterGO, directionArrowsHighlighterGO);
 			LicenseManager lm = SingletonBehaviour<LicenseManager>.Instance;
-		   lm.JobLicenseAcquired += OnLicenseAcquired;
+			lm.JobLicenseAcquired += OnLicenseAcquired;
 		}
 
 		public void Start()

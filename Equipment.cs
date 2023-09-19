@@ -152,7 +152,7 @@ namespace DVOwnership
 				bogie2.HasDerailed,
 				trainCar.frontCoupler.GetCoupled()?.train?.CarGUID,
 				trainCar.rearCoupler.GetCoupled()?.train?.CarGUID,
-			   trainCar.isExploded,
+				trainCar.isExploded,
 				trainCar.logicCar.CurrentCargoTypeInCar,
 				carState?.GetCarStateSaveData(),
 				trainCar);
@@ -164,7 +164,7 @@ namespace DVOwnership
 			var bogie1 = trainCar.Bogies[0];
 			var bogie2 = trainCar.Bogies[1];
 			var carState = trainCar.GetComponent<CarStateSave>();
-		   // var locoState = trainCar.GetComponent<LocoStateSave>();
+			// var locoState = trainCar.GetComponent<LocoStateSave>();
 			ID = trainCar.ID;
 			CarGUID = trainCar.CarGUID;
 			CarType = trainCar.carType;
