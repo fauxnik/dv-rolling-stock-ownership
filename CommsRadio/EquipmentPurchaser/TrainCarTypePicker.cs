@@ -81,13 +81,13 @@ internal class TrainCarTypePicker : AStateBehaviour
 	{
 		var previousLastCarType = availableCarTypes.Count > 0 ? availableCarTypes[LastIndex] : TrainCarType.NotSet;
 		var allowedCarTypes = from carType in TrainCarTypeIntegrator.AllCarTypes
-		                      where !UnmanagedTrainCarTypes.UnmanagedTypes.Contains(carType)
-		                      select carType;
+							  where !UnmanagedTrainCarTypes.UnmanagedTypes.Contains(carType)
+							  select carType;
 		var licensedCarTypes = from carType in allowedCarTypes
-		                       where CarTypes.IsAnyLocomotiveOrTender(TransitionHelpers.ToV2(carType))
-							       ? LicenseManager_Patches.IsLicensedForLoco(TrainCarTypeIntegrator.LocoForTender(carType))
+							   where CarTypes.IsAnyLocomotiveOrTender(TransitionHelpers.ToV2(carType))
+								   ? LicenseManager_Patches.IsLicensedForLoco(TrainCarTypeIntegrator.LocoForTender(carType))
 								   : LicenseManager_Patches.IsLicensedForCar(carType)
-		                       select carType;
+							   select carType;
 		availableCarTypes = licensedCarTypes.ToList();
 		LastIndex = availableCarTypes.FindIndex(carType => carType == previousLastCarType);
 		if (LastIndex == -1) { LastIndex = 0; }

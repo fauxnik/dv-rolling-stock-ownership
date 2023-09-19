@@ -24,7 +24,7 @@ internal class DestinationPicker : AStateBehaviour
 	private const float INVALID_DESTINATION_HIGHLIGHTER_DISTANCE = 20f;
 	private const float UPDATE_TRACKS_PERIOD = 2.5f;
 
-    private TrainCarType selectedCarType;
+	private TrainCarType selectedCarType;
 	private Bounds selectedCarBounds;
 	private Transform signalOrigin;
 	private RailTrack? selectedTrack;
@@ -32,7 +32,7 @@ internal class DestinationPicker : AStateBehaviour
 	private bool isSelectedOrientationOppositeTrackDirection;
 	private CarDestinationHighlighter destinationHighlighter;
 
-    public DestinationPicker(
+	public DestinationPicker(
 		TrainCarType carType,
 		Bounds carBounds,
 		Transform signalOrigin,
@@ -40,15 +40,15 @@ internal class DestinationPicker : AStateBehaviour
 		EquiPointSet.Point? spawnPoint = null,
 		bool reverseDirection = false
 	) : base(
-        new CommsRadioState(
+		new CommsRadioState(
 			titleText: "Rolling Stock",
 			contentText: ContentFromType(carType),
 			actionText: IsPlaceable(carType, track, spawnPoint) ? "place" : "cancel",
 			arrowState: GetArrowState(signalOrigin, spawnPoint, reverseDirection),
 			buttonBehaviour: ButtonBehaviourType.Override
 		)
-    ) {
-        selectedCarType = carType;
+	) {
+		selectedCarType = carType;
 		selectedCarBounds = carBounds;
 		this.signalOrigin = signalOrigin;
 		selectedTrack = track;
@@ -64,7 +64,7 @@ internal class DestinationPicker : AStateBehaviour
 			if (summoner == null) { throw new Exception("Couldn't find crew vehicle summoner mode."); }
 			destinationHighlighter = cachedDestinationHighlighter = new CarDestinationHighlighter(summoner.destinationHighlighterGO, summoner.directionArrowsHighlighterGO);
 		}
-    }
+	}
 
 	public override void OnEnter(CommsRadioUtility utility, AStateBehaviour? previous)
 	{
