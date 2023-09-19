@@ -7,10 +7,11 @@ insert_final_newline = true
 # Using tabs allows each dev to choose the tab size that suits their preference
 indent_style = tab
 
-# Remove trailing whitespace in all files except markdown files
+# Remove trailing whitespace
 trim_trailing_whitespace = true
 
 [*.md]
+# Trailing whitespace is meaningful in markdown files
 trim_trailing_whitespace = false
 
 [*.{yml,yaml}]
