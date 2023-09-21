@@ -16,5 +16,10 @@ namespace DVOwnership
 		public bool isPriceScaledWithDifficulty = false;
 
 		public void OnChange() { }
+
+		public override void Save(UnityModManager.ModEntry modEntry)
+		{
+			Save<Settings>(this, modEntry);
+		}
 	}
 }
