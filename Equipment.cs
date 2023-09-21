@@ -106,6 +106,8 @@ namespace DVOwnership
 		private static readonly string DESTINATION_SAVE_KEY = "destination";
 		public string? DestinationID { get; private set; }
 
+		// TODO: Need to store/save/reload handbrake position ("hb"), main reservoir pressure ("mr"), control reservoir pressure ("cr"), brake cylinder pressure ("bc"), and simulation state ("simCarState").
+		//       See CarsSaveManager#InstantiateCar method for more details.
 		public Equipment(string id, string carGuid, TrainCarType type, Vector3 position, Quaternion rotation, string? bogie1TrackID, double bogie1PositionAlongTrack, bool isBogie1Derailed, string? bogie2TrackID, double bogie2PositionAlongTrack, bool isBogie2Derailed, string? carGuidCoupledFront, string? carGuidCoupledRear, bool isExploded, CargoType loadedCargo, JObject? carStateSave, TrainCar? trainCar)
 		{
 			DVOwnership.Log($"Creating equipment record from values with ID {id}.");
