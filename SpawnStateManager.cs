@@ -45,7 +45,7 @@ namespace DVOwnership
 
 		private IEnumerator ProximityCheckCoro()
 		{
-			JobsManager jobManager = SingletonBehaviour<JobsManager>.Instance;
+			JobsManager jobsManager = SingletonBehaviour<JobsManager>.Instance;
 			for (;;)
 			{
 				lock (RollingStockManager.syncLock)
@@ -74,11 +74,11 @@ namespace DVOwnership
 							bool isDespawnable = !equipment.ExistsInTrainset(bestGuessLastDrivenTrainset);
 							foreach (var eq in connectedEquipment)
 							{
-								DVOwnership.LogDebug(() => $"Testing despawnability of {eq.ID} (from connected set of {connectedEquipment.Count})\n\tisDespawnable:{isDespawnable}\n\tIsStationary: {eq.IsStationary}\n\tSquaredDistanceFromPlayer: {eq.SquaredDistanceFromPlayer()}\n\tDESPAWN_SQR_DISTANCE: {DESPAWN_SQR_DISTANCE}\n\tJob: {jobManager.GetJobOfCar(eq.GetTrainCar())?.ID}\n\tflag: {isDespawnable && (!eq.IsStationary || eq.SquaredDistanceFromPlayer() < DESPAWN_SQR_DISTANCE || jobManager.GetJobOfCar(eq.GetTrainCar()) != null)}");
+								DVOwnership.LogDebug(() => $"Testing despawnability of {eq.ID} (from connected set of {connectedEquipment.Count})\n\tisDespawnable:{isDespawnable}\n\tIsStationary: {eq.IsStationary}\n\tSquaredDistanceFromPlayer: {eq.SquaredDistanceFromPlayer()}\n\tDESPAWN_SQR_DISTANCE: {DESPAWN_SQR_DISTANCE}\n\tJob: {jobsManager.GetJobOfCar(eq.GetTrainCar())?.ID}\n\tflag: {isDespawnable && (!eq.IsStationary || eq.SquaredDistanceFromPlayer() < DESPAWN_SQR_DISTANCE || jobsManager.GetJobOfCar(eq.GetTrainCar()) != null)}");
 								yield return null;
 								seenGuids.Add(eq.CarGUID);
 								// Short circuit avoids doing expensive calculation unnecessarily
-								if (isDespawnable && (!eq.IsStationary || eq.SquaredDistanceFromPlayer() < DESPAWN_SQR_DISTANCE || jobManager.GetJobOfCar(eq.GetTrainCar()) != null))
+								if (isDespawnable && (!eq.IsStationary || eq.SquaredDistanceFromPlayer() < DESPAWN_SQR_DISTANCE || jobsManager.GetJobOfCar(eq.GetTrainCar()) != null))
 								{
 									isDespawnable = false;
 									// Can't break here b/c we need to add all the guids to the hash set
