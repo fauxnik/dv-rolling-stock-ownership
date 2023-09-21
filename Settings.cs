@@ -7,7 +7,7 @@ namespace DVOwnership
 		[Draw("Log level")]
 		public LogLevel selectedLogLevel =
 #if DEBUG
-			LogLevel.Info;
+			LogLevel.Debug;
 #else
 			LogLevel.Warn;
 #endif
