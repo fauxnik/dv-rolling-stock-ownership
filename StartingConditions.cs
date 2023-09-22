@@ -2,10 +2,12 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using DV.InventorySystem;
+using DV.Logic.Job;
 using DV.Simulation.Cars;
 using DV.ThingTypes;
 using DV.ThingTypes.TransitionHelpers;
 using DV.Utils;
+using HarmonyLib;
 using UnityEngine;
 
 namespace DVOwnership;
@@ -29,16 +31,42 @@ internal static class StartingConditions
 			isShuntingLicenseChanged = true;
 		}
 
-		RollingStockManager rollingStockManager = SingletonBehaviour<RollingStockManager>.Instance;
-		if (rollingStockManager.AllEquipment.Count == 0)
+		if (RollingStockManager.Instance.AllEquipment.Count == 0)
 		{
-			CoroutineManager.Instance.StartCoroutine(AcquireStarterEquipment(rollingStockManager));
+			ClearWorldJobs();
+			ClearWorldTrains();
+			CoroutineManager.Instance.StartCoroutine(AcquireStarterEquipment());
 			CoroutineManager.Instance.StartCoroutine(ShowIntroductoryPopup(isShuntingLicenseChanged));
 		}
 	}
 
-	private static IEnumerator AcquireStarterEquipment(RollingStockManager rollingStockManager)
+	private static void ClearWorldJobs()
 	{
+		JobsManager.Instance.AbandonAllJobs();
+		StationController.allStations.ForEach(station => {
+			station.logicStation.ExpireAllAvailableJobsInStation();
+			object maybeSpawnedJobOverviews = AccessTools.Field(typeof(StationController), "spawnedJobOverviews").GetValue(station);
+			if (maybeSpawnedJobOverviews is List<JobOverview> spawnedJobOverviews)
+			{
+				while (spawnedJobOverviews.Count > 0)
+				{
+					JobOverview jobOverview = spawnedJobOverviews[0];
+					spawnedJobOverviews.Remove(jobOverview);
+					jobOverview.DestroyJobOverview();
+				}
+			}
+		});
+	}
+
+	private static void ClearWorldTrains()
+	{
+		CarSpawner.Instance.DeleteTrainCars(CarSpawner.Instance.AllCars, true);
+	}
+
+	private static IEnumerator AcquireStarterEquipment()
+	{
+		yield return new WaitForSeconds(1);
+
 		List<RailTrack> allTracks = new List<RailTrack>(SingletonBehaviour<RailTrackRegistry>.Instance.AllTracks);
 		RailTrack playerHomeTrack = allTracks.Find(track => track.logicTrack.ID.FullID == playerHomeTrackID);
 
@@ -46,12 +74,14 @@ internal static class StartingConditions
 		UnusedTrainCarDeleter unusedTrainCarDeleter = SingletonBehaviour<UnusedTrainCarDeleter>.Instance;
 		CarSpawner carSpawner = SingletonBehaviour<CarSpawner>.Instance;
 		TrainCarLivery starterLoco = TrainCarType.LocoShunter.ToV2();
-		IEnumerable<Equipment> roster = carSpawner.SpawnCarTypesOnTrackRandomOrientation(new List<TrainCarLivery> { starterLoco }, playerHomeTrack, true, true)
+		IEnumerable<Equipment> spawnedEquipment = carSpawner.SpawnCarTypesOnTrackRandomOrientation(new List<TrainCarLivery> { starterLoco }, playerHomeTrack, true, true)
 			.Select(Equipment.FromTrainCar);
 
-		foreach (Equipment equipment in roster)
+		foreach (Equipment equipment in spawnedEquipment)
 		{
 			yield return null;
+
+			RollingStockManager.Instance.Add(equipment);
 
 			SimController? simController = equipment.GetTrainCar()?.GetComponent<SimController>();
 			BaseControlsOverrider? baseControlsOverrider = simController?.controlsOverrider;
