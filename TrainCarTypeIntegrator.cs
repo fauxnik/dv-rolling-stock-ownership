@@ -13,6 +13,16 @@ namespace DVOwnership
 			TrainCarType.LocoRailbus,
 		};
 
+		private static Dictionary<TrainCarType, TrainCarType> locomotiveForTender = new Dictionary<TrainCarType, TrainCarType>
+		{
+			{ TrainCarType.Tender, TrainCarType.LocoSteamHeavy }
+		};
+
+		public static TrainCarType LocoForTender(TrainCarType carType)
+		{
+			return locomotiveForTender.ContainsKey(carType) ? locomotiveForTender[carType] : carType;
+		}
+
 		public static IEnumerable<TrainCarType> AllCarTypes
 		{
 			get

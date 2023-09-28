@@ -112,7 +112,7 @@ internal static class StartingConditions
 
 		foreach(TrainCarLivery livery in startingWagons)
 		{
-			inventory.AddMoney(CommsRadioEquipmentPurchaser.CalculateCarPrice(livery.v1));
+			inventory.AddMoney(Finance.CalculateCarPrice(livery.v1));
 		}
 	}
 
