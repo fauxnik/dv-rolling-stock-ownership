@@ -22,6 +22,7 @@
 		<Reference Include="Assembly-CSharp-firstpass" />
 		<Reference Include="DV.BrakeSystem" />
 		<Reference Include="DV.Inventory" />
+		<Reference Include="DV.Localization" />
 		<Reference Include="DV.PointSet" />
 		<Reference Include="DV.ThingTypes" />
 		<Reference Include="DV.UI" />
@@ -36,7 +37,9 @@
 		<Reference Include="UnityEngine" />
 		<Reference Include="UnityEngine.AudioModule" />
 		<Reference Include="UnityEngine.CoreModule" />
+		<Reference Include="UnityEngine.IMGUIModule" />
 		<Reference Include="UnityEngine.PhysicsModule" />
+		<Reference Include="UnityEngine.TextRenderingModule" />
 	</ItemGroup>
 
 	<!-- Mod Loader -->

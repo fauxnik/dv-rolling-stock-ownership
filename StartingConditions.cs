@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using DV.InventorySystem;
+using DV.Localization;
 using DV.Logic.Job;
 using DV.Simulation.Cars;
 using DV.ThingTypes;
@@ -72,8 +73,21 @@ internal static class StartingConditions
 		Inventory inventory = Inventory.Instance;
 		UnusedTrainCarDeleter unusedTrainCarDeleter = UnusedTrainCarDeleter.Instance;
 		CarSpawner carSpawner = CarSpawner.Instance;
-		TrainCarLivery starterLoco = TrainCarType.LocoShunter.ToV2();
-		IEnumerable<Equipment> spawnedEquipment = carSpawner.SpawnCarTypesOnTrackRandomOrientation(new List<TrainCarLivery> { starterLoco }, playerHomeTrack, true, true)
+		TrainCarType starterLoco = (TrainCarType) DVOwnership.Settings.starterLocoType;
+
+		if (!LicenseManager.Instance.IsLicensedForCar(starterLoco.ToV2()))
+		{
+			LicenseManager.Instance.AcquireGeneralLicense(
+				starterLoco switch
+				{
+					TrainCarType.LocoS060 => GeneralLicenseType.S060.ToV2(),
+					TrainCarType.LocoDM3 => GeneralLicenseType.DM3.ToV2(),
+					_ => GeneralLicenseType.DE2.ToV2(),
+				}
+			);
+		}
+
+		IEnumerable<Equipment> spawnedEquipment = carSpawner.SpawnCarTypesOnTrackRandomOrientation(new List<TrainCarLivery> { starterLoco.ToV2() }, playerHomeTrack, true, true)
 			.Select(Equipment.FromTrainCar);
 
 		foreach (Equipment equipment in spawnedEquipment)
@@ -106,6 +120,8 @@ internal static class StartingConditions
 	{
 		yield return new WaitForSeconds(2);
 
+		string locoName = LocalizationAPI.L(((TrainCarType) DVOwnership.Settings.starterLocoType).ToV2().localizationKey);
+
 		MessageBox.ShowPopupOk(
 			title: "Rolling Stock Ownership",
 			message: string.Join(" ", new string[] {
@@ -120,7 +136,7 @@ internal static class StartingConditions
 				title: "Rolling Stock Ownership",
 				message: string.Join(" ", new string [] {
 					isShuntingLicenseChanged ? "Since you'll need the shunting license to begin any jobs, it's been given to you." : "",
-					"A starter DE2 has been delivered to the player home, and a starting bonus has been deposited in your wallet.",
+					$"A starter {locoName} has been delivered to the player home, and a starting bonus has been deposited in your wallet.",
 					"Use the cash to buy a few wagons. (You won't be able to make money without them.)"
 				}),
 				positive: "Let's go!"
