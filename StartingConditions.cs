@@ -136,8 +136,8 @@ internal static class StartingConditions
 				title: "Rolling Stock Ownership",
 				message: string.Join(" ", new string [] {
 					isShuntingLicenseChanged ? "Since you'll need the shunting license to begin any jobs, it's been given to you." : "",
-					$"A starter {locoName} has been delivered to the player home, and a starting bonus has been deposited in your wallet.",
-					"Use the cash to buy a few wagons. (You won't be able to make money without them.)"
+					$"A starter {locoName} has been delivered outside the player home, and a starting bonus has been deposited in your wallet.",
+					"Use the cash to buy a few wagons. Choose wisely: you won't be able to make money without them!"
 				}),
 				positive: "Let's go!"
 			)
