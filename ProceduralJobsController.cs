@@ -1,7 +1,6 @@
 ﻿using DV.Logic.Job;
 using DV.ThingTypes;
 using DV.ThingTypes.TransitionHelpers;
-using DV.Utils;
 using DVOwnership.Patches;
 using System;
 using System.Collections;
@@ -45,7 +44,7 @@ namespace DVOwnership
 			var stationId = stationController.logicStation.ID;
 			var proceduralRuleset = stationController.proceduralJobsRuleset;
 			var licensedOutputCargoGroups = (from cargoGroup in proceduralRuleset.outputCargoGroups where LicenseManager_Patches.IsLicensedForCargoTypes(cargoGroup.cargoTypes) select cargoGroup).ToList();
-			var manager = SingletonBehaviour<RollingStockManager>.Instance;
+			var manager = RollingStockManager.Instance;
 
 			lock (RollingStockManager.syncLock)
 			{
@@ -90,7 +89,7 @@ namespace DVOwnership
 
 				// get all (logic) cars with active jobs
 				var carsWithJobs = new HashSet<Car>();
-				JobsManager jobsManager = SingletonBehaviour<JobsManager>.Instance;
+				JobsManager jobsManager = JobsManager.Instance;
 				var activeJobs = jobsManager.currentJobs;
 				foreach (var job in activeJobs)
 				{
@@ -124,7 +123,7 @@ namespace DVOwnership
 				carsInYard.ExceptWith(carsWithJobs);
 
 				var minCarsPerJob = Math.Min(proceduralRuleset.minCarsPerJob, carsInYard.Count);
-				var maxCarsPerJob = Math.Min(proceduralRuleset.maxCarsPerJob, SingletonBehaviour<LicenseManager>.Instance.GetMaxNumberOfCarsPerJobWithAcquiredJobLicenses());
+				var maxCarsPerJob = Math.Min(proceduralRuleset.maxCarsPerJob, LicenseManager.Instance.GetMaxNumberOfCarsPerJobWithAcquiredJobLicenses());
 				var maxShuntingStorageTracks = proceduralRuleset.maxShuntingStorageTracks;
 				var haulStartingJobSupported = proceduralRuleset.haulStartingJobSupported;
 				var unloadStartingJobSupported = proceduralRuleset.unloadStartingJobSupported;
@@ -343,7 +342,7 @@ namespace DVOwnership
 
 		private static HashSet<Car> GetMatchingCoupledCars(Equipment equipment, CargoGroup cargoGroup, HashSet<Car> carsInYard, int maxCarsToReturn)
 		{
-			var manager = SingletonBehaviour<RollingStockManager>.Instance;
+			var manager = RollingStockManager.Instance;
 			var cars = new HashSet<Car>();
 			if (manager == null) { return cars; }
 

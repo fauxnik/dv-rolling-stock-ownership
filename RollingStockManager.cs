@@ -81,7 +81,7 @@ namespace DVOwnership
 		{
 			var typeOfEquipment = spawned.HasValue ? spawned.Value ? "spawned " : "unspawned " : "";
 			DVOwnership.Log($"Finding all {typeOfEquipment}equipment that is on track {track.ID.FullDisplayID}");
-			var yto = SingletonBehaviour<YardTracksOrganizer>.Instance;
+			var yto = YardTracksOrganizer.Instance;
 			var equipments = from equipment in registry
 							 where equipment.IsOnTrack(track) && (!spawned.HasValue || equipment.IsSpawned == spawned)
 							 select equipment;
@@ -112,7 +112,7 @@ namespace DVOwnership
 		public JArray GetSaveData()
 		{
 			var serializedRecords = from eq in registry select eq.GetSaveData();
-			//DVOwnership.Log($"Serialized {serializedRecords.Count()} equipment records from the rolling stock registry.");
+			DVOwnership.Log($"Serialized {serializedRecords.Count()} equipment records from the rolling stock registry.");
 			return new JArray(serializedRecords.ToArray());
 		}
 

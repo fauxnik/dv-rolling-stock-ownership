@@ -1,7 +1,6 @@
 ﻿using DV.Logic.Job;
 using DV.ThingTypes;
 using DV.ThingTypes.TransitionHelpers;
-using DV.Utils;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -29,7 +28,7 @@ namespace DVOwnership
 			{
 				rng.Next(1, maxNumberOfStorageTracks + 1),
 				tracks.Count,
-				numCars
+				maxTracks
 			});
 			int averageNumCarsPerTrack = Mathf.FloorToInt((float)numCars / (float)numTracks);
 
@@ -55,8 +54,8 @@ namespace DVOwnership
 			}
 			numCarsPerTracks.Sort((a, b) => b - a); // sort in descending order
 
-			YardTracksOrganizer yto = SingletonBehaviour<YardTracksOrganizer>.Instance;
-			CarSpawner carSpawner = SingletonBehaviour<CarSpawner>.Instance;
+			YardTracksOrganizer yto = YardTracksOrganizer.Instance;
+			CarSpawner carSpawner = CarSpawner.Instance;
 			List<CarsPerTrack> carsPerTracks = new List<CarsPerTrack>();
 			tracks = new List<Track>(tracks); // cloning is required to prevent modifying the external list
 

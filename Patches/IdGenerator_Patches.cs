@@ -1,5 +1,4 @@
 ﻿using DV.Logic.Job;
-using DV.Utils;
 using HarmonyLib;
 using System.Collections.Generic;
 
@@ -21,7 +20,7 @@ namespace DVOwnership.Patches
 			DVOwnership.Log("Setting up IdGenerator patches.");
 
 			isSetup = true;
-			idGenerator = SingletonBehaviour<IdGenerator>.Instance;
+			idGenerator = IdGenerator.Instance;
 			var IdGenerator_RegisterCarId = AccessTools.Method(typeof(IdGenerator), nameof(idGenerator.RegisterCarId));
 			var IdGenerator_RegisterCarId_Prefix = AccessTools.Method(typeof(IdGenerator_Patches), nameof(RegisterCarId_Prefix));
 			DVOwnership.Patch(IdGenerator_RegisterCarId, prefix: new HarmonyMethod(IdGenerator_RegisterCarId_Prefix));
