@@ -29,7 +29,7 @@ namespace DVOwnership
 			{
 				rng.Next(1, maxNumberOfStorageTracks + 1),
 				tracks.Count,
-				numCars
+				maxTracks
 			});
 			int averageNumCarsPerTrack = Mathf.FloorToInt((float)numCars / (float)numTracks);
 
