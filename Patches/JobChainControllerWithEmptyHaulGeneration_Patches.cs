@@ -3,6 +3,7 @@ using DV.Utils;
 using DV.ThingTypes;
 using HarmonyLib;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection.Emit;
 
 namespace DVOwnership.Patches
@@ -49,6 +50,10 @@ namespace DVOwnership.Patches
 			else if (jobType == JobType.ShuntingUnload)
 			{
 				ProceduralJobGenerators.SetDestination(__instance, null);
+				if (!StationProceduralJobsController_Patches.StartJobGenerationCoroutine(destinationController, __instance.trainCarsForJobChain.Select(trainCar => trainCar.logicCar)))
+				{
+					DVOwnership.LogWarning($"Couldn't start job generation coroutine for ${destinationController.logicStation.ID}.\nGeneration of a new shunting load job for cars from ${lastJobInChain.ID} hasn't been attempted.");
+				}
 			}
 		}
 
