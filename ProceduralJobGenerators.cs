@@ -1,4 +1,4 @@
-using DV.Logic.Job;
+﻿using DV.Logic.Job;
 using DV.ThingTypes;
 using DV.ThingTypes.TransitionHelpers;
 using DV.Utils;
@@ -20,18 +20,18 @@ namespace DVOwnership
 		{
 			var yto = YardTracksOrganizer.Instance;
 			var carSpawn = CarSpawner.Instance;
-			var licenseManager = SingletonBehaviour<LicenseManager>.Instance;
+			var licenseManager = LicenseManager.Instance;
 
 			List<CargoType> cargoTypes = (from car in carsForJob select car.CurrentCargoTypeInCar).ToList();
 			List<float> cargoAmounts = (from car in carsForJob select car.LoadedCargoAmount).ToList();
 
-			var tracksForCars = (from car in carsForJob select car.CurrentTrack).ToHashSet();
+			HashSet<Track> tracksForCars = (from car in carsForJob select car.CurrentTrack).ToHashSet();
 			if (tracksForCars.Count != 1)
 			{
 				DVOwnership.LogError($"Expected only one starting track for {JobType.Transport} job, but got {tracksForCars.Count}.");
 				return null;
 			}
-			var startingTrack = tracksForCars.First();
+			Track startingTrack = tracksForCars.First();
 
 			float approxLengthOfWholeTrain = carSpawn.GetTotalCarsLength(carsForJob) + carSpawn.GetSeparationLengthBetweenCars(carsForJob.Count);
 
@@ -42,13 +42,13 @@ namespace DVOwnership
 				select license
 			);
 
-			var possibleDestinationTracks = yto.FilterOutTracksWithoutRequiredFreeSpace(destinationController.logicStation.yard.TransferInTracks, approxLengthOfWholeTrain);
+			List<Track> possibleDestinationTracks = yto.FilterOutTracksWithoutRequiredFreeSpace(destinationController.logicStation.yard.TransferInTracks, approxLengthOfWholeTrain);
 			if (possibleDestinationTracks.Count < 1)
 			{
 				DVOwnership.LogWarning($"Station[{originController.logicStation.ID}] couldn't find an inbound track with enough free space for the job. ({approxLengthOfWholeTrain})");
 				return null;
 			}
-			var destinationTrack = Utilities.GetRandomFrom(rng, possibleDestinationTracks);
+			Track destinationTrack = Utilities.GetRandomFrom(rng, possibleDestinationTracks);
 
 			var gameObject = new GameObject($"ChainJob[{JobType.Transport}]: {originController.logicStation.ID} - {destinationController.logicStation.ID}");
 			gameObject.transform.SetParent(originController.transform);
@@ -65,7 +65,7 @@ namespace DVOwnership
 			float baseWage = JobPaymentCalculator.CalculateJobPayment(JobType.Transport, distanceBetweenStations, Utilities.ExtractPaymentCalculationData(carsForJob));
 			HashSet<JobLicenseType_v2> requiredLicenses = jobLicenses.Concat(licenseManager.GetRequiredLicensesForJobType(JobType.Transport)).ToHashSet();
 
-			var jobDefinition = PopulateHaulJobDefinitionWithExistingCars(jobChainController.jobChainGO, originController.logicStation, startingTrack, destinationTrack, carsForJob, cargoTypes, cargoAmounts, bonusTimeLimit, baseWage, stationsChainData, JobLicenseType_v2.ListToFlags(requiredLicenses));
+			StaticTransportJobDefinition jobDefinition = PopulateHaulJobDefinitionWithExistingCars(jobChainController.jobChainGO, originController.logicStation, startingTrack, destinationTrack, carsForJob, cargoTypes, cargoAmounts, bonusTimeLimit, baseWage, stationsChainData, JobLicenseType_v2.ListToFlags(requiredLicenses));
 
 			jobChainController.AddJobDefinitionToChain(jobDefinition);
 			jobChainController.FinalizeSetupAndGenerateFirstJob();
@@ -82,18 +82,18 @@ namespace DVOwnership
 		{
 			var yto = YardTracksOrganizer.Instance;
 			var carSpawn = CarSpawner.Instance;
-			var licenseManager = SingletonBehaviour<LicenseManager>.Instance;
-			var generationRuleset = destinationController.proceduralJobsRuleset;
+			var licenseManager = LicenseManager.Instance;
+			StationProceduralJobsRuleset generationRuleset = destinationController.proceduralJobsRuleset;
 
 			List<CargoType> cargoTypes = (from car in carsForJob select car.CurrentCargoTypeInCar).ToList();
 
-			var tracksForCars = (from car in carsForJob select car.CurrentTrack).ToHashSet();
+			HashSet<Track> tracksForCars = (from car in carsForJob select car.CurrentTrack).ToHashSet();
 			if (tracksForCars.Count != 1)
 			{
 				DVOwnership.LogError($"Expected only one starting track for {JobType.ShuntingUnload} job, but got {tracksForCars.Count}.");
 				return null;
 			}
-			var startingTrack = tracksForCars.First();
+			Track startingTrack = tracksForCars.First();
 
 			float approxLengthOfWholeTrain = carSpawn.GetTotalCarsLength(carsForJob) + carSpawn.GetSeparationLengthBetweenCars(carsForJob.Count);
 
@@ -104,10 +104,10 @@ namespace DVOwnership
 				select license
 			);
 
-			var warehouseMachinesThatSupportCargoTypes = destinationController.logicStation.yard.GetWarehouseMachinesThatSupportCargoTypes(cargoTypes);
+			List<WarehouseMachine>? warehouseMachinesThatSupportCargoTypes = destinationController.logicStation.yard.GetWarehouseMachinesThatSupportCargoTypes(cargoTypes);
 			if (warehouseMachinesThatSupportCargoTypes.Count == 0)
 			{
-				DVOwnership.LogError($"Station[{destinationController.logicStation.ID}] doesn't have a warehouse machine that supports all cargo types for the job. [{cargoTypes.Aggregate("", (str, type) => $"{str}, {type}")}]");
+				DVOwnership.LogError($"Station[{destinationController.logicStation.ID}] doesn't have a warehouse machine that supports all cargo types for the job. [{string.Join(", ", cargoTypes)}]");
 				return null;
 			}
 			warehouseMachinesThatSupportCargoTypes.RemoveAll((machine) => machine.WarehouseTrack.length < (double)approxLengthOfWholeTrain);
@@ -116,9 +116,9 @@ namespace DVOwnership
 				DVOwnership.LogDebug(() => $"Station[{destinationController.logicStation.ID}] doesn't have a warehouse track long enough for the job. ({approxLengthOfWholeTrain})");
 				return null;
 			}
-			var warehouseMachine = Utilities.GetRandomFrom(rng, warehouseMachinesThatSupportCargoTypes);
+			WarehouseMachine warehouseMachine = Utilities.GetRandomFrom(rng, warehouseMachinesThatSupportCargoTypes);
 
-			var randomSortingOfCarsOnTracks = Utilities.GetRandomSortingOfCarsOnTracks(rng, destinationController.logicStation.yard.StorageTracks, carsForJob, generationRuleset.maxShuntingStorageTracks, generationRuleset.minCarsPerJob);
+			List<CarsPerTrack>? randomSortingOfCarsOnTracks = Utilities.GetRandomSortingOfCarsOnTracks(rng, destinationController.logicStation.yard.StorageTracks, carsForJob, generationRuleset.maxShuntingStorageTracks, generationRuleset.minCarsPerJob);
 			if (randomSortingOfCarsOnTracks == null)
 			{
 				DVOwnership.LogDebug(() => $"Station[{destinationController.logicStation.ID}] couldn't assign cars to storage tracks.");
@@ -141,14 +141,9 @@ namespace DVOwnership
 			float baseWage = JobPaymentCalculator.CalculateJobPayment(JobType.ShuntingUnload, distanceInMeters, Utilities.ExtractPaymentCalculationData(carsForJob));
 			HashSet<JobLicenseType_v2> requiredLicenses = jobLicenses.Concat(licenseManager.GetRequiredLicensesForJobType(JobType.ShuntingUnload)).ToHashSet();
 
-			var carsPerCargoType = Utilities.ExtractCarsPerCargoType(carsForJob);
+			List<CarsPerCargoType> carsPerCargoType = Utilities.ExtractCarsPerCargoType(carsForJob);
 
-			JobLicenses licenses = JobLicenses.Basic;
-			foreach (JobLicenseType_v2 license in requiredLicenses)
-			{
-				licenses |= license.v1;
-			}
-			var jobDefinition = PopulateShuntingUnloadJobDefinitionWithExistingCars(jobChainController.jobChainGO, destinationController.logicStation, startingTrack, warehouseMachine, carsPerCargoType, randomSortingOfCarsOnTracks, bonusTimeLimit, baseWage, stationsChainData, licenses);
+			StaticShuntingUnloadJobDefinition jobDefinition = PopulateShuntingUnloadJobDefinitionWithExistingCars(jobChainController.jobChainGO, destinationController.logicStation, startingTrack, warehouseMachine, carsPerCargoType, randomSortingOfCarsOnTracks, bonusTimeLimit, baseWage, stationsChainData, JobLicenseType_v2.ListToFlags(requiredLicenses));
 
 			jobChainController.AddJobDefinitionToChain(jobDefinition);
 			jobChainController.FinalizeSetupAndGenerateFirstJob();
@@ -161,21 +156,21 @@ namespace DVOwnership
 
 			var yto = YardTracksOrganizer.Instance;
 			var carSpawn = CarSpawner.Instance;
-			var licenseManager = SingletonBehaviour<LicenseManager>.Instance;
+			var licenseManager = LicenseManager.Instance;
 
-			List<CarsPerTrack> carsPerStartingTrack = new List<CarsPerTrack>();
-			List<Car> carsForJob = new List<Car>();
-			List<CargoType> cargoTypes = new List<CargoType>();
-			List<CargoType_v2> cargoTypes_V2 = new List<CargoType_v2>();
+			var carsPerStartingTrack = new List<CarsPerTrack>();
+			var carsForJob = new List<Car>();
+			var cargoTypes = new List<CargoType>();
+			var cargoTypes_v2 = new List<CargoType_v2>();
 			foreach (CargoType cargotype in cargoGroup.cargoTypes)
 			{
-				DVOwnership.LogDebug(() => $"Cargo : {cargotype.ToString()}");
-				cargoTypes_V2.Add(TransitionHelpers.ToV2(cargotype));
+				DVOwnership.LogDebug(() => $"Cargo : {cargotype}");
+				cargoTypes_v2.Add(TransitionHelpers.ToV2(cargotype));
 			}
 
-			foreach (var carSet in carSetsForJob)
+			foreach (List<Car> carSet in carSetsForJob)
 			{
-				var track = carSet.Aggregate(null as Track, (t, c) =>
+				Track? track = carSet.Aggregate(null as Track, (t, c) =>
 				{
 					if (t == null && c.FrontBogieTrack == c.RearBogieTrack) { return c.FrontBogieTrack; }
 					return t;
@@ -191,15 +186,15 @@ namespace DVOwnership
 				foreach (Car car in carSet)
 				{
 					carsForJob.Add(car);
-					var potentialCargoTypes = from CargoType_V2 in cargoTypes_V2
-					                          where CargoType_V2.IsLoadableOnCarType(car.carType.parentType)
-					                          select CargoType_V2;
+					var potentialCargoTypes = from cargoType_v2 in cargoTypes_v2
+					                          where cargoType_v2.IsLoadableOnCarType(car.carType.parentType)
+					                          select cargoType_v2;
 					if (potentialCargoTypes.Count() < 1)
 					{
-						DVOwnership.LogError($"Station[{originController.logicStation.ID}] found no matching cargo types for car type {car.carType} and cargo group cargo types [{cargoGroup.cargoTypes.Aggregate("", (str, type) => $"{str}, {type}")}].");
+						DVOwnership.LogError($"Station[{originController.logicStation.ID}] found no matching cargo types for car type {car.carType} and cargo group cargo types [{string.Join(", ", cargoGroup.cargoTypes)}].");
 						return null;
 					}
-					var selectedCargoType = Utilities.GetRandomFrom(rng, potentialCargoTypes);
+					CargoType_v2 selectedCargoType = Utilities.GetRandomFrom(rng, potentialCargoTypes);
 					cargoTypes.Add(selectedCargoType.v1);
 				}
 			}
@@ -214,10 +209,10 @@ namespace DVOwnership
 				select license
 			);
 
-			var warehouseMachinesThatSupportCargoTypes = originController.logicStation.yard.GetWarehouseMachinesThatSupportCargoTypes(cargoTypes);
+			List<WarehouseMachine> warehouseMachinesThatSupportCargoTypes = originController.logicStation.yard.GetWarehouseMachinesThatSupportCargoTypes(cargoTypes);
 			if (warehouseMachinesThatSupportCargoTypes.Count == 0)
 			{
-				DVOwnership.LogError($"Station[{originController.logicStation.ID}] doesn't have a warehouse machine that supports all cargo types for the job. [{cargoTypes.Aggregate("", (str, type) => $"{str}, {type}")}]");
+				DVOwnership.LogError($"Station[{originController.logicStation.ID}] doesn't have a warehouse machine that supports all cargo types for the job. [{string.Join(", ", cargoTypes)}]");
 				return null;
 			}
 			warehouseMachinesThatSupportCargoTypes.RemoveAll((machine) => machine.WarehouseTrack.length < (double)approxLengthOfWholeTrain);
@@ -226,16 +221,16 @@ namespace DVOwnership
 				DVOwnership.LogDebug(() => $"Station[{originController.logicStation.ID}] doesn't have a warehouse track long enough for the job. ({approxLengthOfWholeTrain})");
 				return null;
 			}
-			var warehouseMachine = Utilities.GetRandomFrom(rng, warehouseMachinesThatSupportCargoTypes);
+			WarehouseMachine warehouseMachine = Utilities.GetRandomFrom(rng, warehouseMachinesThatSupportCargoTypes);
 
-			var destinationController = Utilities.GetRandomFrom(rng, cargoGroup.stations);
-			var possibleDestinationTracks = yto.FilterOutTracksWithoutRequiredFreeSpace(originController.logicStation.yard.TransferOutTracks, approxLengthOfWholeTrain);
+			StationController destinationController = Utilities.GetRandomFrom(rng, cargoGroup.stations);
+			List<Track> possibleDestinationTracks = yto.FilterOutTracksWithoutRequiredFreeSpace(originController.logicStation.yard.TransferOutTracks, approxLengthOfWholeTrain);
 			if (possibleDestinationTracks.Count() < 1)
 			{
 				DVOwnership.LogWarning($"Station[{originController.logicStation.ID}] couldn't find an outbound track with enough free space for the job. ({approxLengthOfWholeTrain})");
 				return null;
 			}
-			var destinationTrack = Utilities.GetRandomFrom(rng, possibleDestinationTracks);
+			Track destinationTrack = Utilities.GetRandomFrom(rng, possibleDestinationTracks);
 
 			var gameObject = new GameObject($"ChainJob[{JobType.ShuntingLoad}]: {originController.logicStation.ID} - {destinationController.logicStation.ID}");
 			gameObject.transform.SetParent(originController.transform);
@@ -253,20 +248,10 @@ namespace DVOwnership
 			float baseWage = JobPaymentCalculator.CalculateJobPayment(JobType.ShuntingLoad, distanceInMeters, Utilities.ExtractPaymentCalculationData(carsForJob));
 			HashSet<JobLicenseType_v2> requiredLicenses = jobLicenses.Concat(licenseManager.GetRequiredLicensesForJobType(JobType.ShuntingLoad)).ToHashSet();
 
-			DVOwnership.LogDebug(() => $"Number of licenses required: {requiredLicenses.Count}");
-			JobLicenses licenses = JobLicenses.Basic;
-			foreach (JobLicenseType_v2 license in requiredLicenses) {
-				licenses |= license.v1;
-			}
-
-			var jobDefinition = PopulateShuntingLoadJobDefinitionWithExistingCars(jobChainController.jobChainGO, originController.logicStation, carsPerStartingTrack, warehouseMachine, carsPerCargoTypes, destinationTrack, bonusTimeLimit, baseWage, stationsChainData, licenses);
-			DVOwnership.LogDebug(() => "After populate job def");
+			StaticShuntingLoadJobDefinition jobDefinition = PopulateShuntingLoadJobDefinitionWithExistingCars(jobChainController.jobChainGO, originController.logicStation, carsPerStartingTrack, warehouseMachine, carsPerCargoTypes, destinationTrack, bonusTimeLimit, baseWage, stationsChainData, JobLicenseType_v2.ListToFlags(requiredLicenses));
 
 			jobChainController.AddJobDefinitionToChain(jobDefinition);
-			DVOwnership.LogDebug(() => "After job job def");
-
 			jobChainController.FinalizeSetupAndGenerateFirstJob();
-			DVOwnership.LogDebug(() => "Finalizing job def");
 
 			return jobChainController;
 		}
@@ -341,7 +326,7 @@ namespace DVOwnership
 
 		public static void SetDestination(JobChainController controller, string? destinationID)
 		{
-			var rollingStock = SingletonBehaviour<RollingStockManager>.Instance;
+			var rollingStock = RollingStockManager.Instance;
 			var trainCars = controller.trainCarsForJobChain;
 			var equipments = from trainCar in trainCars select rollingStock.FindByTrainCar(trainCar);
 			foreach (var equipment in equipments)
