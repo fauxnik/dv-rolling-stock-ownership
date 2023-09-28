@@ -4,6 +4,7 @@ using System.Linq;
 using CommsRadioAPI;
 using DV;
 using DV.InventorySystem;
+using DV.Localization;
 using DV.PointSet;
 using DV.ThingTypes;
 using DV.ThingTypes.TransitionHelpers;
@@ -122,7 +123,7 @@ internal class PurchaseConfirmer : AStateBehaviour
 
 	private static string ContentFromType(TrainCarType carType)
 	{
-		string name = Enum.GetName(typeof(TrainCarType), carType);
+		string name = LocalizationAPI.L(carType.ToV2().localizationKey);
 		float price = Finance.CalculateCarPrice(carType);
 		string addendum = Finance.CanAfford(price) ? "" : "\n\nInsufficient funds.";
 		return $"Buy {name} for ${price}?{addendum}";

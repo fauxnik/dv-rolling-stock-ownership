@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using CommsRadioAPI;
 using DV;
+using DV.Localization;
 using DV.ThingTypes;
 using DV.ThingTypes.TransitionHelpers;
 using DVOwnership.Patches;
@@ -97,7 +98,7 @@ internal class TrainCarTypePicker : AStateBehaviour
 	private static string ContentFromIndex(int index)
 	{
 		TrainCarType type = availableCarTypes[index];
-		string name = Enum.GetName(typeof(TrainCarType), type);
+		string name = LocalizationAPI.L(type.ToV2().localizationKey);
 		float price = Finance.CalculateCarPrice(type);
 		string addendum = Finance.CanAfford(price) ? "" : "\n\nInsufficient funds.";
 		return $"{name}\n${price}{addendum}";

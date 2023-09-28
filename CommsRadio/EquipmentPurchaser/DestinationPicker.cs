@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using CommsRadioAPI;
 using DV;
+using DV.Localization;
 using DV.PointSet;
 using DV.ThingTypes;
 using DV.ThingTypes.TransitionHelpers;
@@ -201,7 +202,7 @@ internal class DestinationPicker : AStateBehaviour
 
 	private static string ContentFromType(TrainCarType carType)
 	{
-		string name = Enum.GetName(typeof(TrainCarType), carType);
+		string name = LocalizationAPI.L(carType.ToV2().localizationKey);
 		GameObject? prefab = TransitionHelpers.ToV2(carType).prefab;
 		TrainCar? trainCar = prefab?.GetComponent<TrainCar>();
 		float? length = trainCar?.InterCouplerDistance;
