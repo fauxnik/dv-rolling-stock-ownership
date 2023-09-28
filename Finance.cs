@@ -10,7 +10,7 @@ internal static class Finance
 {
 	internal static bool CanAfford(float price)
 	{
-		return SingletonBehaviour<Inventory>.Instance.PlayerMoney >= price;
+		return Inventory.Instance.PlayerMoney >= price;
 	}
 
 	internal static bool CanAfford(TrainCarType carType)

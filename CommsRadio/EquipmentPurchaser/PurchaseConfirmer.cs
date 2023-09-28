@@ -96,7 +96,7 @@ internal class PurchaseConfirmer : AStateBehaviour
 
 					utility.PlaySound(VanillaSoundCommsRadio.Confirm);
 					utility.PlayVehicleSound(VanillaSoundVehicle.SpawnVehicle, trainCar);
-					SingletonBehaviour<RollingStockManager>.Instance.Add(Equipment.FromTrainCar(trainCar));
+					RollingStockManager.Instance.Add(Equipment.FromTrainCar(trainCar));
 				}
 				else
 				{
