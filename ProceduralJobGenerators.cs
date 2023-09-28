@@ -1,4 +1,4 @@
-﻿using DV.Logic.Job;
+using DV.Logic.Job;
 using DV.ThingTypes;
 using DV.ThingTypes.TransitionHelpers;
 using DV.Utils;
@@ -36,8 +36,10 @@ namespace DVOwnership
 			float approxLengthOfWholeTrain = carSpawn.GetTotalCarsLength(carsForJob) + carSpawn.GetSeparationLengthBetweenCars(carsForJob.Count);
 
 			HashSet<JobLicenseType_v2> jobLicenses = new (
-				licenseManager.GetRequiredLicensesForCargoTypes(cargoTypes)
+				from license in licenseManager.GetRequiredLicensesForCargoTypes(cargoTypes)
 					.Append(licenseManager.GetRequiredLicenseForNumberOfTransportedCars(carsForJob.Count))
+				where license != null
+				select license
 			);
 
 			var possibleDestinationTracks = yto.FilterOutTracksWithoutRequiredFreeSpace(destinationController.logicStation.yard.TransferInTracks, approxLengthOfWholeTrain);
@@ -96,8 +98,10 @@ namespace DVOwnership
 			float approxLengthOfWholeTrain = carSpawn.GetTotalCarsLength(carsForJob) + carSpawn.GetSeparationLengthBetweenCars(carsForJob.Count);
 
 			HashSet<JobLicenseType_v2> jobLicenses = new (
-				licenseManager.GetRequiredLicensesForCargoTypes(cargoTypes)
+				from license in licenseManager.GetRequiredLicensesForCargoTypes(cargoTypes)
 					.Append(licenseManager.GetRequiredLicenseForNumberOfTransportedCars(carsForJob.Count))
+				where license != null
+				select license
 			);
 
 			var warehouseMachinesThatSupportCargoTypes = destinationController.logicStation.yard.GetWarehouseMachinesThatSupportCargoTypes(cargoTypes);
@@ -199,13 +203,15 @@ namespace DVOwnership
 					cargoTypes.Add(selectedCargoType.v1);
 				}
 			}
-			List<CarsPerCargoType> carsPerCargoTypes = Utilities.ExtractCarsPerCargoType(carsForJob);
+			List<CarsPerCargoType> carsPerCargoTypes = Utilities.ExtractCarsPerCargoType(carsForJob, cargoTypes);
 
 			float approxLengthOfWholeTrain = carSpawn.GetTotalCarsLength(carsForJob) + carSpawn.GetSeparationLengthBetweenCars(carsForJob.Count);
 
 			HashSet<JobLicenseType_v2> jobLicenses = new (
-				licenseManager.GetRequiredLicensesForCargoTypes(cargoTypes)
+				from license in licenseManager.GetRequiredLicensesForCargoTypes(cargoTypes)
 					.Append(licenseManager.GetRequiredLicenseForNumberOfTransportedCars(carsForJob.Count))
+				where license != null
+				select license
 			);
 
 			var warehouseMachinesThatSupportCargoTypes = originController.logicStation.yard.GetWarehouseMachinesThatSupportCargoTypes(cargoTypes);
