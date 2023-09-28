@@ -1,5 +1,4 @@
 ﻿using DV.Logic.Job;
-using DV.Utils;
 using HarmonyLib;
 using System.Linq;
 using System.Collections.Generic;
@@ -30,9 +29,9 @@ namespace DVOwnership.Patches
 
 		static void OccupiedLength_get_Postfix(Track __instance, ref float __result)
 		{
-			var yto = SingletonBehaviour<YardTracksOrganizer>.Instance;
-			var carSpawner = SingletonBehaviour<CarSpawner>.Instance;
-			var rsm = SingletonBehaviour<RollingStockManager>.Instance;
+			var yto = YardTracksOrganizer.Instance;
+			var carSpawner = CarSpawner.Instance;
+			var rsm = RollingStockManager.Instance;
 			var equipmentOnTrack = rsm.GetEquipmentOnTrack(__instance);
 			List<Car> cars = new();
 			foreach (Equipment equipment in equipmentOnTrack)
@@ -47,7 +46,7 @@ namespace DVOwnership.Patches
 
 		static void IsFree_Postfix(Track __instance, ref bool __result)
 		{
-			var rsm = SingletonBehaviour<RollingStockManager>.Instance;
+			var rsm = RollingStockManager.Instance;
 			var equipmentOnTrack = rsm.GetEquipmentOnTrack(__instance);
 			var isFree = equipmentOnTrack.Count() == 0;
 			DVOwnership.LogDebug(() => $"[IsFree()] Track: {__instance.ID.FullDisplayID}\n\tspawned: {equipmentOnTrack.Where(eq => eq.IsSpawned).Count()} cars\n\tunspawned: {equipmentOnTrack.Where(eq => !eq.IsSpawned).Count()} cars\n\tfree?: {(isFree ? "yes" : "no")}");

@@ -45,12 +45,12 @@ namespace DVOwnership
 
 		private IEnumerator ProximityCheckCoro()
 		{
-			JobsManager jobsManager = SingletonBehaviour<JobsManager>.Instance;
+			JobsManager jobsManager = JobsManager.Instance;
 			for (;;)
 			{
 				lock (RollingStockManager.syncLock)
 				{
-					var rollingStock = SingletonBehaviour<RollingStockManager>.Instance;
+					var rollingStock = RollingStockManager.Instance;
 					var seenGuids = new HashSet<string>();
 
 					foreach (var equipment in rollingStock.AllEquipment)

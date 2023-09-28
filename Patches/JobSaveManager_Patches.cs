@@ -1,6 +1,5 @@
 ﻿using DV;
 using DV.Logic.Job;
-using DV.Utils;
 using HarmonyLib;
 using System.Linq;
 
@@ -28,7 +27,7 @@ namespace DVOwnership.Patches
 
 		static void GetYardTrackWithId_Postfix(string trackId, ref Track __result)
 		{
-			__result ??= SingletonBehaviour<WorldData>.Instance.OrderedRailtracks.Select(railTrack => railTrack.logicTrack).FirstOrDefault(logicTrack => logicTrack.ID.FullID == trackId);
+			__result ??= WorldData.Instance.OrderedRailtracks.Select(railTrack => railTrack.logicTrack).FirstOrDefault(logicTrack => logicTrack.ID.FullID == trackId);
 		}
 	}
 }

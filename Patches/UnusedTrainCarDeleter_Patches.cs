@@ -1,5 +1,4 @@
-﻿using DV.Utils;
-using HarmonyLib;
+﻿using HarmonyLib;
 using System.Collections.Generic;
 
 namespace DVOwnership.Patches
@@ -39,7 +38,7 @@ namespace DVOwnership.Patches
 
 			__result = false;
 
-			var equipment = SingletonBehaviour<RollingStockManager>.Instance.FindByTrainCar(trainCar);
+			var equipment = RollingStockManager.Instance.FindByTrainCar(trainCar);
 			if (equipment == null)
 			{
 				DVOwnership.LogError($"Checking delete conditions for a train car with ID {trainCar.ID}, which isn't recorded in the rolling stock registry! Returning true.");

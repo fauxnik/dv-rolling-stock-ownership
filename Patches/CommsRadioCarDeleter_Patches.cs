@@ -1,5 +1,4 @@
 ﻿using DV;
-using DV.Utils;
 using HarmonyLib;
 
 namespace DVOwnership.Patches
@@ -43,7 +42,7 @@ namespace DVOwnership.Patches
 
 			DVOwnership.Log($"Train car is being deleted. Attempting to remove it from the rolling stock registry.");
 
-			var manager = SingletonBehaviour<RollingStockManager>.Instance;
+			var manager = RollingStockManager.Instance;
 			var equipment = manager?.FindByCarGUID(carToMaybeDeleteGuid);
 			if (equipment == null)
 			{

@@ -81,7 +81,7 @@ namespace DVOwnership
 		{
 			var typeOfEquipment = spawned.HasValue ? spawned.Value ? "spawned " : "unspawned " : "";
 			DVOwnership.Log($"Finding all {typeOfEquipment}equipment that is on track {track.ID.FullDisplayID}");
-			var yto = SingletonBehaviour<YardTracksOrganizer>.Instance;
+			var yto = YardTracksOrganizer.Instance;
 			var equipments = from equipment in registry
 							 where equipment.IsOnTrack(track) && (!spawned.HasValue || equipment.IsSpawned == spawned)
 							 select equipment;

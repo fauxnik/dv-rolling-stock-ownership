@@ -1,6 +1,5 @@
 ﻿using DV;
 using DV.JObjectExtstensions;
-using DV.Utils;
 using HarmonyLib;
 using Newtonsoft.Json.Linq;
 using System;
@@ -23,8 +22,8 @@ namespace DVOwnership
 				try
 				{
 					var tracksHash = WorldData.Instance.TracksHash;
-					var rollingStockManager = SingletonBehaviour<RollingStockManager>.Instance;
-					SaveGameManager saveGameManager = SingletonBehaviour<SaveGameManager>.Instance;
+					var rollingStockManager = RollingStockManager.Instance;
+					SaveGameManager saveGameManager = SaveGameManager.Instance;
 
 					// TODO: is there any more data that needs to be saved?
 
@@ -49,7 +48,7 @@ namespace DVOwnership
 
 			static void Postfix(SaveGameManager __instance)
 			{
-				SaveGameManager saveGameManager = SingletonBehaviour<SaveGameManager>.Instance;
+				SaveGameManager saveGameManager = SaveGameManager.Instance;
 				try
 				{
 					JObject saveData = saveGameManager.data.GetJObject(PRIMARY_SAVE_KEY);
@@ -75,7 +74,7 @@ namespace DVOwnership
 					}
 					else
 					{
-						var rollingStockManager = SingletonBehaviour<RollingStockManager>.Instance;
+						var rollingStockManager = RollingStockManager.Instance;
 						rollingStockManager.LoadSaveData(rollingStockJArray);
 					}
 

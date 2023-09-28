@@ -1,5 +1,4 @@
-﻿using DV.Utils;
-using HarmonyLib;
+﻿using HarmonyLib;
 
 namespace DVOwnership.Patches
 {
@@ -25,7 +24,7 @@ namespace DVOwnership.Patches
 
 		static void PrepareForDestroy_Prefix(TrainCar __instance)
 		{
-			var equipment = SingletonBehaviour<RollingStockManager>.Instance.FindByTrainCar(__instance);
+			var equipment = RollingStockManager.Instance.FindByTrainCar(__instance);
 			if (equipment == null)
 			{
 				DVOwnership.LogError($"Preparing train car with ID {__instance.ID} for despawning, but it isn't recorded in the rolling stock registry!");

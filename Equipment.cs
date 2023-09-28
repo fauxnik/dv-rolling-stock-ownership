@@ -2,7 +2,6 @@
 using DV.JObjectExtstensions;
 using DV.Simulation.Cars;
 using DV.ThingTypes;
-using DV.Utils;
 using UnityEngine;
 using Newtonsoft.Json.Linq;
 using System;
@@ -154,7 +153,7 @@ namespace DVOwnership
 		public static Equipment FromTrainCar(TrainCar trainCar)
 		{
 			DVOwnership.Log($"Creating equipment record from train car {trainCar.ID}.");
-			SingletonBehaviour<UnusedTrainCarDeleter>.Instance.MarkForDelete(trainCar);
+			UnusedTrainCarDeleter.Instance.MarkForDelete(trainCar);
 			var bogie1 = trainCar.Bogies[0];
 			var bogie2 = trainCar.Bogies[1];
 			var carState = trainCar.GetComponent<CarStateSave>();
@@ -323,10 +322,10 @@ namespace DVOwnership
 
 			DVOwnership.Log($"Spawning train car based on equipment record with ID {ID}.");
 			var carPrefab = TrainCar.GetCarPrefab(CarType);
-			var allTracks = new List<RailTrack>(SingletonBehaviour<RailTrackRegistry>.Instance.AllTracks);
+			var allTracks = new List<RailTrack>(RailTrackRegistry.Instance.AllTracks);
 			var bogie1Track = isBogie1Derailed ? null : allTracks.Find(track => track.logicTrack.ID.FullID == bogie1TrackID);
 			var bogie2Track = isBogie2Derailed ? null : allTracks.Find(track => track.logicTrack.ID.FullID == bogie2TrackID);
-			trainCar = SingletonBehaviour<CarSpawner>.Instance.SpawnLoadedCar(carPrefab, ID, CarGUID, false, position + WorldMover.currentMove, rotation, isBogie1Derailed, bogie1Track, bogie1PositionAlongTrack, isBogie2Derailed, bogie2Track, bogie2PositionAlongTrack, IsCoupledFront, IsCoupledRear);
+			trainCar = CarSpawner.Instance.SpawnLoadedCar(carPrefab, ID, CarGUID, false, position + WorldMover.currentMove, rotation, isBogie1Derailed, bogie1Track, bogie1PositionAlongTrack, isBogie2Derailed, bogie2Track, bogie2PositionAlongTrack, IsCoupledFront, IsCoupledRear);
 
 			if (loadedCargo != CargoType.None) { trainCar.logicCar.LoadCargo(trainCar.cargoCapacity, loadedCargo, null); }
 			if (isExploded) { TrainCarExplosion.UpdateModelToExploded(trainCar); }
@@ -343,7 +342,7 @@ namespace DVOwnership
 			if(simCarStateSave != null && simCarState != null) { simCarState.SetStateSaveData(simCarState.GetStateSaveData()); }
 
 			IsMarkedForDespawning = false;
-			SingletonBehaviour<UnusedTrainCarDeleter>.Instance.MarkForDelete(trainCar);
+			UnusedTrainCarDeleter.Instance.MarkForDelete(trainCar);
 
 			SetupCouplerEventHandlers(trainCar);
 
@@ -421,7 +420,7 @@ namespace DVOwnership
 			TrainCar? trainCar = null;
 			if (isSpawned)
 			{
-				var allCars = SingletonBehaviour<CarSpawner>.Instance.AllCars;
+				var allCars = CarSpawner.Instance.AllCars;
 				trainCar = allCars.Find(tc => tc.CarGUID == carGuid);
 				if (trainCar == null)
 				{

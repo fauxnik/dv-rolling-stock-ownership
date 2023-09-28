@@ -1,7 +1,6 @@
 using DV;
 using DV.UI;
 using DV.UIFramework;
-using DV.Utils;
 using System.Collections;
 
 namespace DVOwnership
@@ -43,17 +42,17 @@ namespace DVOwnership
 		{
 			if (WorldStreamingInit.IsLoaded)
 			{
-				SingletonBehaviour<CoroutineManager>.Instance.Run(Coro(prefab, locKeys, onClose));
+				CoroutineManager.Instance.Run(Coro(prefab, locKeys, onClose));
 			}
 			else
 			{
-				WorldStreamingInit.LoadingFinished += () => SingletonBehaviour<CoroutineManager>.Instance.Run(Coro(prefab, locKeys, onClose));
+				WorldStreamingInit.LoadingFinished += () => CoroutineManager.Instance.Run(Coro(prefab, locKeys, onClose));
 			}
 		}
 
 		private static IEnumerator Coro(Popup prefab, PopupLocalizationKeys locKeys, PopupClosedDelegate? onClose)
 		{
-			while (SingletonBehaviour<AppUtil>.Instance.IsTimePaused)
+			while (AppUtil.Instance.IsTimePaused)
 				yield return null;
 			while (!PopupManager.CanShowPopup())
 				yield return null;
@@ -63,12 +62,12 @@ namespace DVOwnership
 
 		private static PopupManager PopupManager
 		{
-			get => SingletonBehaviour<ACanvasController<CanvasController.ElementType>>.Instance.PopupManager;
+			get => ACanvasController<CanvasController.ElementType>.Instance.PopupManager;
 		}
 
 		private static PopupNotificationReferences uiReferences
 		{
-			get => SingletonBehaviour<ACanvasController<CanvasController.ElementType>>.Instance.uiReferences;
+			get => ACanvasController<CanvasController.ElementType>.Instance.uiReferences;
 		}
 	}
 }

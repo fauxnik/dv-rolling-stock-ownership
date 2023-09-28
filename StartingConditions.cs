@@ -6,7 +6,6 @@ using DV.Logic.Job;
 using DV.Simulation.Cars;
 using DV.ThingTypes;
 using DV.ThingTypes.TransitionHelpers;
-using DV.Utils;
 using HarmonyLib;
 using UnityEngine;
 
@@ -24,7 +23,7 @@ internal static class StartingConditions
 	internal static void Verify()
 	{
 		bool isShuntingLicenseChanged = false;
-		LicenseManager licenseManager = SingletonBehaviour<LicenseManager>.Instance;
+		LicenseManager licenseManager = LicenseManager.Instance;
 		if (!licenseManager.IsJobLicenseAcquired(TransitionHelpers.ToV2(JobLicenses.Shunting)))
 		{
 			licenseManager.AcquireJobLicense(TransitionHelpers.ToV2(JobLicenses.Shunting));
@@ -67,12 +66,12 @@ internal static class StartingConditions
 	{
 		yield return new WaitForSeconds(1);
 
-		List<RailTrack> allTracks = new List<RailTrack>(SingletonBehaviour<RailTrackRegistry>.Instance.AllTracks);
+		List<RailTrack> allTracks = new List<RailTrack>(RailTrackRegistry.Instance.AllTracks);
 		RailTrack playerHomeTrack = allTracks.Find(track => track.logicTrack.ID.FullID == playerHomeTrackID);
 
-		Inventory inventory = SingletonBehaviour<Inventory>.Instance;
-		UnusedTrainCarDeleter unusedTrainCarDeleter = SingletonBehaviour<UnusedTrainCarDeleter>.Instance;
-		CarSpawner carSpawner = SingletonBehaviour<CarSpawner>.Instance;
+		Inventory inventory = Inventory.Instance;
+		UnusedTrainCarDeleter unusedTrainCarDeleter = UnusedTrainCarDeleter.Instance;
+		CarSpawner carSpawner = CarSpawner.Instance;
 		TrainCarLivery starterLoco = TrainCarType.LocoShunter.ToV2();
 		IEnumerable<Equipment> spawnedEquipment = carSpawner.SpawnCarTypesOnTrackRandomOrientation(new List<TrainCarLivery> { starterLoco }, playerHomeTrack, true, true)
 			.Select(Equipment.FromTrainCar);
