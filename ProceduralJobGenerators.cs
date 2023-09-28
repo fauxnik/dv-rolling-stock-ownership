@@ -273,7 +273,16 @@ namespace DVOwnership
 
 		private static StaticTransportJobDefinition PopulateHaulJobDefinitionWithExistingCars(GameObject chainJobGO, Station logicStation, Track startingTrack, Track destinationTrack, List<Car> logicCarsToHaul, List<CargoType> cargoTypePerCar, List<float> cargoAmountPerCar, float bonusTimeLimit, float baseWage, StationsChainData stationsChainData, JobLicenses requiredLicenses)
 		{
-			var jobDefinition = chainJobGO.AddComponent<StaticTransportJobDefinition>();
+			if (chainJobGO == null) { DVOwnership.LogError("Chain job game object must not be null, but is (in PopulateHaulJobDefinitionWithExistingCars)"); }
+			if (logicStation == null) { DVOwnership.LogError("Origin station must not be null, but is (in PopulateHaulJobDefinitionWithExistingCars)"); }
+			if (startingTrack == null) { DVOwnership.LogError("Starting track must not be null, but is (in PopulateHaulJobDefinitionWithExistingCars)"); }
+			if (destinationTrack == null) { DVOwnership.LogError("Destination track must not be null, but is (in PopulateHaulJobDefinitionWithExistingCars)"); }
+			if (logicCarsToHaul == null) { DVOwnership.LogError("List of logic cars must not be null, but is (in PopulateHaulJobDefinitionWithExistingCars)"); }
+			if (logicCarsToHaul.Any(car => car == null)) { DVOwnership.LogError("All logic cars must not be null, but at least one of them is (in PopulateHaulJobDefinitionWithExistingCars)"); }
+			if (cargoTypePerCar == null) { DVOwnership.LogError("List of cargo type per car must not be null, but is (in PopulateHaulJobDefinitionWithExistingCars)"); }
+			if (cargoAmountPerCar == null) { DVOwnership.LogError("List of cargo amounts must not be null, but is (in PopulateHaulJobDefinitionWithExistingCars)"); }
+			if (stationsChainData == null) { DVOwnership.LogError("Stations chain data must not be null, but is (in PopulateHaulJobDefinitionWithExistingCars)"); }
+			var jobDefinition = chainJobGO!.AddComponent<StaticTransportJobDefinition>();
 			jobDefinition.PopulateBaseJobDefinition(logicStation, bonusTimeLimit, baseWage, stationsChainData, requiredLicenses);
 			jobDefinition.startingTrack = startingTrack;
 			jobDefinition.trainCarsToTransport = logicCarsToHaul;
@@ -284,25 +293,47 @@ namespace DVOwnership
 			return jobDefinition;
 		}
 
-		private static StaticShuntingUnloadJobDefinition PopulateShuntingUnloadJobDefinitionWithExistingCars(GameObject chainJobGO, Station logicStation, Track startingTrack, WarehouseMachine unloadMachine, List<CarsPerCargoType> carsPerCargoType, List<CarsPerTrack> carsPerDestinationTrack, float bonusTimeLimit, float baseWage, StationsChainData stationsChainData, JobLicenses requiredLicenses)
+		private static StaticShuntingUnloadJobDefinition PopulateShuntingUnloadJobDefinitionWithExistingCars(GameObject chainJobGO, Station logicStation, Track startingTrack, WarehouseMachine unloadMachine, List<CarsPerCargoType> carsPerCargoTypes, List<CarsPerTrack> carsPerDestinationTrack, float bonusTimeLimit, float baseWage, StationsChainData stationsChainData, JobLicenses requiredLicenses)
 		{
-			var jobDefinition = chainJobGO.AddComponent<StaticShuntingUnloadJobDefinition>();
+			if (chainJobGO == null) { DVOwnership.LogError("Chain job game object must not be null, but is (in PopulateShuntingUnloadJobDefinitionWithExistingCars)"); }
+			if (logicStation == null) { DVOwnership.LogError("Origin station must not be null, but is (in PopulateShuntingUnloadJobDefinitionWithExistingCars)"); }
+			if (startingTrack == null) { DVOwnership.LogError("Starting track must not be null, but is (in PopulateShuntingUnloadJobDefinitionWithExistingCars)"); }
+			if (unloadMachine == null) { DVOwnership.LogError("Warehouse machine must not be null, but is (in PopulateShuntingUnloadJobDefinitionWithExistingCars)"); }
+			if (carsPerCargoTypes == null) { DVOwnership.LogError("List of cars per cargo types must not be null, but is (in PopulateShuntingUnloadJobDefinitionWithExistingCars)"); }
+			if (carsPerCargoTypes.Any(carsPerCargoType => carsPerCargoType == null)) { DVOwnership.LogError("All cars per cargo type must not be null, but at least one of them is (in PopulateShuntingUnloadJobDefinitionWithExistingCars)"); }
+			if (carsPerCargoTypes.Any(carsPerCargoType => carsPerCargoType.cars == null)) { DVOwnership.LogError("All lists of cars must not be null, but at least one of them is (in PopulateShuntingUnloadJobDefinitionWithExistingCars)"); }
+			if (carsPerCargoTypes.Any(carsPerCargoType => carsPerCargoType.cars.Any(car => car == null))) { DVOwnership.LogError("All cars must not be null, but at least one of them is (in PopulateShuntingUnloadJobDefinitionWithExistingCars)"); }
+			if (carsPerDestinationTrack == null) { DVOwnership.LogError("List of cars per destination track must not be null, but is (in PopulateShuntingUnloadJobDefinitionWithExistingCars)"); }
+			if (carsPerDestinationTrack.Any(carsPerTrack => carsPerTrack == null)) { DVOwnership.LogError("All cars per destination track must not be null, but at least one of them is (in PopulateShuntingUnloadJobDefinitionWithExistingCars)"); }
+			if (stationsChainData == null) { DVOwnership.LogError("Stations chain data must not be null, but is (in PopulateShuntingUnloadJobDefinitionWithExistingCars)"); }
+			var jobDefinition = chainJobGO!.AddComponent<StaticShuntingUnloadJobDefinition>();
 			jobDefinition.PopulateBaseJobDefinition(logicStation, bonusTimeLimit, baseWage, stationsChainData, requiredLicenses);
 			jobDefinition.startingTrack = startingTrack;
 			jobDefinition.unloadMachine = unloadMachine;
-			jobDefinition.unloadData = carsPerCargoType;
+			jobDefinition.unloadData = carsPerCargoTypes;
 			jobDefinition.carsPerDestinationTrack = carsPerDestinationTrack;
 			jobDefinition.forceCorrectCargoStateOnCars = true;
 			return jobDefinition;
 		}
 
-		private static StaticShuntingLoadJobDefinition PopulateShuntingLoadJobDefinitionWithExistingCars(GameObject chainJobGO, Station logicStation, List<CarsPerTrack> carsPerStartingTrack, WarehouseMachine loadMachine, List<CarsPerCargoType> carsPerCargoType, Track destinationTrack, float bonusTimeLimit, float baseWage, StationsChainData stationsChainData, JobLicenses requiredLicenses)
+		private static StaticShuntingLoadJobDefinition PopulateShuntingLoadJobDefinitionWithExistingCars(GameObject chainJobGO, Station logicStation, List<CarsPerTrack> carsPerStartingTrack, WarehouseMachine loadMachine, List<CarsPerCargoType> carsPerCargoTypes, Track destinationTrack, float bonusTimeLimit, float baseWage, StationsChainData stationsChainData, JobLicenses requiredLicenses)
 		{
-			var jobDefinition = chainJobGO.AddComponent<StaticShuntingLoadJobDefinition>();
+			if (chainJobGO == null) { DVOwnership.LogError("Chain job game object must not be null, but is (in PopulateShungingLoadJobDefinitionWithExistingCars)"); }
+			if (logicStation == null) { DVOwnership.LogError("Origin station must not be null, but is (in PopulateShungingLoadJobDefinitionWithExistingCars)"); }
+			if (carsPerStartingTrack == null) { DVOwnership.LogError("List of cars per starting track must not be null, but is (in PopulateShungingLoadJobDefinitionWithExistingCars)"); }
+			if (carsPerStartingTrack.Any(carsPerTrack => carsPerTrack == null)) { DVOwnership.LogError("All cars per starting track must not be null, but at least one of them is (in PopulateShungingLoadJobDefinitionWithExistingCars)"); }
+			if (loadMachine == null) { DVOwnership.LogError("Warehouse machine must not be null, but is (in PopulateShungingLoadJobDefinitionWithExistingCars)"); }
+			if (carsPerCargoTypes == null) { DVOwnership.LogError("List of cars per cargo types must not be null, but is (in PopulateShungingLoadJobDefinitionWithExistingCars)"); }
+			if (carsPerCargoTypes.Any(carsPerCargoType => carsPerCargoType == null)) { DVOwnership.LogError("All cars per cargo type must not be null, but at least one of them is (in PopulateShungingLoadJobDefinitionWithExistingCars)"); }
+			if (carsPerCargoTypes.Any(carsPerCargoType => carsPerCargoType.cars == null)) { DVOwnership.LogError("All lists of cars must not be null, but at least one of them is (in PopulateShungingLoadJobDefinitionWithExistingCars)"); }
+			if (carsPerCargoTypes.Any(carsPerCargoType => carsPerCargoType.cars.Any(car => car == null))) { DVOwnership.LogError("All cars must not be null, but at least one of them is (in PopulateShungingLoadJobDefinitionWithExistingCars)"); }
+			if (destinationTrack == null) { DVOwnership.LogError("Destination track must not be null, but is (in PopulateShungingLoadJobDefinitionWithExistingCars)"); }
+			if (stationsChainData == null) { DVOwnership.LogError("Stations chain data must not be null, but is (in PopulateShungingLoadJobDefinitionWithExistingCars)"); }
+			var jobDefinition = chainJobGO!.AddComponent<StaticShuntingLoadJobDefinition>();
 			jobDefinition.PopulateBaseJobDefinition(logicStation, bonusTimeLimit, baseWage, stationsChainData, requiredLicenses);
 			jobDefinition.carsPerStartingTrack = carsPerStartingTrack;
 			jobDefinition.loadMachine = loadMachine;
-			jobDefinition.loadData = carsPerCargoType;
+			jobDefinition.loadData = carsPerCargoTypes;
 			jobDefinition.destinationTrack = destinationTrack;
 			jobDefinition.forceCorrectCargoStateOnCars = true;
 			return jobDefinition;
