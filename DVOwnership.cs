@@ -39,7 +39,7 @@ namespace DVOwnership
 				LogWarning("Unabled to load mod settings. Using defaults instead.");
 				Settings = new Settings();
 			}
-			modEntry.OnGUI = Settings.CustomDraw;
+			modEntry.OnGUI = Settings.Draw;
 			modEntry.OnSaveGUI = Settings.Save;
 
 			try
