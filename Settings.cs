@@ -12,8 +12,7 @@ namespace DVOwnership
 #else
 			LogLevel.Warn;
 #endif
-		// TODO: What to do about this?
-		public bool isPriceScaledWithDifficulty = false;
+		public float sandboxPriceMultiplier = 0f;
 		public StarterLocoType starterLocoType = StarterLocoType.LocoDE2;
 
 		public void OnChange() { }
@@ -36,7 +35,15 @@ namespace DVOwnership
 
 			RenderEnumOption<LogLevel>("Log level", ref selectedLogLevel, ref choosingLogLevel);
 
-			// TODO: Possibly add price scaling option?
+			GUILayout.BeginHorizontal();
+			GUILayout.Label("Sandbox price multiplier");
+			GUILayout.Space(5);
+			string multiplierString = GUILayout.TextField(sandboxPriceMultiplier.ToString());
+			if (float.TryParse(multiplierString, out float multiplierFloat))
+			{
+				sandboxPriceMultiplier = Math.Abs(multiplierFloat);
+			}
+			GUILayout.EndHorizontal();
 
 			RenderEnumOption<StarterLocoType>("Starter locomotive", ref starterLocoType, ref choosingStarterLoco);
 

@@ -2,7 +2,7 @@ using DV;
 using DV.InventorySystem;
 using DV.ThingTypes;
 using DV.ThingTypes.TransitionHelpers;
-using DV.Utils;
+using DV.UserManagement;
 
 namespace DVOwnership;
 
@@ -23,7 +23,7 @@ internal static class Finance
 		var isLoco = CarTypes.IsLocomotive(TransitionHelpers.ToV2(carType));
 		var price = ResourceTypes.GetFullUnitPriceOfResource(ResourceType.Car_DMG, TransitionHelpers.ToV2(carType), gameParams: Globals.G.GameParams.ResourcesParams);
 		if (isLoco) { price = ScaleLocoPrice(price); }
-		if (DVOwnership.Settings.isPriceScaledWithDifficulty) { price = ScalePriceBasedOnDifficulty(price, isLoco); }
+		price = ScalePriceBasedOnGameMode(price);
 #if DEBUG
 		return 0;
 #else
@@ -36,14 +36,12 @@ internal static class Finance
 		return price * 10f;
 	}
 
-	private static float ScalePriceBasedOnDifficulty(float price, bool isLoco)
+	private static float ScalePriceBasedOnGameMode(float price)
 	{
+		if (UserManager.Instance.CurrentUser.CurrentSession.GameMode.Equals("FreeRoam"))
+		{
+			return price * DVOwnership.Settings.sandboxPriceMultiplier;
+		}
 		return price;
-		// return GamePreferences.Get<CareerDifficultyValues>(Preferences.CareerDifficulty) switch
-		// {
-		// 	CareerDifficultyValues.HARDCORE => Mathf.Pow(price / 10_000f, 1.1f) * 10_000f,
-		// 	CareerDifficultyValues.CASUAL => price / (isLoco ? 100f : 10f),
-		// 	_ => price,
-		// };
 	}
 }
