@@ -1,11 +1,10 @@
 {
-  "Id": "DVOwnership",
+  "Id": "RollingStockOwnership",
+  "Version": "2.0.0",
   "DisplayName": "Rolling Stock Ownership",
   "Author": "fauxnik",
-  "Version": "1.1.0",
-  "AssemblyName": "DVOwnership.dll",
-  "EntryMethod": "DVOwnership.DVOwnership.OnLoad",
-  "LoadAfter": [],
+  "EntryMethod": "RollingStockOwnership.Main.OnLoad",
+  "LoadAfter": ["DVCustomCarLoader"],
 	"ManagerVersion": "0.27.8",
-  "Repository": "https://raw.githubusercontent.com/fauxnik/DVOwnership/main/Repository.json"
+  "Repository": "https://raw.githubusercontent.com/fauxnik/dv-rolling-stock-ownership/main/Repository.json"
 }

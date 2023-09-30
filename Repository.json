@@ -1,24 +1,29 @@
 {
   "Releases": [
     {
+			"Id": "RollingStockOwnership",
+			"Version": "2.0.0",
+			"DownloadUrl": "https://github.com/fauxnik/dv-rolling-stock-ownership/releases/download/v2.0.0/RollingStockOwnership_v2.0.0.zip"
+		},
+    {
 			"Id": "DVOwnership",
 			"Version": "1.2.0",
-			"DownloadUrl": "https://github.com/fauxnik/DVOwnership/releases/download/v1.2.0/DVOwnership.zip"
+			"DownloadUrl": "https://github.com/fauxnik/dv-rolling-stock-ownership/releases/download/v1.2.0/DVOwnership.zip"
 		},
 		{
       "Id": "DVOwnership",
       "Version": "1.1.0",
-      "DownloadUrl": "https://github.com/fauxnik/DVOwnership/releases/download/v1.1.0/DVOwnership.zip"
+      "DownloadUrl": "https://github.com/fauxnik/dv-rolling-stock-ownership/releases/download/v1.1.0/DVOwnership.zip"
     },
     {
       "Id": "DVOwnership",
       "Version": "1.0.1",
-      "DownloadUrl": "https://github.com/fauxnik/DVOwnership/releases/download/v1.0.1/DVOwnership.zip"
+      "DownloadUrl": "https://github.com/fauxnik/dv-rolling-stock-ownership/releases/download/v1.0.1/DVOwnership.zip"
     },
     {
       "Id": "DVOwnership",
       "Version": "1.0.0",
-      "DownloadUrl": "https://github.com/fauxnik/DVOwnership/releases/download/v1.0.0/DVOwnership.zip"
+      "DownloadUrl": "https://github.com/fauxnik/dv-rolling-stock-ownership/releases/download/v1.0.0/DVOwnership.zip"
     }
   ]
 }
