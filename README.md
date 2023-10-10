@@ -126,7 +126,7 @@ See [LICENSE][license-url] for more information.
 [issues-shield]: https://img.shields.io/github/issues/fauxnik/dv-rolling-stock-ownership.svg?style=for-the-badge
 [issues-url]: https://github.com/fauxnik/dv-rolling-stock-ownership/issues
 [license-shield]: https://img.shields.io/github/license/fauxnik/dv-rolling-stock-ownership.svg?style=for-the-badge
-[license-url]: https://github.com/fauxnik/dv-rolling-stock-ownership/blob/master/LICENSE
+[license-url]: https://github.com/fauxnik/dv-rolling-stock-ownership/blob/main/LICENSE
 [derail-valley-url]: http://www.derailvalley.com/
 [references-url]: https://learn.microsoft.com/en-us/visualstudio/msbuild/customize-your-build?view=vs-2022
 [autocrlf-url]: https://www.git-scm.com/book/en/v2/Customizing-Git-Git-Configuration#_formatting_and_whitespace
