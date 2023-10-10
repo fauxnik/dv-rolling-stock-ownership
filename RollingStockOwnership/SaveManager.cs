@@ -58,18 +58,14 @@ public class SaveManager
 
 				if (saveData == null)
 				{
-#if DEBUG
 					Main.Log("Not loading save data: primary object is null.");
-#else
-					throw new Exception($"The active savegame file is not compatible with the {Main.DisplayName} ({Main.Id}) mod! Please use a compatible savegame file and try again. A compatible savegame file can be found on the NexusMods download page where you downloaded this mod.");
-#endif
 					return;
 				}
 				var tracksHash = WorldData.Instance.TracksHash;
 				var loadedTracksHash = saveData.GetString(TRACKS_HASH_SAVE_KEY);
 
 				var rollingStockSaveData = saveData[ROLLING_STOCK_SAVE_KEY];
-				if (rollingStockSaveData == null) { Main.Log($"Not loading rolling stock; data is null."); }
+				if (rollingStockSaveData == null) { Main.Log($"Not loading rolling stock: data is null."); }
 				else if (!(rollingStockSaveData is JArray rollingStockJArray)) { throw new Exception($"Tried to load rolling stock, but data type is {rollingStockSaveData.Type} instead of {JTokenType.Array}."); }
 				else if (loadedTracksHash != tracksHash)
 				{
@@ -81,7 +77,7 @@ public class SaveManager
 					rollingStockManager.LoadSaveData(rollingStockJArray);
 				}
 
-				// TODO: load more data
+				// TODO: load more data?
 			}
 			catch (Exception e) { Main.OnCriticalFailure(e, "loading mod data"); }
 		}
