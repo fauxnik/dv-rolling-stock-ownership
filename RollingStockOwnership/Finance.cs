@@ -22,6 +22,7 @@ internal static class Finance
 	{
 		var isLoco = CarTypes.IsLocomotive(TransitionHelpers.ToV2(carType));
 		var price = ResourceTypes.GetFullUnitPriceOfResource(ResourceType.Car_DMG, TransitionHelpers.ToV2(carType), gameParams: Globals.G.GameParams.ResourcesParams);
+		price *= 10f; // Cost per unit damage appears to have been scaled down as of the Simulator update
 		if (isLoco) { price = ScaleLocoPrice(price); }
 		price = ScalePriceBasedOnGameMode(price);
 #if DEBUG
