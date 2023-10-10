@@ -1,9 +1,6 @@
 # Local reference configuration
 Directory.Build.targets
 
-# Starter save archive
-SaveGame/savegame.zip
-
 # Local preferences
 .vscode/
 
