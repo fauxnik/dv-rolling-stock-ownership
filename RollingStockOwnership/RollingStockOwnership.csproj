@@ -16,6 +16,8 @@
 		<Reference Include="CCL.Importer"/>
 		<Reference Include="CommsRadioAPI"/>
 		<Reference Include="DVLangHelper.Runtime"/>
+		<Reference Include="MessageBox"/>
+		<Reference Include="RSG.Promise"/>
 	</ItemGroup>
 
 	<!-- Derail Valley -->

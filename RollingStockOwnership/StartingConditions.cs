@@ -8,6 +8,7 @@ using DV.Simulation.Cars;
 using DV.ThingTypes;
 using DV.ThingTypes.TransitionHelpers;
 using HarmonyLib;
+using MessageBox;
 using UnityEngine;
 
 namespace RollingStockOwnership;
@@ -122,11 +123,12 @@ internal static class StartingConditions
 
 		string locoName = LocalizationAPI.L(((TrainCarType) Main.Settings.starterLocoType).ToV2().localizationKey);
 
-		MessageBox.ShowPopupOk(
+		PopupAPI.ShowOk(
 			title: "Rolling Stock Ownership",
 			message: LocalizationAPI.L("first_time_with_save"),
-			positive: LocalizationAPI.L("first_time_with_save_positive"),
-			onClose: (_) => MessageBox.ShowPopupOk(
+			positive: LocalizationAPI.L("first_time_with_save_positive")
+		).Then((_) => (
+			PopupAPI.ShowOk(
 				title: "Rolling Stock Ownership",
 				message: string.Join(" ", new string [] {
 					isShuntingLicenseChanged ? LocalizationAPI.L("given_shunting_license") : "",
@@ -134,6 +136,6 @@ internal static class StartingConditions
 				}),
 				positive: LocalizationAPI.L("given_starter_equipment_positive")
 			)
-		);
+		));
 	}
 }
