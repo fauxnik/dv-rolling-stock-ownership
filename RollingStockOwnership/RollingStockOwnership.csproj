@@ -13,37 +13,37 @@
 
 	<!-- Mod Integration -->
 	<ItemGroup>
-		<Reference Include="CCL.Importer" />
-		<Reference Include="CommsRadioAPI" />
+		<Reference Include="CCL.Importer"/>
+		<Reference Include="CommsRadioAPI"/>
 		<Reference Include="DVLangHelper.Runtime"/>
 	</ItemGroup>
 
 	<!-- Derail Valley -->
 	<ItemGroup>
 		<Reference Include="Assembly-CSharp"/>
-		<Reference Include="Assembly-CSharp-firstpass" />
-		<Reference Include="DV.BrakeSystem" />
-		<Reference Include="DV.Common" />
-		<Reference Include="DV.Inventory" />
-		<Reference Include="DV.Localization" />
-		<Reference Include="DV.PointSet" />
-		<Reference Include="DV.ThingTypes" />
-		<Reference Include="DV.UI" />
-		<Reference Include="DV.UIFramework" />
-		<Reference Include="DV.UserManagement" />
-		<Reference Include="DV.Utils" />
-		<Reference Include="net.smkd.vector3d" />
-		<Reference Include="Newtonsoft.Json" />
+		<Reference Include="Assembly-CSharp-firstpass"/>
+		<Reference Include="DV.BrakeSystem"/>
+		<Reference Include="DV.Common"/>
+		<Reference Include="DV.Inventory"/>
+		<Reference Include="DV.Localization"/>
+		<Reference Include="DV.PointSet"/>
+		<Reference Include="DV.ThingTypes"/>
+		<Reference Include="DV.UI"/>
+		<Reference Include="DV.UIFramework"/>
+		<Reference Include="DV.UserManagement"/>
+		<Reference Include="DV.Utils"/>
+		<Reference Include="net.smkd.vector3d"/>
+		<Reference Include="Newtonsoft.Json"/>
 	</ItemGroup>
 
 	<!-- Unity -->
 	<ItemGroup>
-		<Reference Include="UnityEngine" />
-		<Reference Include="UnityEngine.AudioModule" />
-		<Reference Include="UnityEngine.CoreModule" />
-		<Reference Include="UnityEngine.IMGUIModule" />
-		<Reference Include="UnityEngine.PhysicsModule" />
-		<Reference Include="UnityEngine.TextRenderingModule" />
+		<Reference Include="UnityEngine"/>
+		<Reference Include="UnityEngine.AudioModule"/>
+		<Reference Include="UnityEngine.CoreModule"/>
+		<Reference Include="UnityEngine.IMGUIModule"/>
+		<Reference Include="UnityEngine.PhysicsModule"/>
+		<Reference Include="UnityEngine.TextRenderingModule"/>
 	</ItemGroup>
 
 	<!-- Mod Loader -->
