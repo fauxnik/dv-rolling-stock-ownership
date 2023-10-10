@@ -124,22 +124,15 @@ internal static class StartingConditions
 
 		MessageBox.ShowPopupOk(
 			title: "Rolling Stock Ownership",
-			message: string.Join(" ", new string[] {
-				"It looks like this is the first time Rolling Stock Ownership has been used with this save.",
-				"You'll find that all locomotives and wagons have been removed from the world,",
-				"and that they don't magically appear at stations anymore.",
-				"They must instead be purchased.",
-				"A new mode has been added to the Comms Radio for this purpose."
-			}),
-			positive: "Understood",
+			message: LocalizationAPI.L("first_time_with_save"),
+			positive: LocalizationAPI.L("first_time_with_save_positive"),
 			onClose: (_) => MessageBox.ShowPopupOk(
 				title: "Rolling Stock Ownership",
 				message: string.Join(" ", new string [] {
-					isShuntingLicenseChanged ? "Since you'll need the shunting license to begin any jobs, it's been given to you." : "",
-					$"A starter {locoName} has been delivered outside the player home, and a starting bonus has been deposited in your wallet.",
-					"Use the cash to buy a few wagons. Choose wisely: you won't be able to make money without them!"
+					isShuntingLicenseChanged ? LocalizationAPI.L("given_shunting_license") : "",
+					LocalizationAPI.L("given_starter_equipment", new string[] { locoName }),
 				}),
-				positive: "Let's go!"
+				positive: LocalizationAPI.L("given_starter_equipment_positive")
 			)
 		);
 	}

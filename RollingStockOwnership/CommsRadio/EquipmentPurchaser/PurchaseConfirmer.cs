@@ -34,9 +34,11 @@ internal class PurchaseConfirmer : AStateBehaviour
 		bool buy = true
 	) : base(
 		new CommsRadioState(
-			titleText: "Rolling Stock",
+			titleText: LocalizationAPI.L("comms_mode_title"),
 			contentText: ContentFromType(carType),
-			actionText: buy ? "confirm" : "cancel",
+			actionText: buy
+				? LocalizationAPI.L("comms_confirmation_action_positive")
+				: LocalizationAPI.L("comms_confirmation_action_negative"),
 			buttonBehaviour: ButtonBehaviourType.Override
 		)
 	) {
@@ -124,8 +126,8 @@ internal class PurchaseConfirmer : AStateBehaviour
 	{
 		string name = LocalizationAPI.L(carType.ToV2().localizationKey);
 		float price = Finance.CalculateCarPrice(carType);
-		string addendum = Finance.CanAfford(price) ? "" : "\n\nInsufficient funds.";
-		return $"Buy {name} for ${price}?{addendum}";
+		string financeReport = Finance.CanAfford(price) ? "" : LocalizationAPI.L("comms_finance_error");
+		return LocalizationAPI.L("comms_confirmation_content", new string[] { name, price.ToString("N0"), financeReport });
 	}
 
 	private static IEnumerator CheckHandbrakeNextFrame(TrainCar trainCar)

@@ -1,6 +1,7 @@
 using System;
 using CommsRadioAPI;
 using DV;
+using DV.Localization;
 
 namespace RollingStockOwnership.CommsRadio.EquipmentPurchaser;
 
@@ -8,9 +9,9 @@ internal class ErrorViewer : AStateBehaviour
 {
 	public ErrorViewer(string error) : base(
 		new CommsRadioState(
-			titleText: "Error",
+			titleText: LocalizationAPI.L("comms_error_title"),
 			contentText: error,
-			actionText: "ok",
+			actionText: LocalizationAPI.L("comms_error_action_positive"),
 			buttonBehaviour: ButtonBehaviourType.Override
 		)
 	) {}

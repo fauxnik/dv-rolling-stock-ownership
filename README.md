@@ -64,7 +64,8 @@ Below is an example of the necessary structure. When creating your targets file,
 		<ReferencePath>
 			C:\Program Files (x86)\Steam\steamapps\common\Derail Valley\DerailValley_Data\Managed\;
 			C:\Program Files (x86)\Steam\steamapps\common\Derail Valley\Mods\CommsRadioAPI\;
-			C:\Program Files (x86)\Steam\steamapps\common\Derail Valley\Mods\DVCustomCarLoader\
+			C:\Program Files (x86)\Steam\steamapps\common\Derail Valley\Mods\DVCustomCarLoader\;
+			C:\Program Files (x86)\Steam\steamapps\common\Derail Valley\Mods\DVLangHelper\
 		</ReferencePath>
 		<AssemblySearchPaths>$(AssemblySearchPaths);$(ReferencePath);</AssemblySearchPaths>
 	</PropertyGroup>

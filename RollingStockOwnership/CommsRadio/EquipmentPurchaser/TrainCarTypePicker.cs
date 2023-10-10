@@ -20,9 +20,11 @@ internal class TrainCarTypePicker : AStateBehaviour
 
 	public TrainCarTypePicker(int selectedIndex) : base(
 		new CommsRadioState(
-			titleText: "Rolling Stock",
+			titleText: LocalizationAPI.L("comms_mode_title"),
 			contentText: ContentFromIndex(selectedIndex),
-			actionText: Finance.CanAfford(availableCarTypes[selectedIndex]) ? "buy" : "cancel",
+			actionText: Finance.CanAfford(availableCarTypes[selectedIndex])
+				? LocalizationAPI.L("comms_car_type_action_positive")
+				: LocalizationAPI.L("comms_car_type_action_negative"),
 			buttonBehaviour: ButtonBehaviourType.Override
 		)
 	) {
@@ -100,7 +102,7 @@ internal class TrainCarTypePicker : AStateBehaviour
 		TrainCarType type = availableCarTypes[index];
 		string name = LocalizationAPI.L(type.ToV2().localizationKey);
 		float price = Finance.CalculateCarPrice(type);
-		string addendum = Finance.CanAfford(price) ? "" : "\n\nInsufficient funds.";
-		return $"{name}\n${price}{addendum}";
+		string financeReport = Finance.CanAfford(price) ? "" : LocalizationAPI.L("comms_finance_error");
+		return LocalizationAPI.L("comms_car_type_content", new string[] { name, price.ToString("N0"), financeReport });
 	}
 }

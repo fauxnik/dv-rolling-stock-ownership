@@ -6,6 +6,7 @@ using System.Reflection;
 using UnityEngine;
 using UnityModManagerNet;
 using static UnityModManagerNet.UnityModManager.ModSettings;
+using DVLangHelper.Runtime;
 
 namespace RollingStockOwnership;
 
@@ -46,6 +47,9 @@ public static class Main
 		{
 			harmony = new Harmony(modEntry.Info.Id);
 			harmony.PatchAll(Assembly.GetExecutingAssembly());
+
+			var translations = new TranslationInjector("fauxnik/dv-rolling-stock-ownership");
+			translations.AddTranslationsFromWebCsv("https://docs.google.com/spreadsheets/d/e/2PACX-1vQGeGpv-zk-TxxN3c87vjhtwJdP2oOYeJHF5nI2cJshF7mrNGHTeqQFOda0fo-zOltSRfNdT_nrHNiW/pub?gid=1191351766&single=true&output=csv");
 		}
 		catch (Exception e) { OnCriticalFailure(e, "patching miscellaneous assembly"); }
 

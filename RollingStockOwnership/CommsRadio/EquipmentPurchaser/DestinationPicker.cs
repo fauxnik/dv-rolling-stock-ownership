@@ -42,9 +42,11 @@ internal class DestinationPicker : AStateBehaviour
 		bool reverseDirection = false
 	) : base(
 		new CommsRadioState(
-			titleText: "Rolling Stock",
+			titleText: LocalizationAPI.L("comms_mode_title"),
 			contentText: ContentFromType(carType),
-			actionText: IsPlaceable(carType, track, spawnPoint) ? "place" : "cancel",
+			actionText: IsPlaceable(carType, track, spawnPoint)
+				? LocalizationAPI.L("comms_destination_action_positive")
+				: LocalizationAPI.L("comms_destination_action_negative"),
 			arrowState: GetArrowState(signalOrigin, spawnPoint, reverseDirection),
 			buttonBehaviour: ButtonBehaviourType.Override
 		)
@@ -206,9 +208,11 @@ internal class DestinationPicker : AStateBehaviour
 		GameObject? prefab = TransitionHelpers.ToV2(carType).prefab;
 		TrainCar? trainCar = prefab?.GetComponent<TrainCar>();
 		float? length = trainCar?.InterCouplerDistance;
-		string lengthString = length.HasValue ? $"{length.Value}m" : "???";
-		string addendum = Finance.CanAfford(carType) ? "" : "\n\nInsufficient funds.";
-		return $"{name}\n{lengthString}{addendum}";
+		string lengthString = length.HasValue
+			? LocalizationAPI.L("comms_destination_equipment_length", new string[] { length.Value.ToString("N0") })
+			: LocalizationAPI.L("comms_destination_equipment_length_unknown");
+		string financeReport = Finance.CanAfford(carType) ? "" : LocalizationAPI.L("comms_finance_error");
+		return LocalizationAPI.L("comms_destination_content", new string[] { name, lengthString, financeReport });
 	}
 
 	private static LCDArrowState GetArrowState(Transform signalOrigin, EquiPointSet.Point? spawnPoint, bool reverseDirection)
