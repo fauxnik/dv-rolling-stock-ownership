@@ -339,7 +339,7 @@ public class Equipment
 		if (carStateSave != null && carState != null) { carState.SetCarStateSaveData(carStateSave); }
 
 		var simCarState = trainCar.GetComponent<SimCarStateSave>();
-		if(simCarStateSave != null && simCarState != null) { simCarState.SetStateSaveData(simCarState.GetStateSaveData()); }
+		if(simCarStateSave != null && simCarState != null) { simCarState.SetStateSaveData(simCarStateSave); }
 
 		IsMarkedForDespawning = false;
 		UnusedTrainCarDeleter.Instance.MarkForDelete(trainCar);
