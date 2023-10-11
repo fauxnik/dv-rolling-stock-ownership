@@ -167,6 +167,13 @@ public class ProceduralJobsController
 						yield return null;
 						carsForJob.UnionWith(GetMatchingCoupledCars(thisEquipment, cargoGroup, carsInYard, maxCarsPerJob - carsForJob.Count));
 
+						if (carsForJob.Count > maxCarsPerJob)
+						{
+							int count = maxCarsPerJob - Math.Max(0, minCarsPerJob - (carsForJob.Count - maxCarsPerJob));
+							Main.LogDebug(() => $"Exceeded the maximum number of cars per job ({maxCarsPerJob}). Truncating set to {count} cars.");
+							carsForJob = carsForJob.ToList().Take(count).ToHashSet();
+						}
+
 						// Generate the job, but only if it meets the length requirements
 						if (carsForJob.Count >= minCarsPerJob && carsForJob.Count <= maxCarsPerJob)
 						{
@@ -174,10 +181,6 @@ public class ProceduralJobsController
 							yield return null;
 							jobChainController = ProceduralJobGenerators.GenerateHaulChainJobForCars(rng, carsForJob.ToList(), cargoGroup, stationController);
 							Main.LogDebug(() => "Generation OK");
-						}
-						else if (carsForJob.Count > maxCarsPerJob)
-						{
-							Main.LogDebug(() => $"Exceeded the maximum number of cars per job ({maxCarsPerJob}).");
 						}
 						else
 						{
@@ -198,6 +201,13 @@ public class ProceduralJobsController
 						yield return null;
 						carsForJob.UnionWith(GetMatchingCoupledCars(thisEquipment, cargoGroup, carsInYard, maxCarsPerJob - carsForJob.Count));
 
+						if (carsForJob.Count > maxCarsPerJob)
+						{
+							int count = maxCarsPerJob - Math.Max(0, minCarsPerJob - (carsForJob.Count - maxCarsPerJob));
+							Main.LogDebug(() => $"Exceeded the maximum number of cars per job ({maxCarsPerJob}). Truncating set to {count} cars.");
+							carsForJob = carsForJob.ToList().Take(count).ToHashSet();
+						}
+
 						// Generate the job, but only if it meets the length requirements
 						if (carsForJob.Count >= minCarsPerJob && carsForJob.Count <= maxCarsPerJob)
 						{
@@ -205,10 +215,6 @@ public class ProceduralJobsController
 							yield return null;
 							jobChainController = ProceduralJobGenerators.GenerateUnloadChainJobForCars(rng, carsForJob.ToList(), cargoGroup, stationController);
 							Main.LogDebug(() => "Generation OK");
-						}
-						else if (carsForJob.Count > maxCarsPerJob)
-						{
-							Main.LogDebug(() => $"Exceeded the maximum number of cars per job ({maxCarsPerJob}).");
 						}
 						else
 						{
@@ -288,6 +294,13 @@ public class ProceduralJobsController
 							}
 						}
 
+						if (carsForJob.Count > maxCarsPerJob)
+						{
+							int count = maxCarsPerJob - Math.Max(0, minCarsPerJob - (carsForJob.Count - maxCarsPerJob));
+							Main.LogDebug(() => $"Exceeded the maximum number of cars per job ({maxCarsPerJob}). Truncating set to {count} cars.");
+							carsForJob = carsForJob.ToList().Take(count).ToHashSet();
+						}
+
 						// Generate the job, but only if it meets the length requirements
 						if (carsForJob.Count >= minCarsPerJob && carsForJob.Count <= maxCarsPerJob)
 						{
@@ -295,13 +308,13 @@ public class ProceduralJobsController
 							yield return null;
 							var carSetsForJob =
 								from equipmentSet in equipmentSetsForJob
-								select (from equipment in equipmentSet select equipment.GetLogicCar()).ToList();
+								select (
+									from equipment in equipmentSet
+									where equipment.GetLogicCar() != null && carsForJob.Contains(equipment.GetLogicCar()!) // Cars may have been dropped to meet length requirements
+									select equipment.GetLogicCar()
+								).ToList();
 							jobChainController = ProceduralJobGenerators.GenerateLoadChainJobForCars(rng, carSetsForJob.ToList(), cargoGroup, stationController);
 							Main.LogDebug(() => "Generation OK");
-						}
-						else if (carsForJob.Count > maxCarsPerJob)
-						{
-							Main.LogDebug(() => $"Exceeded the maximum number of cars per job ({maxCarsPerJob}).");
 						}
 						else
 						{
