@@ -42,7 +42,7 @@
 
 Rolling Stock Ownership (RSO) is a mod for the 2019 VR compatible train simulator [Derail Valley][derail-valley-url]. It introduces a game mechanic of purchasing and managing railroad equipment—a.k.a. rolling stock—the locomotives and wagons that the player must use to complete job contracts in the game.
 Use the Comms Radio to purchase and clear equipment.
-Integrates with [Custom Car Loader](https://github.com/katycat5e/DVCustomCarLoader).
+~~Integrates with [Custom Car Loader](https://github.com/katycat5e/DVCustomCarLoader).~~ Custom Car Loader integration returning soon.
 
 
 
