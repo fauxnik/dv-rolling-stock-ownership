@@ -25,7 +25,7 @@ internal class DestinationPicker : AStateBehaviour
 	private const float INVALID_DESTINATION_HIGHLIGHTER_DISTANCE = 20f;
 	private const float UPDATE_TRACKS_PERIOD = 2.5f;
 
-	private TrainCarType selectedCarType;
+	private TrainCarLivery selectedCarLivery;
 	private Bounds selectedCarBounds;
 	private Transform signalOrigin;
 	private RailTrack? selectedTrack;
@@ -34,7 +34,7 @@ internal class DestinationPicker : AStateBehaviour
 	private CarDestinationHighlighter destinationHighlighter;
 
 	public DestinationPicker(
-		TrainCarType carType,
+		TrainCarLivery carLivery,
 		Bounds carBounds,
 		Transform signalOrigin,
 		RailTrack? track = null,
@@ -43,15 +43,15 @@ internal class DestinationPicker : AStateBehaviour
 	) : base(
 		new CommsRadioState(
 			titleText: LocalizationAPI.L("comms_mode_title"),
-			contentText: ContentFromType(carType),
-			actionText: IsPlaceable(carType, track, spawnPoint)
+			contentText: ContentFromType(carLivery),
+			actionText: IsPlaceable(carLivery, track, spawnPoint)
 				? LocalizationAPI.L("comms_destination_action_positive")
 				: LocalizationAPI.L("comms_destination_action_negative"),
 			arrowState: GetArrowState(signalOrigin, spawnPoint, reverseDirection),
 			buttonBehaviour: ButtonBehaviourType.Override
 		)
 	) {
-		selectedCarType = carType;
+		selectedCarLivery = carLivery;
 		selectedCarBounds = carBounds;
 		this.signalOrigin = signalOrigin;
 		selectedTrack = track;
@@ -101,17 +101,17 @@ internal class DestinationPicker : AStateBehaviour
 		switch (action)
 		{
 			case InputAction.Activate:
-				if (IsPlaceable(selectedCarType, selectedTrack, selectedPoint))
+				if (IsPlaceable(selectedCarLivery, selectedTrack, selectedPoint))
 				{
 					utility.PlaySound(VanillaSoundCommsRadio.Confirm);
-					return new PurchaseConfirmer(selectedCarType, selectedTrack, selectedPoint.Value, isSelectedOrientationOppositeTrackDirection, destinationHighlighter);
+					return new PurchaseConfirmer(selectedCarLivery, selectedTrack, selectedPoint.Value, isSelectedOrientationOppositeTrackDirection, destinationHighlighter);
 				}
 				utility.PlaySound(VanillaSoundCommsRadio.Cancel);
 				return new MainMenu();
 
 			case InputAction.Up:
 			case InputAction.Down:
-				return new DestinationPicker(selectedCarType, selectedCarBounds, signalOrigin, selectedTrack, selectedPoint, !isSelectedOrientationOppositeTrackDirection);
+				return new DestinationPicker(selectedCarLivery, selectedCarBounds, signalOrigin, selectedTrack, selectedPoint, !isSelectedOrientationOppositeTrackDirection);
 
 			default:
 				throw new Exception($"Unexpected action: {action}");
@@ -132,14 +132,14 @@ internal class DestinationPicker : AStateBehaviour
 					int index = pointWithinRangeWithYOffset.Value.index;
 					EquiPointSet.Point? closestSpawnablePoint = CarSpawner.FindClosestValidPointForCarStartingFromIndex(trackPoints, index, selectedCarBounds.extents);
 
-					return new DestinationPicker(selectedCarType, selectedCarBounds, signalOrigin, railTrack, closestSpawnablePoint, isSelectedOrientationOppositeTrackDirection);
+					return new DestinationPicker(selectedCarLivery, selectedCarBounds, signalOrigin, railTrack, closestSpawnablePoint, isSelectedOrientationOppositeTrackDirection);
 				}
 			}
 		}
 
 		if (selectedTrack != null || selectedPoint != null)
 		{
-			return new DestinationPicker(selectedCarType, selectedCarBounds, signalOrigin, null, null, isSelectedOrientationOppositeTrackDirection);
+			return new DestinationPicker(selectedCarLivery, selectedCarBounds, signalOrigin, null, null, isSelectedOrientationOppositeTrackDirection);
 		}
 
 		// No transition will happen when returning `this`, thus we must manually update the destination highlighter.
@@ -182,7 +182,7 @@ internal class DestinationPicker : AStateBehaviour
 	{
 		Vector3 position, direction;
 		Material? highlightMaterial;
-		if (IsPlaceable(selectedCarType, selectedTrack, selectedPoint))
+		if (IsPlaceable(selectedCarLivery, selectedTrack, selectedPoint))
 		{
 			position = (Vector3)selectedPoint.Value.position + WorldMover.currentMove;
 			direction = selectedPoint.Value.forward;
@@ -202,16 +202,16 @@ internal class DestinationPicker : AStateBehaviour
 			destinationHighlighter.TurnOff();
 	}
 
-	private static string ContentFromType(TrainCarType carType)
+	private static string ContentFromType(TrainCarLivery carLivery)
 	{
-		string name = LocalizationAPI.L(carType.ToV2().localizationKey);
-		GameObject? prefab = TransitionHelpers.ToV2(carType).prefab;
+		string name = LocalizationAPI.L(carLivery.localizationKey);
+		GameObject? prefab = carLivery.prefab;
 		TrainCar? trainCar = prefab?.GetComponent<TrainCar>();
 		float? length = trainCar?.InterCouplerDistance;
 		string lengthString = length.HasValue
 			? LocalizationAPI.L("comms_destination_equipment_length", new string[] { length.Value.ToString("N0") })
 			: LocalizationAPI.L("comms_destination_equipment_length_unknown");
-		string financeReport = Finance.CanAfford(carType) ? "" : LocalizationAPI.L("comms_finance_error");
+		string financeReport = Finance.CanAfford(carLivery) ? "" : LocalizationAPI.L("comms_finance_error");
 		return LocalizationAPI.L("comms_destination_content", new string[] { name, lengthString, financeReport });
 	}
 
@@ -229,8 +229,8 @@ internal class DestinationPicker : AStateBehaviour
 		return isRight ? LCDArrowState.Right : LCDArrowState.Left;
 	}
 
-	private static bool IsPlaceable(TrainCarType carType, [NotNullWhen(true)] RailTrack? track, [NotNullWhen(true)] EquiPointSet.Point? point)
+	private static bool IsPlaceable(TrainCarLivery carLivery, [NotNullWhen(true)] RailTrack? track, [NotNullWhen(true)] EquiPointSet.Point? point)
 	{
-		return Finance.CanAfford(carType) && track != null && point.HasValue;
+		return Finance.CanAfford(carLivery) && track != null && point.HasValue;
 	}
 }

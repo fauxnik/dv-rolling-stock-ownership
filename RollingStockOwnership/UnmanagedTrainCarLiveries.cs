@@ -7,20 +7,19 @@ using System.Collections.Generic;
 
 namespace RollingStockOwnership;
 
-public class UnmanagedTrainCarTypes
+public class UnmanagedTrainCarLiveries
 {
-	public static HashSet<TrainCarType> UnmanagedTypes
+	public static HashSet<TrainCarLivery> UnmanagedLiveries
 	{
 		get
 		{
-			if (unmanagedTypes.Count == 1) { SetUnmanagedTypes(); }
-			return new HashSet<TrainCarType>(unmanagedTypes);
+			if (unmanagedLiveries.Count <= 1) { SetUnmanagedTypes(); }
+			return new HashSet<TrainCarLivery>(unmanagedLiveries);
 		}
 	}
 
-	private static HashSet<TrainCarType> unmanagedTypes = new HashSet<TrainCarType>
+	private static HashSet<TrainCarLivery> unmanagedLiveries = new HashSet<TrainCarLivery>
 	{
-		TrainCarType.NotSet,
 		// Crew vehicle types are added by the SetUnmanagedTypes method
 	};
 
@@ -34,7 +33,7 @@ public class UnmanagedTrainCarTypes
 			{
 				foreach (var garageSpawner in garageCarSpawners)
 				{
-					unmanagedTypes.Add(garageSpawner.GarageCarLivery.v1);
+					unmanagedLiveries.Add(garageSpawner.GarageCarLivery);
 				}
 			}
 		}

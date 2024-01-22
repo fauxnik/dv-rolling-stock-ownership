@@ -70,13 +70,13 @@ public class ProceduralJobsController
 
 					foreach (var car in track.GetCarsFullyOnTrack())
 					{
-						if (Utilities.IsAnySpecialCar(car.carType.v1)) { continue; }
+						if (Utilities.IsAnySpecialCar(car.carType)) { continue; }
 						carsInYard.Add(car);
 					}
 
 					foreach (var car in track.GetCarsPartiallyOnTrack())
 					{
-						if (Utilities.IsAnySpecialCar(car.carType.v1)) { continue; }
+						if (Utilities.IsAnySpecialCar(car.carType)) { continue; }
 						carsInYard.Add(car);
 					}
 				}
