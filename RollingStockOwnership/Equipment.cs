@@ -7,6 +7,7 @@ using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using DV.ThingTypes.TransitionHelpers;
+using System.Linq;
 
 
 namespace RollingStockOwnership;
@@ -412,7 +413,7 @@ public class Equipment
 		return trainset.cars.Contains(trainCar);
 	}
 
-	public static Equipment FromSaveData(JObject data)
+	public static Equipment? FromSaveData(JObject data)
 	{
 		Main.LogDebug(() => $"Restoring data: {data}");
 		string id = GetOrThrow<string>(data, ID_SAVE_KEY);
@@ -448,16 +449,22 @@ public class Equipment
 			out var bogie2Derailed
 		);
 
-		TrainCarLivery carLivery;
+		TrainCarLivery? carLivery;
 		try
 		{
 			string liveryId = GetOrThrow<string>(data, CAR_LIVERY_SAVE_KEY);
-			// TODO: where is CCL getting IdToLiveryMap?
-			carLivery = IdToLiveryMap[liveryId];
+			carLivery = TrainCarLiveryIntegrator.AllCarLiveries.FirstOrDefault(livery => livery.id == liveryId);
+			if (carLivery == null)
+			{
+				Main.LogWarning($"Can't load this equipment from save data because no livery exists with the ID \"{liveryId}\"");
+				return null;
+			}
 		}
 		catch
 		{
 			// If the livery save key didn't return data, we can assume we're loading an old save that stored TrainCarType (v1)
+			Main.Log($"Can't find a livery ID for the train car with ID \"{id}\". Attempting to find a car type instead.");
+
 			TrainCarType carType = (TrainCarType)GetOrThrow<int>(data, CAR_TYPE_SAVE_KEY);
 			carLivery = TransitionHelpers.ToV2(carType);
 		}
