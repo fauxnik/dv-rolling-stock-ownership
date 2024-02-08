@@ -87,6 +87,8 @@ public class ProceduralJobsController
 				foreach (var car in playerCars) { carsInYard.Add(car); }
 			}
 
+			Main.LogDebug(() => $"Found {carsInYard.Count()} cars in {stationId} yard and player's train.");
+
 			// get all (logic) cars with active jobs
 			var carsWithJobs = new HashSet<Car>();
 			JobsManager jobsManager = JobsManager.Instance;
@@ -118,9 +120,13 @@ public class ProceduralJobsController
 				}
 			}
 
+			Main.LogDebug(() => $"Found {carsWithJobs.Count()} cars with active jobs.");
+
 			// filter out (logic) cars with active jobs
 			yield return null;
 			carsInYard.ExceptWith(carsWithJobs);
+
+			Main.LogDebug(() => $"Using {carsInYard.Count()} cars without active jobs from {stationId} yard and player's train as the job generation pool.");
 
 			var minCarsPerJob = Math.Min(proceduralRuleset.minCarsPerJob, carsInYard.Count);
 			var maxCarsPerJob = Math.Min(proceduralRuleset.maxCarsPerJob, LicenseManager.Instance.GetMaxNumberOfCarsPerJobWithAcquiredJobLicenses());

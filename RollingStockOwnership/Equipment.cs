@@ -517,7 +517,7 @@ public class Equipment
 
 	public JObject GetSaveData()
 	{
-		Main.LogDebug(() => "We are in save data");
+		Main.LogVerbose(() => $"Getting equipment save data for train car {ID}");
 		if (IsSpawned) { Update(trainCar!, false); } // IsSpawned checks if trainCar is null
 
 		var data = new JObject();

@@ -96,9 +96,19 @@ public static class Main
 		return harmony.Patch(original, prefix, postfix, transpiler);
 	}
 
+	public static void LogVerbose(System.Func<object> messageFactory)
+	{
+		LogAtLevel(messageFactory, LogLevel.Verbose);
+	}
+
 	public static void LogDebug(System.Func<object> messageFactory)
 	{
-		if (Settings.selectedLogLevel > LogLevel.Debug) { return; }
+		LogAtLevel(messageFactory, LogLevel.Debug);
+	}
+
+	private static void LogAtLevel(System.Func<object> messageFactory, LogLevel level)
+	{
+		if (Settings.selectedLogLevel > level) { return; }
 
 		var message = messageFactory();
 		if (message is string) { modEntry.Logger.Log(message as string); }
