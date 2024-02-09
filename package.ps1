@@ -20,6 +20,7 @@ $ZipOutDir = "$ZipWorkDir/$modId"
 
 New-Item "$ZipOutDir" -ItemType Directory -Force
 Copy-Item -Force -Path $FilesToInclude -Destination "$ZipOutDir"
+Invoke-WebRequest -OutFile "$ZipOutDir/offline_translations.csv" -Uri "https://docs.google.com/spreadsheets/d/e/2PACX-1vQGeGpv-zk-TxxN3c87vjhtwJdP2oOYeJHF5nI2cJshF7mrNGHTeqQFOda0fo-zOltSRfNdT_nrHNiW/pub?gid=1191351766&single=true&output=csv"
 
 if (!$NoArchive)
 {
