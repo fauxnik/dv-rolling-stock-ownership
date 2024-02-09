@@ -1,6 +1,7 @@
 param (
 	[switch]$NoArchive,
-	[string]$OutputDirectory = $PSScriptRoot
+	[string]$OutputDirectory = $PSScriptRoot,
+	[switch]$NoCleanup
 )
 
 Set-Location "$PSScriptRoot"
@@ -25,4 +26,9 @@ if (!$NoArchive)
 {
 	$FILE_NAME = "$DistDir/${modId}_v$modVersion.zip"
 	Compress-Archive -Update -CompressionLevel Fastest -Path "$ZipOutDir/*" -DestinationPath "$FILE_NAME"
+
+	if (!$NoCleanup)
+	{
+		Remove-Item -LiteralPath "$ZipWorkDir" -Force -Recurse
+	}
 }
