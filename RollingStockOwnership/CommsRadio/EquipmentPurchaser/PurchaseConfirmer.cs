@@ -133,7 +133,7 @@ internal class PurchaseConfirmer : AStateBehaviour
 	private static IEnumerator CheckHandbrakeNextFrame(TrainCar trainCar)
 	{
 		yield return null;
-		if (!trainCar.trainset.cars.Any(car => car.brakeSystem.brakeset.anyHandbrakeApplied))
+		if (trainCar.brakeSystem.hasHandbrake && !trainCar.trainset.cars.Any(car => car.brakeSystem.brakeset.anyHandbrakeApplied))
 		{
 			trainCar.brakeSystem.handbrakePosition = 1f;
 		}
