@@ -1,6 +1,6 @@
 {
   "Id": "RollingStockOwnership",
-  "Version": "2.0.1",
+  "Version": "2.0.2",
   "DisplayName": "Rolling Stock Ownership",
   "Author": "fauxnik",
   "EntryMethod": "RollingStockOwnership.Main.OnLoad",

@@ -1,9 +1,10 @@
 ﻿using CommsRadioAPI;
 using DV;
 using DV.ThingTypes;
-using HarmonyLib;
+using DV.Utils;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace RollingStockOwnership;
 
@@ -30,13 +31,17 @@ public class UnmanagedTrainCarTypes
 		{
 			// Crew vehicles use the vanilla crew vehicle summoning logic, so they can't be purchased.
 			if (!(ControllerAPI.GetVanillaMode(VanillaMode.SummonCrewVehicle) is CommsRadioCrewVehicle summoner)) { throw new Exception("Crew vehicle radio mode could not be found!"); }
-			if (AccessTools.Field(typeof(CommsRadioCrewVehicle), "garageCarSpawners").GetValue(summoner) is GarageCarSpawner[] garageCarSpawners)
+
+			CarSpawner carSpawner = SingletonBehaviour<CarSpawner>.Instance;
+			var garageCarLiveries = carSpawner.crewVehicleGarages.Select((GarageType_v2 garageType) => garageType.garageCarLivery);
+			foreach (TrainCarLivery summonableLivery in garageCarLiveries.Union(carSpawner.vehiclesWithoutGarage))
 			{
-				foreach (var garageSpawner in garageCarSpawners)
-				{
-					unmanagedTypes.Add(garageSpawner.GarageCarLivery.v1);
-				}
+				if (summonableLivery == null) { continue; }
+
+				unmanagedTypes.Add(summonableLivery.v1);
 			}
+
+			Main.LogDebug(() => $"Set unmanaged types: [{string.Join(", ", unmanagedTypes)}]");
 		}
 		catch (Exception e) { Main.OnCriticalFailure(e, "banning crew vehicles from purchase"); }
 	}

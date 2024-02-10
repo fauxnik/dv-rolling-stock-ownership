@@ -103,6 +103,12 @@ Leave the package contents uncompressed in the output directory.
 Specify a different output directory.
 For instance, this can be used in conjunction with `-NoArchive` to copy the mod files into your Derail Valley installation directory.
 
+#### -NoCleanup
+
+When compressing the package contents, a temporary directory is created and later removed.
+This can be used to leave the temporary directory in place for inspection, debugging, etc.
+It has no effect when used with `-NoArchive`.
+
 
 
 
