@@ -172,9 +172,4 @@ public static class Utilities
 
 		return from car in cars select trainCarsByLogicCar[car];
 	}
-
-	public static bool IsAnySpecialCar(TrainCarType carType)
-	{
-		return CarTypes.IsAnyLocomotiveOrTender(TransitionHelpers.ToV2(carType)) || CarTypes.IsCaboose(TransitionHelpers.ToV2(carType));
-	}
 }
