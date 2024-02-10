@@ -26,20 +26,9 @@ public class CommsRadioCarDeleter_Patches
 
 	static void OnUse_Prefix(CommsRadioCarDeleter __instance, TrainCar ___carToDelete)
 	{
-		if (___carToDelete == null) { return; }
+		if (___carToDelete == null || ___carToDelete == PlayerManager.Car) { return; }
 
-		// CommsRadioCarDeleter.State enum is private. This attempt to use Harmony/reflection to get the value didn't work (null reference exception).
-		// object carDeleterState = AccessTools.Field(typeof(CommsRadioCarDeleter), "state").GetValue(__instance);
-		// Type State = AccessTools.TypeByName("DV.CommsRadioCarDeleter+State");
-		// object confirmDeleteEnumValue = State.GetField("ConfirmDelete").GetValue(State);
-		// Main.LogDebug(() => $"[CarDeleterPatch] state: {carDeleterState}, ConfirmDelete enum value: {confirmDeleteEnumValue}");
-
-		// CommsRadioCarDeleter.State enum is private. Casting it to an int allows for comparison.
-		int carDeleterState = (int) AccessTools.Field(typeof(CommsRadioCarDeleter), "state").GetValue(__instance);
-		int confirmDeleteEnumValue = 1; // Known from decompilation, but could change/break
-		Main.LogDebug(() => $"[CarDeleterPatch] state: {carDeleterState}, ConfirmDelete enum value (hard coded): {confirmDeleteEnumValue}");
-
-		if (carDeleterState == confirmDeleteEnumValue)
+		if (__instance.CurrentState == CommsRadioCarDeleter.State.ConfirmDelete)
 		{
 			___carToDelete.OnDestroyCar += NewEquipmentRemoverLambda(___carToDelete);
 		}
