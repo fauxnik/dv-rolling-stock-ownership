@@ -43,6 +43,7 @@ internal class TrainCarTypePicker : AStateBehaviour
 				if (Finance.CanAfford(selectedCarType))
 				{
 					if (!carBounds.HasValue) { throw new Exception($"Can't find car bounds for car type: {selectedCarType}"); }
+					Main.LogDebug(() => $"Selected livery: {selectedCarType}");
 					utility.PlaySound(VanillaSoundCommsRadio.Confirm);
 					return new DestinationPicker(selectedCarType, carBounds.Value, utility.SignalOrigin);
 				}
