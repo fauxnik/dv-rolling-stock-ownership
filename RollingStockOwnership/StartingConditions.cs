@@ -15,7 +15,7 @@ namespace RollingStockOwnership;
 
 internal static class StartingConditions
 {
-	private static readonly string playerHomeTrackID = "#Y-#S-392-#T";
+	private static readonly string playerHomeTrackID = "#Y-#S-194-#T";
 	private static readonly TrainCarLivery[] startingWagons = {
 		TrainCarType.FlatbedStakes.ToV2(),
 		TrainCarType.FlatbedStakes.ToV2(),
