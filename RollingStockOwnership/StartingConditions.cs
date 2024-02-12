@@ -146,7 +146,7 @@ internal static class StartingConditions
 				title: "Rolling Stock Ownership",
 				message: string.Join(" ", new string [] {
 					isShuntingLicenseChanged ? LocalizationAPI.L("given_shunting_license") : "",
-					LocalizationAPI.L("given_starter_equipment", new string[] { locoName }),
+					LocalizationAPI.L("given_starter_equipment", new string [] { locoName }),
 				}),
 				positive: LocalizationAPI.L("given_starter_equipment_positive")
 			)
