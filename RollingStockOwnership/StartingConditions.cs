@@ -15,7 +15,11 @@ namespace RollingStockOwnership;
 
 internal static class StartingConditions
 {
-	private static readonly string playerHomeTrackID = "#Y-#S-194-#T";
+	private static readonly Vector3 starterLocoSpawnPosition = new Vector3(
+		5698.63135f,
+		155.929153f,
+		7622.781f
+	);
 	private static readonly TrainCarLivery[] startingWagons = {
 		TrainCarType.FlatbedStakes.ToV2(),
 		TrainCarType.FlatbedStakes.ToV2(),
@@ -68,9 +72,6 @@ internal static class StartingConditions
 	{
 		yield return new WaitForSeconds(1);
 
-		List<RailTrack> allTracks = new List<RailTrack>(RailTrackRegistry.Instance.AllTracks);
-		RailTrack playerHomeTrack = allTracks.Find(track => track.logicTrack.ID.FullID == playerHomeTrackID);
-
 		Inventory inventory = Inventory.Instance;
 		UnusedTrainCarDeleter unusedTrainCarDeleter = UnusedTrainCarDeleter.Instance;
 		CarSpawner carSpawner = CarSpawner.Instance;
@@ -88,7 +89,20 @@ internal static class StartingConditions
 			);
 		}
 
-		IEnumerable<Equipment> spawnedEquipment = carSpawner.SpawnCarTypesOnTrackRandomOrientation(new List<TrainCarLivery> { starterLoco.ToV2() }, playerHomeTrack, true, true)
+		bool flipRotation = false;
+		bool playerSpawnedCar = false;
+		bool uniqueCar = false;
+		IEnumerable<Equipment> spawnedEquipment =
+			new List<TrainCar>
+			{
+				carSpawner.SpawnCarOnClosestTrack(
+					starterLocoSpawnPosition + WorldMover.currentMove,
+					starterLoco.ToV2(),
+					flipRotation,
+					playerSpawnedCar,
+					uniqueCar
+				)
+			}
 			.Select(Equipment.FromTrainCar);
 
 		foreach (Equipment equipment in spawnedEquipment)
