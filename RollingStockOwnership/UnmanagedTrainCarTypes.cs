@@ -14,22 +14,29 @@ public class UnmanagedTrainCarTypes
 	{
 		get
 		{
-			if (unmanagedTypes.Count == 1) { SetUnmanagedTypes(); }
+			if (!isInitialized)
+			{
+				AddCrewVehiclesToUnmanagedTypes();
+				isInitialized = true;
+			}
+
 			return new HashSet<TrainCarType>(unmanagedTypes);
 		}
 	}
 
+	private static bool isInitialized = false;
 	private static HashSet<TrainCarType> unmanagedTypes = new HashSet<TrainCarType>
 	{
 		TrainCarType.NotSet,
 		// Crew vehicle types are added by the SetUnmanagedTypes method
 	};
 
-	private static void SetUnmanagedTypes()
+	private static void AddCrewVehiclesToUnmanagedTypes()
 	{
 		try
 		{
-			// Crew vehicles use the vanilla crew vehicle summoning logic, so they can't be purchased.
+			// Crew vehicles use the vanilla crew vehicle summoning logic, so they can't be purchased when that mode is enabled.
+			if (!ControllerAPI.IsVanillaModeEnabled(VanillaMode.SummonCrewVehicle)) { return; }
 			if (!(ControllerAPI.GetVanillaMode(VanillaMode.SummonCrewVehicle) is CommsRadioCrewVehicle summoner)) { throw new Exception("Crew vehicle radio mode could not be found!"); }
 
 			CarSpawner carSpawner = SingletonBehaviour<CarSpawner>.Instance;
