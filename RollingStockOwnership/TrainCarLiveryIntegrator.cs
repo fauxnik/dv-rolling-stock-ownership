@@ -82,8 +82,9 @@ internal static class TrainCarLiveryIntegrator
 	// needs to be a separate method for try block to catch dll load exceptions when DVCustomCarLoader is not installed
 	private static IEnumerable<TrainCarLivery> PullCustomTypes()
 	{
-		var customCarVariants = from carType_v2 in CCL.Importer.CarManager.CustomCarTypes select carType_v2.Variants;
-		return from carVariant in customCarVariants
-		       select (TrainCarLivery)carVariant;
+		throw new NotImplementedException("TODO: restore integration with Custom Car Loader");
+		// var customCarVariants = from carType_v2 in CCL.Importer.CarManager.CustomCarTypes select carType_v2.Variants;
+		// return from carVariant in customCarVariants
+		//        select (TrainCarLivery)carVariant;
 	}
 }
