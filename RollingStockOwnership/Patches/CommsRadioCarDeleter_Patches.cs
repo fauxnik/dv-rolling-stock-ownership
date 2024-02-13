@@ -1,12 +1,12 @@
 ﻿using DV;
 using HarmonyLib;
+using System;
 
 namespace RollingStockOwnership.Patches;
 
 public class CommsRadioCarDeleter_Patches
 {
 	private static bool isSetup = false;
-	private static string? carToMaybeDeleteGuid;
 
 	public static void Setup()
 	{
@@ -22,37 +22,37 @@ public class CommsRadioCarDeleter_Patches
 		var CommsRadioCarDeleter_OnUse = AccessTools.Method(typeof(CommsRadioCarDeleter), "OnUse");
 		var CommsRadioCarDeleter_OnUse_Prefix = AccessTools.Method(typeof(CommsRadioCarDeleter_Patches), nameof(OnUse_Prefix));
 		Main.Patch(CommsRadioCarDeleter_OnUse, prefix: new HarmonyMethod(CommsRadioCarDeleter_OnUse_Prefix));
-		var CommsRadioCarDeleter_OnCarToDeleteDestroy = AccessTools.Method(typeof(CommsRadioCarDeleter), "OnCarToDeleteDestroy");
-		var CommsRadioCarDeleter_OnCarToDeleteDestroy_Postfix = AccessTools.Method(typeof(CommsRadioCarDeleter_Patches), nameof(OnCarToDeleteDestroy_Postfix));
-		Main.Patch(CommsRadioCarDeleter_OnCarToDeleteDestroy, postfix: new HarmonyMethod(CommsRadioCarDeleter_OnCarToDeleteDestroy_Postfix));
 	}
 
-	static void OnUse_Prefix(TrainCar ___carToDelete)
+	static void OnUse_Prefix(CommsRadioCarDeleter __instance, TrainCar ___carToDelete)
 	{
-		carToMaybeDeleteGuid = ___carToDelete?.CarGUID;
+		if (___carToDelete == null || ___carToDelete == PlayerManager.Car) { return; }
+
+		if (__instance.CurrentState == CommsRadioCarDeleter.State.ConfirmDelete)
+		{
+			___carToDelete.OnDestroyCar += NewEquipmentRemoverLambda(___carToDelete);
+		}
 	}
 
-	static void OnCarToDeleteDestroy_Postfix()
+	static Action<TrainCar> NewEquipmentRemoverLambda (TrainCar trainCar)
 	{
-		if (string.IsNullOrEmpty(carToMaybeDeleteGuid))
-		{
-			Main.LogError("Car GUID is missing while attempting to remove a deleted train car's entry from the rolling stock registry!");
-			return;
-		}
+		string id = trainCar.ID;
+		string guid = trainCar.logicCar.carGuid;
 
-		Main.Log($"Train car is being deleted. Attempting to remove it from the rolling stock registry.");
+		return (TrainCar _) => {
+			Main.Log($"Train car {id} is being deleted. Attempting to remove it from the rolling stock registry.");
 
-		var manager = RollingStockManager.Instance;
-		var equipment = manager?.FindByCarGUID(carToMaybeDeleteGuid);
-		if (equipment == null)
-		{
-			Main.LogWarning($"Equipment record not found in the rolling stock registry.");
-			return;
-		}
+			var manager = RollingStockManager.Instance;
+			var equipment = manager?.FindByCarGUID(guid);
+			if (equipment == null)
+			{
+				Main.LogWarning($"Equipment record not found in the rolling stock registry.");
+				return;
+			}
 
-		Main.Log($"Removing equipment with ID {equipment.ID} from the rolling stock registry.");
+			Main.Log($"Removing equipment with ID {equipment.ID} from the rolling stock registry.");
 
-		manager?.Remove(equipment);
-		carToMaybeDeleteGuid = null;
+			manager?.Remove(equipment);
+		};
 	}
 }

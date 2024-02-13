@@ -7,7 +7,6 @@ using DV;
 using DV.Localization;
 using DV.PointSet;
 using DV.ThingTypes;
-using DV.ThingTypes.TransitionHelpers;
 using UnityEngine;
 
 namespace RollingStockOwnership.CommsRadio.EquipmentPurchaser;
@@ -103,6 +102,7 @@ internal class DestinationPicker : AStateBehaviour
 			case InputAction.Activate:
 				if (IsPlaceable(selectedCarLivery, selectedTrack, selectedPoint))
 				{
+					Main.LogDebug(() => $"Selected track: {selectedTrack.logicTrack.ID.FullID}");
 					utility.PlaySound(VanillaSoundCommsRadio.Confirm);
 					return new PurchaseConfirmer(selectedCarLivery, selectedTrack, selectedPoint.Value, isSelectedOrientationOppositeTrackDirection, destinationHighlighter);
 				}

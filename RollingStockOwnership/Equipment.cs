@@ -328,7 +328,9 @@ public class Equipment
 		var allTracks = new List<RailTrack>(RailTrackRegistry.Instance.AllTracks);
 		var bogie1Track = isBogie1Derailed ? null : allTracks.Find(track => track.logicTrack.ID.FullID == bogie1TrackID);
 		var bogie2Track = isBogie2Derailed ? null : allTracks.Find(track => track.logicTrack.ID.FullID == bogie2TrackID);
-		trainCar = CarSpawner.Instance.SpawnLoadedCar(carPrefab, ID, CarGUID, false, position + WorldMover.currentMove, rotation, isBogie1Derailed, bogie1Track, bogie1PositionAlongTrack, isBogie2Derailed, bogie2Track, bogie2PositionAlongTrack, IsCoupledFront, IsCoupledRear);
+		bool isPlayerSpawnedCar = false;
+		bool isUniqueCar = false;
+		trainCar = CarSpawner.Instance.SpawnLoadedCar(carPrefab, ID, CarGUID, isPlayerSpawnedCar, isUniqueCar, position + WorldMover.currentMove, rotation, isBogie1Derailed, bogie1Track, bogie1PositionAlongTrack, isBogie2Derailed, bogie2Track, bogie2PositionAlongTrack, IsCoupledFront, IsCoupledRear);
 
 		if (loadedCargo != CargoType.None) { trainCar.logicCar.LoadCargo(trainCar.cargoCapacity, loadedCargo, null); }
 		if (isExploded) { TrainCarExplosion.UpdateModelToExploded(trainCar); }
@@ -540,7 +542,7 @@ public class Equipment
 
 	public JObject GetSaveData()
 	{
-		Main.LogDebug(() => "We are in save data");
+		Main.LogVerbose(() => $"Getting equipment save data for train car {ID}");
 		if (IsSpawned) { Update(trainCar!, false); } // IsSpawned checks if trainCar is null
 
 		var data = new JObject();

@@ -1,5 +1,4 @@
 ﻿using DV.ThingTypes;
-using DV.ThingTypes.TransitionHelpers;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -55,11 +54,5 @@ public class LicenseManager_Patches
 		}
 
 		return true;
-	}
-
-	public static bool IsLicensedForLoco(TrainCarLivery carLivery)
-	{
-		LicenseManager licenseManager = LicenseManager.Instance;
-		return CarTypes.IsTender(carLivery) && licenseManager.IsGeneralLicenseAcquired(TransitionHelpers.ToV2(GeneralLicenseType.SH282)) || licenseManager.IsLicensedForCar(carLivery);
 	}
 }

@@ -23,7 +23,15 @@ internal static class TrainCarLiveryIntegrator
 	// TODO: how to get loco/tender associations from CCL?
 	public static TrainCarLivery LocoForTender(TrainCarLivery carLivery)
 	{
-		return locomotiveForTender.ContainsKey(carLivery) ? locomotiveForTender[carLivery] : carLivery;
+		if (!CarTypes.IsTender(carLivery)) { return carLivery; }
+
+		if (!locomotiveForTender.ContainsKey(carLivery))
+		{
+			Main.LogError($"Encountered tender ({carLivery.name}) without a locomotive association!");
+			return carLivery;
+		}
+
+		return locomotiveForTender[carLivery];
 	}
 
 	public static IEnumerable<TrainCarLivery> AllCarLiveries

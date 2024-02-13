@@ -70,22 +70,25 @@ public class ProceduralJobsController
 
 					foreach (var car in track.GetCarsFullyOnTrack())
 					{
-						if (Utilities.IsAnySpecialCar(car.carType)) { continue; }
 						carsInYard.Add(car);
 					}
 
 					foreach (var car in track.GetCarsPartiallyOnTrack())
 					{
-						if (Utilities.IsAnySpecialCar(car.carType)) { continue; }
 						carsInYard.Add(car);
 					}
 				}
 
 				// get all (logic) cars from player's train
 				var playerTrainCars = PlayerManager.Car?.trainset?.cars ?? new List<TrainCar>();
-				var playerCars = from trainCar in playerTrainCars where !trainCar.IsLoco select trainCar.logicCar;
+				var playerCars = from trainCar in playerTrainCars select trainCar.logicCar;
 				foreach (var car in playerCars) { carsInYard.Add(car); }
 			}
+
+			// Must only consider regular cars or else job generation may fail
+			carsInYard = carsInYard.Where(car => CarTypes.IsRegularCar(car.carType)).ToHashSet();
+
+			Main.LogDebug(() => $"Found {carsInYard.Count()} cars in {stationId} yard and player's train.");
 
 			// get all (logic) cars with active jobs
 			var carsWithJobs = new HashSet<Car>();
@@ -118,9 +121,13 @@ public class ProceduralJobsController
 				}
 			}
 
+			Main.LogDebug(() => $"Found {carsWithJobs.Count()} cars with active jobs.");
+
 			// filter out (logic) cars with active jobs
 			yield return null;
 			carsInYard.ExceptWith(carsWithJobs);
+
+			Main.LogDebug(() => $"Using {carsInYard.Count()} cars without active jobs from {stationId} yard and player's train as the job generation pool.");
 
 			var minCarsPerJob = Math.Min(proceduralRuleset.minCarsPerJob, carsInYard.Count);
 			var maxCarsPerJob = Math.Min(proceduralRuleset.maxCarsPerJob, LicenseManager.Instance.GetMaxNumberOfCarsPerJobWithAcquiredJobLicenses());

@@ -1,6 +1,5 @@
 ﻿using DV.Logic.Job;
 using DV.ThingTypes;
-using DV.ThingTypes.TransitionHelpers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -171,10 +170,5 @@ public static class Utilities
 		}
 
 		return from car in cars select trainCarsByLogicCar[car];
-	}
-
-	public static bool IsAnySpecialCar(TrainCarLivery carLivery)
-	{
-		return CarTypes.IsAnyLocomotiveOrTender(carLivery) || CarTypes.IsCaboose(carLivery);
 	}
 }

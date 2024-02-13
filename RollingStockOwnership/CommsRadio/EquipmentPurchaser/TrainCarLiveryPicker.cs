@@ -5,7 +5,6 @@ using CommsRadioAPI;
 using DV;
 using DV.Localization;
 using DV.ThingTypes;
-using DV.ThingTypes.TransitionHelpers;
 using RollingStockOwnership.Patches;
 using UnityEngine;
 
@@ -42,7 +41,8 @@ internal class TrainCarLiveryPicker : AStateBehaviour
 				Bounds? carBounds = trainCar?.Bounds;
 				if (Finance.CanAfford(selectedCarLivery))
 				{
-					if (!carBounds.HasValue) { throw new Exception($"Can't find car bounds for car type: {selectedCarLivery}"); }
+					if (!carBounds.HasValue) { throw new Exception($"Can't find car bounds for car type: {selectedCarLivery.name}"); }
+					Main.LogDebug(() => $"Selected livery: {selectedCarLivery.name}");
 					utility.PlaySound(VanillaSoundCommsRadio.Confirm);
 					return new DestinationPicker(selectedCarLivery, carBounds.Value, utility.SignalOrigin);
 				}
@@ -87,9 +87,9 @@ internal class TrainCarLiveryPicker : AStateBehaviour
 							  where !UnmanagedTrainCarLiveries.UnmanagedLiveries.Contains(carLivery)
 							  select carLivery;
 		var licensedCarLiveries = from carLivery in allowedCarLiveries
-							   where CarTypes.IsAnyLocomotiveOrTender(carLivery)
-								   ? LicenseManager_Patches.IsLicensedForLoco(TrainCarLiveryIntegrator.LocoForTender(carLivery))
-								   : LicenseManager_Patches.IsLicensedForCar(carLivery)
+							   where CarTypes.IsRegularCar(carLivery)
+								   ? LicenseManager_Patches.IsLicensedForCar(carLivery)
+								   : LicenseManager.Instance.IsLicensedForCar(TrainCarLiveryIntegrator.LocoForTender(carLivery))
 							   select carLivery;
 		availableCarLiveries = licensedCarLiveries.ToList();
 		LastIndex = availableCarLiveries.FindIndex(carType => carType == previousLastCarType);

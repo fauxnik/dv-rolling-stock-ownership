@@ -7,7 +7,6 @@ using DV.InventorySystem;
 using DV.Localization;
 using DV.PointSet;
 using DV.ThingTypes;
-using DV.ThingTypes.TransitionHelpers;
 using RollingStockOwnership.Extensions;
 using UnityEngine;
 
@@ -133,7 +132,7 @@ internal class PurchaseConfirmer : AStateBehaviour
 	private static IEnumerator CheckHandbrakeNextFrame(TrainCar trainCar)
 	{
 		yield return null;
-		if (!trainCar.trainset.cars.Any(car => car.brakeSystem.brakeset.anyHandbrakeApplied))
+		if (trainCar.brakeSystem.hasHandbrake && !trainCar.trainset.cars.Any(car => car.brakeSystem.brakeset.anyHandbrakeApplied))
 		{
 			trainCar.brakeSystem.handbrakePosition = 1f;
 		}

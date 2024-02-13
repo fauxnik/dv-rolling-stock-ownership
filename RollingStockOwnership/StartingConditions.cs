@@ -1,9 +1,12 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using DV.CabControls;
 using DV.InventorySystem;
 using DV.Localization;
 using DV.Logic.Job;
+using DV.Shops;
 using DV.Simulation.Cars;
 using DV.ThingTypes;
 using DV.ThingTypes.TransitionHelpers;
@@ -15,7 +18,11 @@ namespace RollingStockOwnership;
 
 internal static class StartingConditions
 {
-	private static readonly string playerHomeTrackID = "#Y-#S-392-#T";
+	private static readonly Vector3 starterLocoSpawnPosition = new Vector3(
+		5698.63135f,
+		155.929153f,
+		7622.781f
+	);
 	private static readonly TrainCarLivery[] startingWagons = {
 		TrainCarType.FlatbedStakes.ToV2(),
 		TrainCarType.FlatbedStakes.ToV2(),
@@ -68,27 +75,31 @@ internal static class StartingConditions
 	{
 		yield return new WaitForSeconds(1);
 
-		List<RailTrack> allTracks = new List<RailTrack>(RailTrackRegistry.Instance.AllTracks);
-		RailTrack playerHomeTrack = allTracks.Find(track => track.logicTrack.ID.FullID == playerHomeTrackID);
-
 		Inventory inventory = Inventory.Instance;
 		UnusedTrainCarDeleter unusedTrainCarDeleter = UnusedTrainCarDeleter.Instance;
 		CarSpawner carSpawner = CarSpawner.Instance;
-		TrainCarType starterLoco = (TrainCarType) Main.Settings.starterLocoType;
+		TrainCarLivery starterLoco = ((TrainCarType) Main.Settings.starterLocoType).ToV2();
 
-		if (!LicenseManager.Instance.IsLicensedForCar(starterLoco.ToV2()))
+		LicenseManager.Instance.AcquireGeneralLicense(starterLoco.requiredLicense);
+		if (CarTypes.IsSteamLocomotive(starterLoco))
 		{
-			LicenseManager.Instance.AcquireGeneralLicense(
-				starterLoco switch
-				{
-					TrainCarType.LocoS060 => GeneralLicenseType.S060.ToV2(),
-					TrainCarType.LocoDM3 => GeneralLicenseType.DM3.ToV2(),
-					_ => GeneralLicenseType.DE2.ToV2(),
-				}
-			);
+			EnsurePlayerHasRequiredItemsForSteamLoco();
 		}
 
-		IEnumerable<Equipment> spawnedEquipment = carSpawner.SpawnCarTypesOnTrackRandomOrientation(new List<TrainCarLivery> { starterLoco.ToV2() }, playerHomeTrack, true, true)
+		bool flipRotation = false;
+		bool playerSpawnedCar = false;
+		bool uniqueCar = false;
+		IEnumerable<Equipment> spawnedEquipment =
+			new List<TrainCar>
+			{
+				carSpawner.SpawnCarOnClosestTrack(
+					starterLocoSpawnPosition + WorldMover.currentMove,
+					starterLoco,
+					flipRotation,
+					playerSpawnedCar,
+					uniqueCar
+				)
+			}
 			.Select(Equipment.FromTrainCar);
 
 		foreach (Equipment equipment in spawnedEquipment)
@@ -132,10 +143,64 @@ internal static class StartingConditions
 				title: "Rolling Stock Ownership",
 				message: string.Join(" ", new string [] {
 					isShuntingLicenseChanged ? LocalizationAPI.L("given_shunting_license") : "",
-					LocalizationAPI.L("given_starter_equipment", new string[] { locoName }),
+					LocalizationAPI.L("given_starter_equipment", new string [] { locoName }),
 				}),
 				positive: LocalizationAPI.L("given_starter_equipment_positive")
 			)
 		));
+	}
+
+	private static void EnsurePlayerHasRequiredItemsForSteamLoco()
+	{
+		List<ShopItemData> shopItemsData = GlobalShopController.Instance.shopItemsData;
+		Main.LogDebug(() => $"All shop items:\n{{\n\t{string.Join(",\n\t", shopItemsData.Select(itemData => itemData.item.name))}\n}}");
+
+		string [] itemNames = { "shovel", "lighter" };
+		foreach (string itemName in itemNames)
+		{
+			bool isItemInInventory = Inventory.Instance.GetItemByName(itemName, false) != null;
+			bool isItemInAnyStorage = StorageController.Instance.allStorages.Any(StorageContainsItemByName(itemName));
+			if (isItemInInventory || isItemInAnyStorage)
+			{
+				Main.Log($"Found {itemName} in player inventory or storage, skipping.");
+				continue;
+			}
+
+			ShopItemData data = shopItemsData.Find(data => data?.item?.name?.ToLower() == itemName.ToLower());
+			if (data == null)
+			{
+				Main.LogError($"Can't find {itemName} in global shop items data! Did its name change?");
+				continue;
+			}
+
+			if (data.item.gameObject == null)
+			{
+				Main.LogError($"The game object for {itemName} is null! Not adding to inventory.");
+				continue;
+			}
+
+			GameObject instantiatedItem = GameObject.Instantiate(data.item.gameObject);
+			if (Inventory.Instance.AddItemToInventory(instantiatedItem) >= 0) { continue; }
+
+			Main.LogWarning($"Couldn't add {itemName} to inventory. Adding to lost and found instead.");
+			StorageController.Instance.AddItemToStorageItemList(StorageController.Instance.StorageLostAndFound, instantiatedItem);
+		}
+	}
+
+	private static Func<StorageBase, bool> StorageContainsItemByName(string itemName)
+	{
+		return (StorageBase storage) => {
+			try
+			{
+				// StorageBase doesn't offer a way of querying for contents by name.
+				List<ItemBase> items = (List<ItemBase>) AccessTools.Field(typeof(StorageBase), "itemList").GetValue(storage);
+				return items.Any(item => item.name.ToLower() == itemName.ToLower());
+			}
+			catch (Exception exception)
+			{
+				Main.LogError($"Exception thrown while determining if {storage.name} contains {itemName}! Returning false.\n{exception}");
+				return false;
+			}
+		};
 	}
 }

@@ -74,7 +74,7 @@ public class SpawnStateManager : SingletonBehaviour<SpawnStateManager>
 						bool isDespawnable = !equipment.ExistsInTrainset(bestGuessLastDrivenTrainset);
 						foreach (var eq in connectedEquipment)
 						{
-							Main.LogDebug(() => $"Testing despawnability of {eq.ID} (from connected set of {connectedEquipment.Count})\n\tisDespawnable:{isDespawnable}\n\tIsStationary: {eq.IsStationary}\n\tSquaredDistanceFromPlayer: {eq.SquaredDistanceFromPlayer()}\n\tDESPAWN_SQR_DISTANCE: {DESPAWN_SQR_DISTANCE}\n\tJob: {jobsManager.GetJobOfCar(eq.GetTrainCar())?.ID}\n\tflag: {isDespawnable && (!eq.IsStationary || eq.SquaredDistanceFromPlayer() < DESPAWN_SQR_DISTANCE || jobsManager.GetJobOfCar(eq.GetTrainCar()) != null)}");
+							Main.LogVerbose(() => $"Testing despawnability of {eq.ID} (from connected set of {connectedEquipment.Count})\n\tisDespawnable:{isDespawnable}\n\tIsStationary: {eq.IsStationary}\n\tSquaredDistanceFromPlayer: {eq.SquaredDistanceFromPlayer()}\n\tDESPAWN_SQR_DISTANCE: {DESPAWN_SQR_DISTANCE}\n\tJob: {jobsManager.GetJobOfCar(eq.GetTrainCar())?.ID}\n\tflag: {isDespawnable && (!eq.IsStationary || eq.SquaredDistanceFromPlayer() < DESPAWN_SQR_DISTANCE || jobsManager.GetJobOfCar(eq.GetTrainCar()) != null)}");
 							yield return null;
 							seenGuids.Add(eq.CarGUID);
 							// Short circuit avoids doing expensive calculation unnecessarily
@@ -98,7 +98,7 @@ public class SpawnStateManager : SingletonBehaviour<SpawnStateManager>
 						bool isSpawnable = false;
 						foreach (var eq in connectedEquipment)
 						{
-							Main.LogDebug(() => $"Testing spawnability of {eq.ID} (from connected set of {connectedEquipment.Count})\n\tisSpawnable: {isSpawnable}\n\tIsStationary: {eq.IsStationary}\n\tSquaredDistanceFromPlayer: {eq.SquaredDistanceFromPlayer()}\n\tSPAWN_SQR_DISTANCE: {SPAWN_SQR_DISTANCE}\n\tflag: {!isSpawnable && eq.SquaredDistanceFromPlayer() < SPAWN_SQR_DISTANCE}");
+							Main.LogVerbose(() => $"Testing spawnability of {eq.ID} (from connected set of {connectedEquipment.Count})\n\tisSpawnable: {isSpawnable}\n\tIsStationary: {eq.IsStationary}\n\tSquaredDistanceFromPlayer: {eq.SquaredDistanceFromPlayer()}\n\tSPAWN_SQR_DISTANCE: {SPAWN_SQR_DISTANCE}\n\tflag: {!isSpawnable && eq.SquaredDistanceFromPlayer() < SPAWN_SQR_DISTANCE}");
 							yield return null;
 							seenGuids.Add(eq.CarGUID);
 							// Short circuit avoids doing expensive calculation unnecessarily

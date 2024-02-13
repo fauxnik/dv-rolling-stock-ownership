@@ -1,7 +1,6 @@
 using DV;
 using DV.InventorySystem;
 using DV.ThingTypes;
-using DV.ThingTypes.TransitionHelpers;
 using DV.UserManagement;
 
 namespace RollingStockOwnership;
