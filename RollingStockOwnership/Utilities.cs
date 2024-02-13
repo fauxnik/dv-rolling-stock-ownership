@@ -1,6 +1,5 @@
 ﻿using DV.Logic.Job;
 using DV.ThingTypes;
-using DV.ThingTypes.TransitionHelpers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -87,17 +86,17 @@ public static class Utilities
 	}
 	public static PaymentCalculationData ExtractPaymentCalculationData(List<Car> cars, List<CargoType> cargoTypes)
 	{
-		return ExtractPaymentCalculationData(cars.Select(car => car.carType.v1).ToList(), cargoTypes);
+		return ExtractPaymentCalculationData(cars.Select(car => car.carType).ToList(), cargoTypes);
 	}
-	public static PaymentCalculationData ExtractPaymentCalculationData(List<TrainCarType> carTypes, List<CargoType> cargoTypes)
+	public static PaymentCalculationData ExtractPaymentCalculationData(List<TrainCarLivery> carLiveries, List<CargoType> cargoTypes)
 	{
 		Dictionary<TrainCarLivery, int> countEachCarType = new Dictionary<TrainCarLivery, int>();
 		Dictionary<CargoType, int> countEachCargoType = new Dictionary<CargoType, int>();
 
-		foreach (var carType in carTypes)
+		foreach (var livery in carLiveries)
 		{
-			if (!countEachCarType.ContainsKey(TransitionHelpers.ToV2(carType))) { countEachCarType.Add(TransitionHelpers.ToV2(carType), 0); }
-			countEachCarType[TransitionHelpers.ToV2(carType)]++;
+			if (!countEachCarType.ContainsKey(livery)) { countEachCarType.Add(livery, 0); }
+			countEachCarType[livery]++;
 		}
 
 		foreach (var cargoType in cargoTypes)

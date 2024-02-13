@@ -18,7 +18,7 @@ internal class MainMenu : AStateBehaviour
 	public override void OnEnter(CommsRadioUtility utility, AStateBehaviour? previous)
 	{
 		base.OnEnter(utility, previous);
-		TrainCarTypePicker.UpdateAvailableCarTypes();
+		TrainCarLiveryPicker.UpdateAvailableCarTypes();
 	}
 
 	public override AStateBehaviour OnAction(CommsRadioUtility utility, InputAction action)
@@ -26,7 +26,7 @@ internal class MainMenu : AStateBehaviour
 		utility.PlaySound(VanillaSoundCommsRadio.ModeEnter);
 		return action switch
 		{
-			InputAction.Activate => new TrainCarTypePicker(TrainCarTypePicker.LastIndex),
+			InputAction.Activate => new TrainCarLiveryPicker(TrainCarLiveryPicker.LastIndex),
 			_ => throw new Exception($"Unexpected action: {action}"),
 		};
 	}

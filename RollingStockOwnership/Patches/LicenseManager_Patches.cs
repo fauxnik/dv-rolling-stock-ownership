@@ -1,5 +1,4 @@
 ﻿using DV.ThingTypes;
-using DV.ThingTypes.TransitionHelpers;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -43,23 +42,17 @@ public class LicenseManager_Patches
 		return IsLicensedForCargoTypes(new List<CargoType> { cargoType });
 	}
 
-	public static bool IsLicensedForCar(TrainCarType carType)
+	public static bool IsLicensedForCar(TrainCarLivery carLivery)
 	{
 		var unlicensedCargoTypes = from cargoType in cargoTypesRequiringLicense
 									where !IsLicensedForCargoType(cargoType)
 									select cargoType;
-		if (CargoTypes_Patches.CanCarContainOnlyTheseCargoTypes(carType, unlicensedCargoTypes.ToHashSet()))
+		if (CargoTypes_Patches.CanCarContainOnlyTheseCargoTypes(carLivery, unlicensedCargoTypes.ToHashSet()))
 		{
 			// Not licensed for cargo types
 			return false;
 		}
 
 		return true;
-	}
-
-	public static bool IsLicensedForLoco(TrainCarType carType)
-	{
-		LicenseManager licenseManager = LicenseManager.Instance;
-		return CarTypes.IsTender(TransitionHelpers.ToV2(carType)) && licenseManager.IsGeneralLicenseAcquired(TransitionHelpers.ToV2(GeneralLicenseType.SH282)) || licenseManager.IsLicensedForCar(TransitionHelpers.ToV2(carType));
 	}
 }

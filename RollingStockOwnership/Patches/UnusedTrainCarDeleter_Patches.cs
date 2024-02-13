@@ -28,9 +28,9 @@ public class UnusedTrainCarDeleter_Patches
 
 	static bool AreDeleteConditionsFulfilled_Prefix(ref bool __result, TrainCar trainCar)
 	{
-		Main.LogVerbose(() => $"Checking delete conditions for train car with ID {trainCar.ID} and type {trainCar.carType}.");
+		Main.LogVerbose(() => $"Checking delete conditions for train car with ID {trainCar.ID} and type {trainCar.carLivery}.");
 
-		if (UnmanagedTrainCarTypes.UnmanagedTypes.Contains(trainCar.carType))
+		if (UnmanagedTrainCarLiveries.UnmanagedLiveries.Contains(trainCar.carLivery))
 		{
 			// Unmanaged train cars must use the vanilla logic
 			return true;

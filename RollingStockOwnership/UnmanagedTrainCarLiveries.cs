@@ -8,20 +8,19 @@ using System.Linq;
 
 namespace RollingStockOwnership;
 
-public class UnmanagedTrainCarTypes
+public class UnmanagedTrainCarLiveries
 {
-	public static HashSet<TrainCarType> UnmanagedTypes
+	public static HashSet<TrainCarLivery> UnmanagedLiveries
 	{
 		get
 		{
-			if (unmanagedTypes.Count == 1) { SetUnmanagedTypes(); }
-			return new HashSet<TrainCarType>(unmanagedTypes);
+			if (unmanagedLiveries.Count <= 1) { SetUnmanagedTypes(); }
+			return new HashSet<TrainCarLivery>(unmanagedLiveries);
 		}
 	}
 
-	private static HashSet<TrainCarType> unmanagedTypes = new HashSet<TrainCarType>
+	private static HashSet<TrainCarLivery> unmanagedLiveries = new HashSet<TrainCarLivery>
 	{
-		TrainCarType.NotSet,
 		// Crew vehicle types are added by the SetUnmanagedTypes method
 	};
 
@@ -38,10 +37,10 @@ public class UnmanagedTrainCarTypes
 			{
 				if (summonableLivery == null) { continue; }
 
-				unmanagedTypes.Add(summonableLivery.v1);
+				unmanagedLiveries.Add(summonableLivery);
 			}
 
-			Main.LogDebug(() => $"Set unmanaged types: [{string.Join(", ", unmanagedTypes)}]");
+			Main.LogDebug(() => $"Set unmanaged liveries: [{string.Join(", ", unmanagedLiveries.Select(livery => livery.name))}]");
 		}
 		catch (Exception e) { Main.OnCriticalFailure(e, "banning crew vehicles from purchase"); }
 	}
