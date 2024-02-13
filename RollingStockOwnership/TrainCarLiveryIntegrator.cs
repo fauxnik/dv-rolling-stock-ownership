@@ -17,7 +17,7 @@ internal static class TrainCarLiveryIntegrator
 
 	private static Dictionary<TrainCarLivery, TrainCarLivery> locomotiveForTender = new Dictionary<TrainCarLivery, TrainCarLivery>
 	{
-		{ TransitionHelpers.ToV2(TrainCarType.Tender), TransitionHelpers.ToV2(TrainCarType.LocoSteamHeavy) }
+		{ TrainCarType.Tender.ToV2(), TrainCarType.LocoSteamHeavy.ToV2() }
 	};
 
 	// TODO: how to get loco/tender associations from CCL?
