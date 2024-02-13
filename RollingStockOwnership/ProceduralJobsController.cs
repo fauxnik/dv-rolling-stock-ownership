@@ -129,6 +129,25 @@ public class ProceduralJobsController
 
 			Main.LogDebug(() => $"Using {carsInYard.Count()} cars without active jobs from {stationId} yard and player's train as the job generation pool.");
 
+			/**
+			 * JOB GENERATION REWRITE NOTES
+			 *
+			 * 0. replace Equipment destination field with EquipmentReservation class
+			 *     a. car ID
+			 *     b. origin station ID
+			 *     c. destination station ID
+			 *     d. cargo type?
+			 * 1. separate cars in yard into subsets based on loaded cargo and relevant EquipmentReservation
+			 *     a. empty
+			 *     b. loaded (inbound)
+			 *     c. loaded (outbound)
+			 * 2. for each subset of cars, create a mapping of all relevant cargo types supported by the station to cars that can contain that type
+			 * 3. choose the cargo type with the most cars mapped to it and attempt to generate a job using those cars as the pool of available equipment
+			 *     a. break ties with RNG?
+			 * 4. upon successful generation, remove the involved cars from all mappings
+			 * 5. repeat until all cars have been accounted for or no more jobs can be generated
+			 */
+
 			var minCarsPerJob = Math.Min(proceduralRuleset.minCarsPerJob, carsInYard.Count);
 			var maxCarsPerJob = Math.Min(proceduralRuleset.maxCarsPerJob, LicenseManager.Instance.GetMaxNumberOfCarsPerJobWithAcquiredJobLicenses());
 			var maxShuntingStorageTracks = proceduralRuleset.maxShuntingStorageTracks;
