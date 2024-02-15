@@ -1,7 +1,6 @@
 using DV;
 using DV.InventorySystem;
 using DV.ThingTypes;
-using DV.ThingTypes.TransitionHelpers;
 using DV.UserManagement;
 
 namespace RollingStockOwnership;
@@ -13,15 +12,15 @@ internal static class Finance
 		return Inventory.Instance.PlayerMoney >= price;
 	}
 
-	internal static bool CanAfford(TrainCarType carType)
+	internal static bool CanAfford(TrainCarLivery carLivery)
 	{
-		return CanAfford(CalculateCarPrice(carType));
+		return CanAfford(CalculateCarPrice(carLivery));
 	}
 
-	internal static float CalculateCarPrice(TrainCarType carType)
+	internal static float CalculateCarPrice(TrainCarLivery carLivery)
 	{
-		var isLoco = CarTypes.IsLocomotive(TransitionHelpers.ToV2(carType));
-		var price = ResourceTypes.GetFullUnitPriceOfResource(ResourceType.Car_DMG, TransitionHelpers.ToV2(carType), gameParams: Globals.G.GameParams.ResourcesParams);
+		var isLoco = CarTypes.IsLocomotive(carLivery);
+		var price = ResourceTypes.GetFullUnitPriceOfResource(ResourceType.Car_DMG, carLivery, gameParams: Globals.G.GameParams.ResourcesParams);
 		price *= 10f; // Cost per unit damage appears to have been scaled down as of the Simulator update
 		if (isLoco) { price = ScaleLocoPrice(price); }
 		price = ScalePriceBasedOnGameMode(price);

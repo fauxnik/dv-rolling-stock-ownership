@@ -90,14 +90,18 @@ public class RollingStockManager : SingletonBehaviour<RollingStockManager>
 
 	public void LoadSaveData(JArray data)
 	{
-		int countLoaded = 0;
+		int countLoaded = 0, countTotal = 0;
 		foreach(var token in data)
 		{
 			if (token.Type != JTokenType.Object) { continue; }
 
+			countTotal++;
+
 			try
 			{
-				Add(Equipment.FromSaveData((JObject)token));
+				Equipment? loadedEquipment = Equipment.FromSaveData((JObject)token);
+				if (loadedEquipment == null) { continue; }
+				Add(loadedEquipment);
 				countLoaded++;
 			}
 			catch (Exception exception)
@@ -106,7 +110,7 @@ public class RollingStockManager : SingletonBehaviour<RollingStockManager>
 				Main.LogWarning(exception);
 			}
 		}
-		Main.Log($"Loaded {countLoaded} equipment records into the rolling stock registry.");
+		Main.Log($"Loaded {countLoaded}/{countTotal} equipment records into the rolling stock registry.");
 	}
 
 	public JArray GetSaveData()

@@ -7,7 +7,6 @@ using DV.InventorySystem;
 using DV.Localization;
 using DV.PointSet;
 using DV.ThingTypes;
-using DV.ThingTypes.TransitionHelpers;
 using RollingStockOwnership.Extensions;
 using UnityEngine;
 
@@ -15,7 +14,7 @@ namespace RollingStockOwnership.CommsRadio.EquipmentPurchaser;
 
 internal class PurchaseConfirmer : AStateBehaviour
 {
-	private TrainCarType selectedCarType;
+	private TrainCarLivery selectedCarLivery;
 	private RailTrack destinationTrack;
 	private EquiPointSet.Point selectedSpawnPoint;
 	private bool isSelectedOrientationOppositeTrackDirection;
@@ -26,7 +25,7 @@ internal class PurchaseConfirmer : AStateBehaviour
 	private Vector3 SelectedDirection { get => selectedSpawnPoint.forward; }
 
 	public PurchaseConfirmer(
-		TrainCarType carType,
+		TrainCarLivery carLivery,
 		RailTrack track,
 		EquiPointSet.Point spawnPoint,
 		bool reverseDirection,
@@ -35,14 +34,14 @@ internal class PurchaseConfirmer : AStateBehaviour
 	) : base(
 		new CommsRadioState(
 			titleText: LocalizationAPI.L("comms_mode_title"),
-			contentText: ContentFromType(carType),
+			contentText: ContentFromType(carLivery),
 			actionText: buy
 				? LocalizationAPI.L("comms_confirmation_action_positive")
 				: LocalizationAPI.L("comms_confirmation_action_negative"),
 			buttonBehaviour: ButtonBehaviourType.Override
 		)
 	) {
-		selectedCarType = carType;
+		selectedCarLivery = carLivery;
 		destinationTrack = track;
 		selectedSpawnPoint = spawnPoint;
 		isSelectedOrientationOppositeTrackDirection = reverseDirection;
@@ -69,31 +68,31 @@ internal class PurchaseConfirmer : AStateBehaviour
 		switch (action)
 		{
 			case InputAction.Activate:
-				if (confirmPurchase && Finance.CanAfford(selectedCarType))
+				if (confirmPurchase && Finance.CanAfford(selectedCarLivery))
 				{
-					Main.Log($"Spawning {selectedCarType} on track {destinationTrack.logicTrack.ID.FullID}");
+					Main.Log($"Spawning {selectedCarLivery} on track {destinationTrack.logicTrack.ID.FullID}");
 
 					Vector3 position = SelectedPosition;
 					Vector3 direction = SelectedDirection;
 					if (isSelectedOrientationOppositeTrackDirection) { direction *= -1f; }
 
-					GameObject? prefab = TransitionHelpers.ToV2(selectedCarType).prefab;
+					GameObject? prefab = selectedCarLivery.prefab;
 					if (prefab == null)
 					{
-						Main.LogError($"Couldn't find prefab for {selectedCarType}");
+						Main.LogError($"Couldn't find prefab for {selectedCarLivery}");
 						return new ErrorViewer("Unable to manufacture requested equipment.");
 					}
 
 					TrainCar trainCar = CarSpawner.Instance.SpawnCar(prefab, destinationTrack, position, direction);
 					if (trainCar == null)
 					{
-						Main.LogError($"CarSpawner didn't return a TrainCar for {selectedCarType}");
+						Main.LogError($"CarSpawner didn't return a TrainCar for {selectedCarLivery}");
 						return new ErrorViewer("Unable to deliver requested equipment.");
 					}
 
 					utility.StartCoroutine(CheckHandbrakeNextFrame(trainCar));
 
-					Inventory.Instance.RemoveMoney(Finance.CalculateCarPrice(selectedCarType));
+					Inventory.Instance.RemoveMoney(Finance.CalculateCarPrice(selectedCarLivery));
 					utility.PlaySound(VanillaSoundCommsRadio.MoneyRemoved);
 
 					utility.PlaySound(VanillaSoundCommsRadio.Confirm);
@@ -109,7 +108,7 @@ internal class PurchaseConfirmer : AStateBehaviour
 			case InputAction.Up:
 			case InputAction.Down:
 				return new PurchaseConfirmer(
-					selectedCarType,
+					selectedCarLivery,
 					destinationTrack,
 					selectedSpawnPoint,
 					isSelectedOrientationOppositeTrackDirection,
@@ -122,10 +121,10 @@ internal class PurchaseConfirmer : AStateBehaviour
 		}
 	}
 
-	private static string ContentFromType(TrainCarType carType)
+	private static string ContentFromType(TrainCarLivery carLivery)
 	{
-		string name = LocalizationAPI.L(carType.ToV2().localizationKey);
-		float price = Finance.CalculateCarPrice(carType);
+		string name = LocalizationAPI.L(carLivery.localizationKey);
+		float price = Finance.CalculateCarPrice(carLivery);
 		string financeReport = Finance.CanAfford(price) ? "" : LocalizationAPI.L("comms_finance_error");
 		return LocalizationAPI.L("comms_confirmation_content", new string[] { name, price.ToString("N0"), financeReport });
 	}

@@ -32,13 +32,13 @@ public class IdGenerator_Patches
 	// We will skip both vanilla methods entirely and use our own implementations instead
 	static bool RegisterCarId_Prefix(string carId)
 	{
-		// TODO: how to get TrainCarType here so IDs of unmanaged car types can be registered?
+		// TODO: how to get TrainCarLivery here so IDs of unmanaged car types can be registered?
 		Main.LogDebug(() => "Skipping vanilla RegisterCarId.");
 		return false;
 	}
 	static bool UnregisterCarId_Prefix(string carId)
 	{
-		// TODO: how to get TrainCarType here so IDs of unmanaged car types can be unregistered?
+		// TODO: how to get TrainCarLivery here so IDs of unmanaged car types can be unregistered?
 		Main.LogDebug(() => "Skipping vanilla UnregisterCarId.");
 		return false;
 	}

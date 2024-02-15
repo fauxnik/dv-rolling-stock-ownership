@@ -6,6 +6,8 @@ using UnityEngine;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
+using DV.ThingTypes.TransitionHelpers;
+using System.Linq;
 
 
 namespace RollingStockOwnership;
@@ -21,7 +23,8 @@ public class Equipment
 	public string CarGUID { get; private set; }
 
 	private static readonly string CAR_TYPE_SAVE_KEY = "type";
-	public TrainCarType CarType { get; private set; }
+	private static readonly string CAR_LIVERY_SAVE_KEY = "livery";
+	public TrainCarLivery CarLivery { get; private set; }
 
 	private static readonly string WORLD_POSITION_SAVE_KEY = "position";
 	private Vector3 position;
@@ -121,12 +124,12 @@ public class Equipment
 	private static readonly string DESTINATION_SAVE_KEY = "destination";
 	public string? DestinationID { get; private set; }
 
-	public Equipment(string id, string carGuid, TrainCarType type, Vector3 position, Quaternion rotation, string? bogie1TrackID, double bogie1PositionAlongTrack, bool isBogie1Derailed, string? bogie2TrackID, double bogie2PositionAlongTrack, bool isBogie2Derailed, string? carGuidCoupledFront, string? carGuidCoupledRear, bool isExploded, CargoType loadedCargo, float? handbrakeApplication, float? mainReservoirPressure, float? controlReservoirPressure, float? brakeCylinderPressure, JObject? carStateSave, JObject? simCarStateSave, TrainCar? trainCar)
+	public Equipment(string id, string carGuid, TrainCarLivery livery, Vector3 position, Quaternion rotation, string? bogie1TrackID, double bogie1PositionAlongTrack, bool isBogie1Derailed, string? bogie2TrackID, double bogie2PositionAlongTrack, bool isBogie2Derailed, string? carGuidCoupledFront, string? carGuidCoupledRear, bool isExploded, CargoType loadedCargo, float? handbrakeApplication, float? mainReservoirPressure, float? controlReservoirPressure, float? brakeCylinderPressure, JObject? carStateSave, JObject? simCarStateSave, TrainCar? trainCar)
 	{
 		Main.Log($"Creating equipment record from values with ID {id}.");
 		this.ID = id;
 		this.CarGUID = carGuid;
-		this.CarType = type;
+		this.CarLivery = livery;
 		this.position = position;
 		this.rotation = rotation;
 		this.bogie1TrackID = bogie1TrackID;
@@ -162,7 +165,7 @@ public class Equipment
 		return new Equipment(
 			trainCar.ID,
 			trainCar.CarGUID,
-			trainCar.carType,
+			trainCar.carLivery,
 			trainCar.transform.position - WorldMover.currentMove,
 			trainCar.transform.rotation,
 			bogie1.HasDerailed ? null : bogie1.track.logicTrack.ID.FullID,
@@ -193,7 +196,7 @@ public class Equipment
 		var simCarState = trainCar.GetComponent<SimCarStateSave>();
 		ID = trainCar.ID;
 		CarGUID = trainCar.CarGUID;
-		CarType = trainCar.carType;
+		CarLivery = trainCar.carLivery;
 		position = trainCar.transform.position - WorldMover.currentMove;
 		rotation = trainCar.transform.rotation;
 		bogie1TrackID = bogie1.HasDerailed ? null : bogie1.track.logicTrack.ID.FullID;
@@ -321,7 +324,7 @@ public class Equipment
 		}
 
 		Main.Log($"Spawning train car based on equipment record with ID {ID}.");
-		var carPrefab = TrainCar.GetCarPrefab(CarType);
+		var carPrefab = CarLivery.prefab;
 		var allTracks = new List<RailTrack>(RailTrackRegistry.Instance.AllTracks);
 		var bogie1Track = isBogie1Derailed ? null : allTracks.Find(track => track.logicTrack.ID.FullID == bogie1TrackID);
 		var bogie2Track = isBogie2Derailed ? null : allTracks.Find(track => track.logicTrack.ID.FullID == bogie2TrackID);
@@ -412,7 +415,7 @@ public class Equipment
 		return trainset.cars.Contains(trainCar);
 	}
 
-	public static Equipment FromSaveData(JObject data)
+	public static Equipment? FromSaveData(JObject data)
 	{
 		Main.LogDebug(() => $"Restoring data: {data}");
 		string id = GetOrThrow<string>(data, ID_SAVE_KEY);
@@ -448,10 +451,30 @@ public class Equipment
 			out var bogie2Derailed
 		);
 
+		TrainCarLivery? carLivery;
+		try
+		{
+			string liveryId = GetOrThrow<string>(data, CAR_LIVERY_SAVE_KEY);
+			carLivery = TrainCarLiveryIntegrator.AllCarLiveries.FirstOrDefault(livery => livery.id == liveryId);
+			if (carLivery == null)
+			{
+				Main.LogWarning($"Can't load this equipment from save data because no livery exists with the ID \"{liveryId}\"");
+				return null;
+			}
+		}
+		catch
+		{
+			// If the livery save key didn't return data, we can assume we're loading an old save that stored TrainCarType (v1)
+			Main.Log($"Can't find a livery ID for the train car with ID \"{id}\". Attempting to find a car type instead.");
+
+			TrainCarType carType = (TrainCarType)GetOrThrow<int>(data, CAR_TYPE_SAVE_KEY);
+			carLivery = TransitionHelpers.ToV2(carType);
+		}
+
 		var equipment = new Equipment(
 			id,
 			carGuid,
-			(TrainCarType)GetOrThrow<int>(data, CAR_TYPE_SAVE_KEY),
+			carLivery,
 			GetOrThrow<Vector3>(data, WORLD_POSITION_SAVE_KEY),
 			Quaternion.Euler(GetOrThrow<Vector3>(data, WORLD_ROTATION_SAVE_KEY)),
 			bogie1TrackID,
@@ -525,7 +548,7 @@ public class Equipment
 		var data = new JObject();
 		data.SetString(ID_SAVE_KEY, ID);
 		data.SetString(CAR_GUID_SAVE_KEY, CarGUID);
-		data.SetInt(CAR_TYPE_SAVE_KEY, (int)CarType);
+		data.SetString(CAR_LIVERY_SAVE_KEY, CarLivery.id);
 		data.SetVector3(WORLD_POSITION_SAVE_KEY, position);
 		data.SetVector3(WORLD_ROTATION_SAVE_KEY, rotation.eulerAngles);
 		data.SetString(BOGIE_1_TRACK_ID_SAVE_KEY, bogie1TrackID);
