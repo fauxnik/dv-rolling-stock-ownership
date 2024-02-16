@@ -1,5 +1,6 @@
 ﻿using DV.Logic.Job;
 using DV.ThingTypes;
+using RollingStockOwnership.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,12 +11,6 @@ namespace RollingStockOwnership;
 
 public static class Utilities
 {
-	public static T GetRandomFrom<T>(System.Random rng, IEnumerable<T> enumerable)
-	{
-		var index = rng.Next(enumerable.Count());
-		return enumerable.ElementAt(index);
-	}
-
 	public static List<CarsPerTrack>? GetRandomSortingOfCarsOnTracks(System.Random rng, List<Track> tracks, List<Car> allCarsForJobChain, int maxNumberOfStorageTracks, int minNumberOfCarsPerTrack)
 	{
 		if (tracks == null || tracks.Count == 0) { return null; }
@@ -72,7 +67,7 @@ public static class Utilities
 				return null;
 			}
 
-			Track track = Utilities.GetRandomFrom(rng, tracksWithRequiredFreeSpace);
+			Track track = tracksWithRequiredFreeSpace.ElementAtRandom(rng);
 			tracks.Remove(track);
 			carsPerTracks.Add(new CarsPerTrack(track, carsForCurrentTrack));
 		}
