@@ -1,4 +1,4 @@
-﻿using DV.Logic.Job;
+using DV.Logic.Job;
 using DV.ThingTypes;
 using DV.ThingTypes.TransitionHelpers;
 using RollingStockOwnership.Extensions;
@@ -151,16 +151,16 @@ public class ProceduralJobsController
 			 * 5. repeat until all cars have been accounted for or no more jobs can be generated
 			 */
 
-			// var minCarsPerJob = Math.Min(proceduralRuleset.minCarsPerJob, carsInYard.Count);
-			var targetMinCarsPerJob = proceduralRuleset.minCarsPerJob;
-			var maxCarsPerJob = Math.Min(proceduralRuleset.maxCarsPerJob, LicenseManager.Instance.GetMaxNumberOfCarsPerJobWithAcquiredJobLicenses());
-			var maxShuntingStorageTracks = proceduralRuleset.maxShuntingStorageTracks;
-			var haulStartingJobSupported = proceduralRuleset.haulStartingJobSupported;
-			var unloadStartingJobSupported = proceduralRuleset.unloadStartingJobSupported;
-			var loadStartingJobSupported = proceduralRuleset.loadStartingJobSupported;
+			// int minCarsPerJob = Math.Min(proceduralRuleset.minCarsPerJob, carsInYard.Count);
+			int targetMinCarsPerJob = proceduralRuleset.minCarsPerJob;
+			int maxCarsPerJob = Math.Min(proceduralRuleset.maxCarsPerJob, LicenseManager.Instance.GetMaxNumberOfCarsPerJobWithAcquiredJobLicenses());
+			int maxShuntingStorageTracks = proceduralRuleset.maxShuntingStorageTracks;
+			bool haulStartingJobSupported = proceduralRuleset.haulStartingJobSupported;
+			bool unloadStartingJobSupported = proceduralRuleset.unloadStartingJobSupported;
+			bool loadStartingJobSupported = proceduralRuleset.loadStartingJobSupported;
 
 			yield return null;
-			var licensedInboundCargoGroups = (
+			List<CargoGroup> licensedInboundCargoGroups = (
 				from cargoGroup in proceduralRuleset.inputCargoGroups
 				where LicenseManager_Patches.IsLicensedForCargoTypes(cargoGroup.cargoTypes)
 				select cargoGroup
@@ -168,7 +168,7 @@ public class ProceduralJobsController
 			Main.LogDebug(() => $"Licensed inbound cargo groups: [{string.Join(", ", licensedInboundCargoGroups.Select(cg => string.Join(", ", cg.cargoTypes)))}]");
 
 			yield return null;
-			var licensedOutboundCargoGroups = (
+			List<CargoGroup> licensedOutboundCargoGroups = (
 				from cargoGroup in proceduralRuleset.outputCargoGroups
 				where LicenseManager_Patches.IsLicensedForCargoTypes(cargoGroup.cargoTypes)
 				select cargoGroup
@@ -273,43 +273,83 @@ public class ProceduralJobsController
 				Dictionary<CargoGroup, HashSet<TrainCar>> associations = AssociateWagonsWithCargoGroups(licensedOutboundCargoGroups, wagonsForLoading);
 				yield return null;
 				KeyValuePair<CargoGroup, HashSet<TrainCar>> association = ChooseAssociation(associations);
+				CargoGroup associatedCargoGroup = association.Key;
+				HashSet<TrainCar> associatedWagons = association.Value;
 				yield return null;
-				IEnumerable<HashSet<TrainCar>> coupledSets = GroupWagonsByCoupled(association.Value, maxCarsPerJob).RandomSorting(rng);
+				double maxWarehouseTrackLength = FindSupportedWarehouseMachineWithLongestTrack(
+					associatedCargoGroup,
+					stationController.warehouseMachineControllers
+				).warehouseTrack.logicTrack.length;
+				yield return null;
+				IEnumerable<CoupledSetData> coupledSets = GroupWagonsByCoupled(associatedWagons, maxCarsPerJob, maxWarehouseTrackLength).RandomSorting(rng);
 				yield return null;
 				int countSets = coupledSets.Count();
 				int maxSets = Math.Min(countSets, maxShuntingStorageTracks);
-				int numSets = rng.Next(maxSets) + 1;
+				int targetSets = rng.Next(maxSets) + 1;
 
-				// Use the randomly chosen sets as a starting point, but attempt to satisfy min/max lengths
+				// Use the randomly chosen sets as a starting point, but attempt to satisfy min/max counts/lengths
+				IEnumerable<CoupledSetData> coupledSetsForGeneration = coupledSets.Take(targetSets);
 				int expansion = 0;
 				int reduction = 0;
-				IEnumerable<HashSet<TrainCar>> coupledSetsForGeneration;
+				bool areConstraintsSatisfied = false;
 				while (expansion < countSets && reduction < countSets)
 				{
 					yield return null;
-					coupledSetsForGeneration = coupledSets.SkipTakeCyclical(reduction, numSets + expansion - reduction);
-					int carCount = coupledSetsForGeneration.Aggregate(0, (sum, coupledSet) => sum + coupledSet.Count());
+					coupledSetsForGeneration = coupledSets.SkipTakeCyclical(reduction, targetSets + expansion - reduction);
+					int wagonCount = coupledSetsForGeneration.Aggregate(0, (count, coupledSet) => count + coupledSet.Wagons.Count());
+					double totalLength = coupledSetsForGeneration.Aggregate(0d, (length, coupledSet) => length + coupledSet.Length);
 
 					int nextExpansion = expansion + 1;
-					if (carCount < targetMinCarsPerJob && numSets + nextExpansion - reduction <= maxSets)
+					if (wagonCount < targetMinCarsPerJob && targetSets + nextExpansion - reduction <= maxSets)
 					{
 						expansion = nextExpansion;
 						continue;
 					}
 
 					int nextReduction = reduction + 1;
-					if (carCount > maxCarsPerJob && numSets + expansion - nextReduction > 0)
+					if ((wagonCount > maxCarsPerJob || totalLength > maxWarehouseTrackLength) && targetSets + expansion - nextReduction > 0)
 					{
 						reduction = nextReduction;
 						continue;
 					}
 
+					areConstraintsSatisfied = true;
 					break;
 				}
 
-				// TODO: check length constraints & finish job generation
+				if (!areConstraintsSatisfied)
+				{
+					Main.LogWarning(
+						() => $"Couldn't find a grouping of coupled sets to satisfy car count and train length constraints.\n" +
+							$"target sets: {targetSets}\nexpansion: {expansion}\nreduction: {reduction}\n" +
+							$"target car count: [{targetMinCarsPerJob}, {maxCarsPerJob}]\nmaximum warehouse track length: {maxWarehouseTrackLength}\n"
+					);
+					continue;
+				}
+
+				yield return null;
+				List<List<Car>> carSetsForJob = (
+					from data in coupledSetsForGeneration
+					select (
+						from wagon in data.Wagons
+						select wagon.logicCar
+					).ToList()
+				).ToList();
+
+				yield return null;
+				JobChainController? jobChainController = ProceduralJobGenerators.GenerateLoadChainJobForCars(rng, carSetsForJob, associatedCargoGroup, stationController);
+
+				if (jobChainController != null)
+				{
+					yield return null;
+					// TODO: setup EquipmentReservation on job activation
+					loadingJobs.Add(jobChainController);
+					List<TrainCar> wagonsForJob = jobChainController.trainCarsForJobChain;
+					wagonsForLoading.ExceptWith(wagonsForJob);
+					log.Append($"Generated shunting load job with cars {string.Join(", ", wagonsForJob.Select(tc => tc.ID))}.\n");
+				}
 			}
-			int attemptsUnsuccessful = MAX_JOB_GENERATION_ATTEMPTS - attemptsRemaining;
+			int attemptsUnsuccessful = MAX_JOB_GENERATION_ATTEMPTS - attemptsRemaining - loadingJobs.Count;
 			Main.LogDebug(() => $"Generated {loadingJobs.Count} shunting load jobs with {attemptsUnsuccessful}/{MAX_JOB_GENERATION_ATTEMPTS} unsuccessful attempts and {wagonsForLoading.Count} cars not receiving jobs.");
 
 			/**
@@ -649,20 +689,37 @@ public class ProceduralJobsController
 		return chosenAssociation!.Value;
 	}
 
-	private static List<HashSet<TrainCar>> GroupWagonsByCoupled(HashSet<TrainCar> wagons, int maxSize)
+	private static List<CoupledSetData> GroupWagonsByCoupled(HashSet<TrainCar> wagons, int maxCount, double maxLength)
 	{
 		var _wagons = new HashSet<TrainCar>(wagons); // Cloning the hash set so the input isn't mutated
-		var coupledSets = new List<HashSet<TrainCar>>();
+		var coupledSets = new List<CoupledSetData>();
 
 		while (_wagons.Count > 0)
 		{
 			var coupled = new HashSet<TrainCar>();
+			double coupledLength = 0;
 			var wagonsQ = new Queue<TrainCar>();
 			wagonsQ.Enqueue(GetNextEdgeWagonFromPool(_wagons)!); // _wagons.Count is checked above, so this won't be null
 
-			while (wagonsQ.Count > 0 && coupled.Count < maxSize)
+			while (wagonsQ.Count > 0 && coupled.Count < maxCount)
 			{
 				TrainCar currentWagon = wagonsQ.Dequeue();
+				double wagonLength = 0;
+				if (coupledLength > 0)
+				{
+					// GetSeparationLengthBetweenCars includes space at the end on each side.
+					// Passing 0 gets the length of a single separation.
+					wagonLength += CarSpawner.Instance.GetSeparationLengthBetweenCars(0);
+				}
+				else
+				{
+					// This accounts for the separation on both ends of the coupled set
+					wagonLength += CarSpawner.Instance.GetSeparationLengthBetweenCars(1);
+				}
+				wagonLength += currentWagon.logicCar.length;
+				if (coupledLength + wagonLength > maxLength) { break; } // No more space on the longest possible supported warehouse track!
+				coupledLength += wagonLength;
+
 				coupled.Add(currentWagon); // If the wagon made it into the queue, it was coupled to a wagon already added to the hash set (or it's the first wagon)
 				_wagons.Remove(currentWagon); // The code that finds the coupled wagons relies on immediately removing the current wagon here to avoid a cycle/infinite loop
 
@@ -675,7 +732,7 @@ public class ProceduralJobsController
 
 			if (coupled.Count > 0)
 			{
-				coupledSets.Add(coupled);
+				coupledSets.Add(new CoupledSetData(coupled, coupledLength));
 			}
 			else
 			{
@@ -683,7 +740,7 @@ public class ProceduralJobsController
 			}
 		}
 
-		Main.LogDebug(() => $"Grouped cars by coupled: {WagonGroupsToString(coupledSets)}");
+		Main.LogDebug(() => $"Grouped cars by coupled: {WagonGroupsToString(coupledSets.Select(coupledSet => coupledSet.Wagons))}");
 
 		return coupledSets;
 	}
@@ -708,5 +765,40 @@ public class ProceduralJobsController
 	private static string WagonGroupToString(IEnumerable<TrainCar> wagons)
 	{
 		return $"[{string.Join(", ", wagons.Select(wagon => wagon.ID))}]";
+	}
+
+	private static WarehouseMachineController FindSupportedWarehouseMachineWithLongestTrack(
+		CargoGroup cargoGroup,
+		IEnumerable<WarehouseMachineController> warehouseMachineControllers)
+	{
+		IEnumerable<WarehouseMachineController> supportedMachines =
+			warehouseMachineControllers.Where(machine => machine.supportedCargoTypes.Intersect(cargoGroup.cargoTypes).Count() > 0);
+
+		WarehouseMachineController supportedMachineWithLongestTrack = supportedMachines.Skip(1).Aggregate(
+			supportedMachines.First(),
+			(longest, current) => {
+				double longestLength = longest.warehouseTrack.logicTrack.length;
+				double currentLength = current.warehouseTrack.logicTrack.length;
+				if (currentLength > longestLength)
+				{
+					return current;
+				}
+				return longest;
+			}
+		);
+
+		return supportedMachineWithLongestTrack;
+	}
+
+	private class CoupledSetData
+	{
+		public HashSet<TrainCar> Wagons { get; private set; }
+		public double Length { get; private set; }
+
+		public CoupledSetData(HashSet<TrainCar> wagons, double length)
+		{
+			Wagons = wagons;
+			Length = length;
+		}
 	}
 }
