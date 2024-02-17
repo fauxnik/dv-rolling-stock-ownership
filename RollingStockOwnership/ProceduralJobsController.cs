@@ -1,4 +1,4 @@
-using DV.Logic.Job;
+﻿using DV.Logic.Job;
 using DV.ThingTypes;
 using DV.ThingTypes.TransitionHelpers;
 using RollingStockOwnership.Extensions;
@@ -151,9 +151,8 @@ public class ProceduralJobsController
 			 * 5. repeat until all cars have been accounted for or no more jobs can be generated
 			 */
 
-			// int minCarsPerJob = Math.Min(proceduralRuleset.minCarsPerJob, carsInYard.Count);
-			int targetMinCarsPerJob = proceduralRuleset.minCarsPerJob;
-			int maxCarsPerJob = Math.Min(proceduralRuleset.maxCarsPerJob, LicenseManager.Instance.GetMaxNumberOfCarsPerJobWithAcquiredJobLicenses());
+			int stationMinWagonsPerJob = proceduralRuleset.minCarsPerJob;
+			int maxWagonsPerJob = Math.Min(proceduralRuleset.maxCarsPerJob, LicenseManager.Instance.GetMaxNumberOfCarsPerJobWithAcquiredJobLicenses());
 			int maxShuntingStorageTracks = proceduralRuleset.maxShuntingStorageTracks;
 			bool haulStartingJobSupported = proceduralRuleset.haulStartingJobSupported;
 			bool unloadStartingJobSupported = proceduralRuleset.unloadStartingJobSupported;
@@ -275,13 +274,16 @@ public class ProceduralJobsController
 				KeyValuePair<CargoGroup, HashSet<TrainCar>> association = ChooseAssociation(associations);
 				CargoGroup associatedCargoGroup = association.Key;
 				HashSet<TrainCar> associatedWagons = association.Value;
+				// This ensures a job will be generated even if there aren't technically enough total wagons
+				int targetMinWagonsPerJob = associatedWagons.Count < 2 * stationMinWagonsPerJob ? associatedWagons.Count : stationMinWagonsPerJob;
+				int absoluteMinWagonsPerJob = Math.Min(stationMinWagonsPerJob, associatedWagons.Count);
 				yield return null;
 				double maxWarehouseTrackLength = FindSupportedWarehouseMachineWithLongestTrack(
 					associatedCargoGroup,
 					stationController.warehouseMachineControllers
 				).warehouseTrack.logicTrack.length;
 				yield return null;
-				IEnumerable<CoupledSetData> coupledSets = GroupWagonsByCoupled(associatedWagons, maxCarsPerJob, maxWarehouseTrackLength).RandomSorting(rng);
+				IEnumerable<CoupledSetData> coupledSets = GroupWagonsByCoupled(associatedWagons, maxWagonsPerJob, maxWarehouseTrackLength).RandomSorting(rng);
 				yield return null;
 				int countSets = coupledSets.Count();
 				int maxSets = Math.Min(countSets, maxShuntingStorageTracks);
@@ -291,41 +293,69 @@ public class ProceduralJobsController
 				IEnumerable<CoupledSetData> coupledSetsForGeneration = coupledSets.Take(targetSets);
 				int expansion = 0;
 				int reduction = 0;
-				bool areConstraintsSatisfied = false;
+				bool isTargetMinWagonsPerJobSatisfied = false;
+				bool isAbsoluteMinWagonsPerJobSatisfied = false;
+				bool isMaxWagonsPerJobSatisfied = false;
+				bool isMaxTrainLengthSatisfied = false;
 				while (expansion < countSets && reduction < countSets)
 				{
 					yield return null;
-					coupledSetsForGeneration = coupledSets.SkipTakeCyclical(reduction, targetSets + expansion - reduction);
-					int wagonCount = coupledSetsForGeneration.Aggregate(0, (count, coupledSet) => count + coupledSet.Wagons.Count());
-					double totalLength = coupledSetsForGeneration.Aggregate(0d, (length, coupledSet) => length + coupledSet.Length);
+					IEnumerable<CoupledSetData> currentSliceOfCoupledSets = coupledSets.SkipTakeCyclical(reduction, targetSets + expansion - reduction);
+					int wagonCount = currentSliceOfCoupledSets.Aggregate(0, (count, coupledSet) => count + coupledSet.Wagons.Count());
+					double trainLength = currentSliceOfCoupledSets.Aggregate(0d, (length, coupledSet) => length + coupledSet.Length);
+					bool currentSliceSatisfiesAbsoluteMinWagonsPerJob = false;
+					bool currentSliceSatisfiesMaxWagonsPerJob = false;
+					bool currentSliceSatisfiesMaxTrainLength = false;
 
 					int nextExpansion = expansion + 1;
-					if (wagonCount < targetMinCarsPerJob && targetSets + nextExpansion - reduction <= maxSets)
+					if (wagonCount < absoluteMinWagonsPerJob && targetSets + nextExpansion - reduction <= maxSets)
 					{
 						expansion = nextExpansion;
 						continue;
 					}
+					currentSliceSatisfiesAbsoluteMinWagonsPerJob = true;
 
 					int nextReduction = reduction + 1;
-					if ((wagonCount > maxCarsPerJob || totalLength > maxWarehouseTrackLength) && targetSets + expansion - nextReduction > 0)
+					if ((wagonCount > maxWagonsPerJob || trainLength > maxWarehouseTrackLength) && targetSets + expansion - nextReduction > 0)
 					{
 						reduction = nextReduction;
 						continue;
 					}
+					isMaxWagonsPerJobSatisfied = true;
+					isMaxTrainLengthSatisfied = true;
 
-					areConstraintsSatisfied = true;
+					// At this point, all required constraints are met. Only optional constrains remain.
+					coupledSetsForGeneration = currentSliceOfCoupledSets;
+					isAbsoluteMinWagonsPerJobSatisfied = currentSliceSatisfiesAbsoluteMinWagonsPerJob;
+					isMaxWagonsPerJobSatisfied = currentSliceSatisfiesMaxWagonsPerJob;
+					isMaxTrainLengthSatisfied = currentSliceSatisfiesMaxTrainLength;
+
+					if (wagonCount < targetMinWagonsPerJob && targetSets + nextExpansion - reduction <= maxSets)
+					{
+						expansion = nextExpansion;
+						continue;
+					}
+					isTargetMinWagonsPerJobSatisfied = true;
+
+					// All required and optional constrains are met. No need to continue looping.
 					break;
 				}
 
-				if (!areConstraintsSatisfied)
+				if (!isAbsoluteMinWagonsPerJobSatisfied || !isMaxWagonsPerJobSatisfied || !isMaxTrainLengthSatisfied)
 				{
 					Main.LogWarning(
-						() => $"Couldn't find a grouping of coupled sets to satisfy car count and train length constraints.\n" +
-							$"target sets: {targetSets}\nexpansion: {expansion}\nreduction: {reduction}\n" +
-							$"target car count: [{targetMinCarsPerJob}, {maxCarsPerJob}]\nmaximum warehouse track length: {maxWarehouseTrackLength}\n"
+						$"Couldn't find a grouping of coupled sets to satisfy required car count and/or train length constraints.\n" +
+						$"required car count range: [{absoluteMinWagonsPerJob}, {maxWagonsPerJob}]\nmaximum warehouse track length: {maxWarehouseTrackLength}\n" +
+						$"coupled sets: {WagonGroupsToString(coupledSets.Select(data => data.Wagons))}" +
+						$"target set count: {targetSets}\nexpansion: {expansion}\nreduction: {reduction}\n"
 					);
 					continue;
 				}
+
+				Main.LogDebug(() =>
+					$"Attempting shunting load job generation after satisfying all {(!isTargetMinWagonsPerJobSatisfied ? "required" : "")} car count and train length constraints.\n" +
+					$"coupled sets for generation: {WagonGroupsToString(coupledSetsForGeneration.Select(data => data.Wagons))}"
+				);
 
 				yield return null;
 				List<List<Car>> carSetsForJob = (
@@ -346,11 +376,11 @@ public class ProceduralJobsController
 					loadingJobs.Add(jobChainController);
 					List<TrainCar> wagonsForJob = jobChainController.trainCarsForJobChain;
 					wagonsForLoading.ExceptWith(wagonsForJob);
-					log.Append($"Generated shunting load job with cars {string.Join(", ", wagonsForJob.Select(tc => tc.ID))}.\n");
+					Main.LogDebug(() => $"Generated shunting load job with cars {string.Join(", ", wagonsForJob.Select(tc => tc.ID))}.");
 				}
 			}
 			int attemptsUnsuccessful = MAX_JOB_GENERATION_ATTEMPTS - attemptsRemaining - loadingJobs.Count;
-			Main.LogDebug(() => $"Generated {loadingJobs.Count} shunting load jobs with {attemptsUnsuccessful}/{MAX_JOB_GENERATION_ATTEMPTS} unsuccessful attempts and {wagonsForLoading.Count} cars not receiving jobs.");
+			log.AppendLine($"Generated {loadingJobs.Count} shunting load jobs with {attemptsUnsuccessful}/{MAX_JOB_GENERATION_ATTEMPTS} unsuccessful attempts and {wagonsForLoading.Count} cars not receiving jobs.");
 
 			/**
 			 * TRANSPORT
@@ -360,7 +390,7 @@ public class ProceduralJobsController
 			while (wagonsForHauling.Count > 0 && attemptsRemaining-- > 0)
 			{}
 			attemptsUnsuccessful = MAX_JOB_GENERATION_ATTEMPTS - attemptsRemaining;
-			Main.LogDebug(() => $"Generated {haulingJobs.Count} transport jobs with {attemptsUnsuccessful}/{MAX_JOB_GENERATION_ATTEMPTS} unsuccessful attempts and {wagonsForHauling.Count} cars not receiving jobs.");
+			log.AppendLine($"Generated {haulingJobs.Count} transport jobs with {attemptsUnsuccessful}/{MAX_JOB_GENERATION_ATTEMPTS} unsuccessful attempts and {wagonsForHauling.Count} cars not receiving jobs.");
 
 			/**
 			 * SHUNTING UNLOAD
@@ -370,7 +400,7 @@ public class ProceduralJobsController
 			while (wagonsForUnloading.Count > 0 && attemptsRemaining-- > 0)
 			{}
 			attemptsUnsuccessful = MAX_JOB_GENERATION_ATTEMPTS - attemptsRemaining;
-			Main.LogDebug(() => $"Generated {unloadingJobs.Count} shunting unload jobs with {attemptsUnsuccessful}/{MAX_JOB_GENERATION_ATTEMPTS} unsuccessful attempts and {wagonsForUnloading.Count} cars not receiving jobs.");
+			log.AppendLine($"Generated {unloadingJobs.Count} shunting unload jobs with {attemptsUnsuccessful}/{MAX_JOB_GENERATION_ATTEMPTS} unsuccessful attempts and {wagonsForUnloading.Count} cars not receiving jobs.");
 
 			// // loop, generating jobs for train cars, until all train cars are accounted for or we reach an upper bound of attempts
 			// var carsQ = new Queue<Car>();
