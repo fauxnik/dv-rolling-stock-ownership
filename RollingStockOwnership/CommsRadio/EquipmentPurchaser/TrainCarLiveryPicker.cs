@@ -19,11 +19,11 @@ internal class TrainCarLiveryPicker : AStateBehaviour
 
 	public TrainCarLiveryPicker(int selectedIndex) : base(
 		new CommsRadioState(
-			titleText: LocalizationAPI.L("comms_mode_title"),
+			titleText: Main.Localize("comms_mode_title"),
 			contentText: ContentFromIndex(selectedIndex),
 			actionText: Finance.CanAfford(availableCarLiveries[selectedIndex])
-				? LocalizationAPI.L("comms_car_type_action_positive")
-				: LocalizationAPI.L("comms_car_type_action_negative"),
+				? Main.Localize("comms_car_type_action_positive")
+				: Main.Localize("comms_car_type_action_negative"),
 			buttonBehaviour: ButtonBehaviourType.Override
 		)
 	) {
@@ -102,7 +102,7 @@ internal class TrainCarLiveryPicker : AStateBehaviour
 		TrainCarLivery livery = availableCarLiveries[index];
 		string name = LocalizationAPI.L(livery.localizationKey);
 		float price = Finance.CalculateCarPrice(livery);
-		string financeReport = Finance.CanAfford(price) ? "" : LocalizationAPI.L("comms_finance_error");
-		return LocalizationAPI.L("comms_car_type_content", new string[] { name, price.ToString("N0"), financeReport });
+		string financeReport = Finance.CanAfford(price) ? "" : Main.Localize("comms_finance_error");
+		return Main.Localize("comms_car_type_content", name, price.ToString("N0"), financeReport);
 	}
 }

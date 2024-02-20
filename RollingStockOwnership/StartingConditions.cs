@@ -136,16 +136,16 @@ internal static class StartingConditions
 
 		PopupAPI.ShowOk(
 			title: "Rolling Stock Ownership",
-			message: LocalizationAPI.L("first_time_with_save"),
-			positive: LocalizationAPI.L("first_time_with_save_positive")
+			message: Main.Localize("first_time_with_save"),
+			positive: Main.Localize("first_time_with_save_positive")
 		).Then((_) => (
 			PopupAPI.ShowOk(
 				title: "Rolling Stock Ownership",
 				message: string.Join(" ", new string [] {
-					isShuntingLicenseChanged ? LocalizationAPI.L("given_shunting_license") : "",
-					LocalizationAPI.L("given_starter_equipment", new string [] { locoName }),
+					isShuntingLicenseChanged ? Main.Localize("given_shunting_license") : "",
+					Main.Localize("given_starter_equipment", locoName),
 				}),
-				positive: LocalizationAPI.L("given_starter_equipment_positive")
+				positive: Main.Localize("given_starter_equipment_positive")
 			)
 		));
 	}
