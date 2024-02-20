@@ -41,11 +41,11 @@ internal class DestinationPicker : AStateBehaviour
 		bool reverseDirection = false
 	) : base(
 		new CommsRadioState(
-			titleText: LocalizationAPI.L("comms_mode_title"),
+			titleText: Main.Localize("comms_mode_title"),
 			contentText: ContentFromType(carLivery),
 			actionText: IsPlaceable(carLivery, track, spawnPoint)
-				? LocalizationAPI.L("comms_destination_action_positive")
-				: LocalizationAPI.L("comms_destination_action_negative"),
+				? Main.Localize("comms_destination_action_positive")
+				: Main.Localize("comms_destination_action_negative"),
 			arrowState: GetArrowState(signalOrigin, spawnPoint, reverseDirection),
 			buttonBehaviour: ButtonBehaviourType.Override
 		)
@@ -209,10 +209,10 @@ internal class DestinationPicker : AStateBehaviour
 		TrainCar? trainCar = prefab?.GetComponent<TrainCar>();
 		float? length = trainCar?.InterCouplerDistance;
 		string lengthString = length.HasValue
-			? LocalizationAPI.L("comms_destination_equipment_length", new string[] { length.Value.ToString("N0") })
-			: LocalizationAPI.L("comms_destination_equipment_length_unknown");
-		string financeReport = Finance.CanAfford(carLivery) ? "" : LocalizationAPI.L("comms_finance_error");
-		return LocalizationAPI.L("comms_destination_content", new string[] { name, lengthString, financeReport });
+			? Main.Localize("comms_destination_equipment_length", length.Value.ToString("N0"))
+			: Main.Localize("comms_destination_equipment_length_unknown");
+		string financeReport = Finance.CanAfford(carLivery) ? "" : Main.Localize("comms_finance_error");
+		return Main.Localize("comms_destination_content", name, lengthString, financeReport);
 	}
 
 	private static LCDArrowState GetArrowState(Transform signalOrigin, EquiPointSet.Point? spawnPoint, bool reverseDirection)
