@@ -1,4 +1,5 @@
-﻿using DV.Utils;
+﻿using DV.Localization;
+using DV.Utils;
 using RollingStockOwnership.Patches;
 using HarmonyLib;
 using System;
@@ -93,20 +94,24 @@ public static class Main
 		WorldStreamingInit.LoadingFinished += StartingConditions.Verify;
 	}
 
-	public static MethodInfo Patch(MethodBase original, HarmonyMethod? prefix = null, HarmonyMethod? postfix = null, HarmonyMethod? transpiler = null)
-	{
-		return harmony.Patch(original, prefix, postfix, transpiler);
-	}
+	internal static string Localize(string nakedKey, params string[] paramValues) =>
+		LocalizationAPI.L(NamespaceKey(nakedKey), paramValues);
 
-	public static void LogVerbose(System.Func<object> messageFactory)
-	{
+	private static string NamespaceKey(string nakedKey) =>
+		$"rolling_stock_ownership/{nakedKey.Replace(" ", "_").ToLowerInvariant()}";
+
+	public static MethodInfo Patch(
+		MethodBase original,
+		HarmonyMethod? prefix = null,
+		HarmonyMethod? postfix = null,
+		HarmonyMethod? transpiler = null
+	) => harmony.Patch(original, prefix, postfix, transpiler);
+
+	public static void LogVerbose(System.Func<object> messageFactory) =>
 		LogAtLevel(messageFactory, LogLevel.Verbose);
-	}
 
-	public static void LogDebug(System.Func<object> messageFactory)
-	{
+	public static void LogDebug(System.Func<object> messageFactory) =>
 		LogAtLevel(messageFactory, LogLevel.Debug);
-	}
 
 	private static void LogAtLevel(System.Func<object> messageFactory, LogLevel level)
 	{
