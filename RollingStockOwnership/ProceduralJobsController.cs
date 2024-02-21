@@ -257,11 +257,12 @@ public class ProceduralJobsController
 			var loadingJobs = new List<JobChainController>();
 			while (wagonsForLoading.Count > 0 && attemptsRemaining-- > 0)
 			{
-				// These are expensive operations, so we'll yield for a frame around them.
+				// These are expensive operations, so we'll yield for a frame around them
 				yield return null;
 				Dictionary<CargoGroup, HashSet<TrainCar>> associations = AssociateWagonsWithCargoGroups(licensedOutboundCargoGroups, wagonsForLoading);
 				yield return null;
 				KeyValuePair<CargoGroup, HashSet<TrainCar>> association = ChooseAssociation(associations);
+				yield return null;
 				CargoGroup associatedCargoGroup = association.Key;
 				HashSet<TrainCar> associatedWagons = association.Value;
 				// This ensures a job will be generated even if there aren't technically enough total wagons
@@ -381,7 +382,7 @@ public class ProceduralJobsController
 			var haulingJobs = new List<JobChainController>();
 			while (wagonsForHauling.Count > 0 && attemptsRemaining-- > 0)
 			{}
-			attemptsUnsuccessful = MAX_JOB_GENERATION_ATTEMPTS - attemptsRemaining;
+			attemptsUnsuccessful = MAX_JOB_GENERATION_ATTEMPTS - attemptsRemaining - haulingJobs.Count;
 			log.AppendLine($"Generated {haulingJobs.Count} transport jobs with {attemptsUnsuccessful}/{MAX_JOB_GENERATION_ATTEMPTS} unsuccessful attempts and {wagonsForHauling.Count} cars not receiving jobs.");
 
 			/**
@@ -391,7 +392,7 @@ public class ProceduralJobsController
 			var unloadingJobs = new List<JobChainController>();
 			while (wagonsForUnloading.Count > 0 && attemptsRemaining-- > 0)
 			{}
-			attemptsUnsuccessful = MAX_JOB_GENERATION_ATTEMPTS - attemptsRemaining;
+			attemptsUnsuccessful = MAX_JOB_GENERATION_ATTEMPTS - attemptsRemaining - unloadingJobs.Count;
 			log.AppendLine($"Generated {unloadingJobs.Count} shunting unload jobs with {attemptsUnsuccessful}/{MAX_JOB_GENERATION_ATTEMPTS} unsuccessful attempts and {wagonsForUnloading.Count} cars not receiving jobs.");
 
 			// // loop, generating jobs for train cars, until all train cars are accounted for or we reach an upper bound of attempts
