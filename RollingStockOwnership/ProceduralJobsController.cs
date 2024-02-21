@@ -114,13 +114,13 @@ public class ProceduralJobsController
 				carsWithJobs.UnionWith(jobCars.Select(trainCar => trainCar.logicCar));
 			}
 
-			Main.LogDebug(() => $"Found {carsWithJobs.Count()} cars with active jobs.");
+			Main.LogDebug(() => $"Found {carsWithJobs.Count()} cars with jobs assigned.");
 
-			// Filter out cars with active jobs
+			// Filter out cars with assigned jobs
 			yield return null;
 			carsInYard.ExceptWith(carsWithJobs);
 
-			Main.LogDebug(() => $"Found {carsInYard.Count()} cars without active jobs in {stationId} yard and player's train.");
+			Main.LogDebug(() => $"Found {carsInYard.Count()} jobless cars in {stationId} yard and player's train.");
 
 			/**
 			 * JOB GENERATION REWRITE NOTES
