@@ -1,6 +1,7 @@
 ﻿using DV.Logic.Job;
 using DV.ThingTypes;
 using DV.ThingTypes.TransitionHelpers;
+using HarmonyLib;
 using RollingStockOwnership.Extensions;
 using RollingStockOwnership.Patches;
 using System;
@@ -87,41 +88,30 @@ public class ProceduralJobsController
 				foreach (var car in playerCars) { carsInYard.Add(car); }
 			}
 
-			// TODO: is this still needed?
-			// Must only consider regular cars or else job generation may fail
-			// carsInYard = carsInYard.Where(car => CarTypes.IsRegularCar(car.carType)).ToHashSet();
-
 			Main.LogDebug(() => $"Found {carsInYard.Count()} cars in {stationId} yard and player's train.");
 
-			// Get all cars with active jobs
+			// Get all cars with assigned jobs
 			var carsWithJobs = new HashSet<Car>();
 			JobsManager jobsManager = JobsManager.Instance;
-			var activeJobs = jobsManager.currentJobs;
-			foreach (var job in activeJobs)
+			var allJobs = (List<Job>) AccessTools.Field(typeof(JobsManager), "allJobs").GetValue(jobsManager);
+			if (allJobs == null)
+			{
+				Main.LogError("Couldn't access private field \"allJobs\" of JobsManager singleton");
+				allJobs = new List<Job>();
+			}
+			var jobToJobCars = (Dictionary<Job, HashSet<TrainCar>>) AccessTools.Field(typeof(JobsManager), "jobToJobCars").GetValue(jobsManager);
+			if (jobToJobCars == null)
+			{
+				Main.LogError("Couldn't access private field \"jobToJobCars\" of JobsManager singleton");
+				jobToJobCars = new Dictionary<Job, HashSet<TrainCar>>();
+			}
+			foreach (var job in allJobs)
 			{
 				yield return null;
 
-				var taskQ = new Queue<Task>();
-				foreach (var task in job.tasks)
-				{
-					taskQ.Enqueue(task);
-				}
+				if (!jobToJobCars.TryGetValue(job, out HashSet<TrainCar> jobCars)) { continue; }
 
-				while (taskQ.Count > 0)
-				{
-					var task = taskQ.Dequeue();
-					var taskData = task.GetTaskData();
-					var nestedTasks = taskData.nestedTasks ?? new List<Task>();
-					foreach (var nestedTask in nestedTasks) { taskQ.Enqueue(nestedTask); }
-
-					if (taskData.type == TaskType.Transport)
-					{
-						foreach (var car in taskData.cars)
-						{
-							carsWithJobs.Add(car);
-						}
-					}
-				}
+				carsWithJobs.UnionWith(jobCars.Select(trainCar => trainCar.logicCar));
 			}
 
 			Main.LogDebug(() => $"Found {carsWithJobs.Count()} cars with active jobs.");
@@ -303,26 +293,23 @@ public class ProceduralJobsController
 					IEnumerable<CoupledSetData> currentSliceOfCoupledSets = coupledSets.SkipTakeCyclical(reduction, targetSets + expansion - reduction);
 					int wagonCount = currentSliceOfCoupledSets.Aggregate(0, (count, coupledSet) => count + coupledSet.Wagons.Count());
 					double trainLength = currentSliceOfCoupledSets.Aggregate(0d, (length, coupledSet) => length + coupledSet.Length);
-					bool currentSliceSatisfiesAbsoluteMinWagonsPerJob = false;
-					bool currentSliceSatisfiesMaxWagonsPerJob = false;
-					bool currentSliceSatisfiesMaxTrainLength = false;
+					bool currentSliceSatisfiesAbsoluteMinWagonsPerJob = wagonCount >= absoluteMinWagonsPerJob;
+					bool currentSliceSatisfiesMaxWagonsPerJob = wagonCount <= maxWagonsPerJob;
+					bool currentSliceSatisfiesMaxTrainLength = trainLength <= maxWarehouseTrackLength;
 
 					int nextExpansion = expansion + 1;
-					if (wagonCount < absoluteMinWagonsPerJob && targetSets + nextExpansion - reduction <= maxSets)
+					if (!currentSliceSatisfiesAbsoluteMinWagonsPerJob && targetSets + nextExpansion - reduction <= maxSets)
 					{
 						expansion = nextExpansion;
 						continue;
 					}
-					currentSliceSatisfiesAbsoluteMinWagonsPerJob = true;
 
 					int nextReduction = reduction + 1;
-					if ((wagonCount > maxWagonsPerJob || trainLength > maxWarehouseTrackLength) && targetSets + expansion - nextReduction > 0)
+					if ((!currentSliceSatisfiesMaxWagonsPerJob || !currentSliceSatisfiesMaxTrainLength) && targetSets + expansion - nextReduction > 0)
 					{
 						reduction = nextReduction;
 						continue;
 					}
-					isMaxWagonsPerJobSatisfied = true;
-					isMaxTrainLengthSatisfied = true;
 
 					// At this point, all required constraints are met. Only optional constrains remain.
 					coupledSetsForGeneration = currentSliceOfCoupledSets;
@@ -345,15 +332,20 @@ public class ProceduralJobsController
 				{
 					Main.LogWarning(
 						$"Couldn't find a grouping of coupled sets to satisfy required car count and/or train length constraints.\n" +
-						$"required car count range: [{absoluteMinWagonsPerJob}, {maxWagonsPerJob}]\nmaximum warehouse track length: {maxWarehouseTrackLength}\n" +
-						$"coupled sets: {WagonGroupsToString(coupledSets.Select(data => data.Wagons))}" +
-						$"target set count: {targetSets}\nexpansion: {expansion}\nreduction: {reduction}\n"
+						$"required car count range: [{absoluteMinWagonsPerJob}, {maxWagonsPerJob}]\n" +
+						$"maximum warehouse track length: {maxWarehouseTrackLength}\n" +
+						$"coupled sets: {WagonGroupsToString(coupledSets.Select(data => data.Wagons))}\n" +
+						$"coupled set count: {countSets}\n" +
+						$"maximum set count: {maxSets}\n" +
+						$"target set count: {targetSets}\n" +
+						$"expansion: {expansion}\n" +
+						$"reduction: {reduction}\n"
 					);
 					continue;
 				}
 
 				Main.LogDebug(() =>
-					$"Attempting shunting load job generation after satisfying all {(!isTargetMinWagonsPerJobSatisfied ? "required" : "")} car count and train length constraints.\n" +
+					$"Attempting shunting load job generation after satisfying {(isTargetMinWagonsPerJobSatisfied ? "all" : "required")} car count and train length constraints.\n" +
 					$"coupled sets for generation: {WagonGroupsToString(coupledSetsForGeneration.Select(data => data.Wagons))}"
 				);
 
