@@ -324,6 +324,7 @@ public static class ProceduralJobGenerators
 		return jobDefinition;
 	}
 
+	[Obsolete("ReservationManager replaces the function of DestinationID")]
 	public static void SetDestination(JobChainController controller, string? destinationID)
 	{
 		var rollingStock = RollingStockManager.Instance;

@@ -35,7 +35,7 @@ public class ProceduralJobsController
 	private ProceduralJobsController(StationController stationController)
 	{
 		this.stationController = stationController;
-		stationTracks = GetTracksByStationID(stationController.logicStation.ID).ToList();
+		stationTracks = GetTracksByYardID(stationController.stationInfo.YardID).ToList();
 	}
 
 	public IEnumerator GenerateJobsCoro(Action onComplete, IEnumerable<Car>? carsToUse = null)
@@ -43,7 +43,7 @@ public class ProceduralJobsController
 		var log = new StringBuilder();
 		int tickCount = Environment.TickCount;
 		System.Random rng = new System.Random(tickCount);
-		var stationId = stationController.logicStation.ID;
+		var yardId = stationController.stationInfo.YardID;
 		var proceduralRuleset = stationController.proceduralJobsRuleset;
 		var manager = RollingStockManager.Instance;
 
@@ -88,7 +88,7 @@ public class ProceduralJobsController
 				foreach (var car in playerCars) { carsInYard.Add(car); }
 			}
 
-			Main.LogDebug(() => $"Found {carsInYard.Count()} cars in {stationId} yard and player's train.");
+			Main.LogDebug(() => $"Found {carsInYard.Count()} cars in {yardId} yard and player's train.");
 
 			// Get all cars with assigned jobs
 			var carsWithJobs = new HashSet<Car>();
@@ -120,7 +120,7 @@ public class ProceduralJobsController
 			yield return null;
 			carsInYard.ExceptWith(carsWithJobs);
 
-			Main.LogDebug(() => $"Found {carsInYard.Count()} jobless cars in {stationId} yard and player's train.");
+			Main.LogDebug(() => $"Found {carsInYard.Count()} jobless cars in {yardId} yard and player's train.");
 
 			/**
 			 * JOB GENERATION REWRITE NOTES
@@ -194,7 +194,7 @@ public class ProceduralJobsController
 				Main.LogDebug(() => $"Found {wagonsForLoading.Count} cars for shunting load jobs.");
 				wagonsInYard.ExceptWith(wagonsForLoading);
 			}
-			else { Main.LogDebug(() => $"{stationId} doesn't support shunting load jobs."); }
+			else { Main.LogDebug(() => $"{yardId} doesn't support shunting load jobs."); }
 
 			if (haulStartingJobSupported)
 			{
@@ -212,7 +212,7 @@ public class ProceduralJobsController
 						)
 					)) { continue; }
 					// If an equipment reservation exists, it must originate here
-					// TODO: check equipment reservations
+					if (ReservationManager.Instance.TryGetReservation(wagon, out Reservation? reservation) && reservation.OutboundYardID != yardId) { continue; }
 
 					Main.LogDebug(() => $"Found {wagonsForHauling.Count} cars for transport jobs.");
 					wagonsForHauling.Add(wagon);
@@ -220,7 +220,7 @@ public class ProceduralJobsController
 
 				wagonsInYard.ExceptWith(wagonsForHauling);
 			}
-			else { Main.LogDebug(() => $"{stationId} doesn't support transport jobs."); }
+			else { Main.LogDebug(() => $"{yardId} doesn't support transport jobs."); }
 
 			if (unloadStartingJobSupported)
 			{
@@ -238,7 +238,7 @@ public class ProceduralJobsController
 						)
 					)) { continue; }
 					// If an equipment reservation exists, it must be destined for here
-					// TODO: check equipment reservations
+					if (ReservationManager.Instance.TryGetReservation(wagon, out Reservation? reservation) && reservation.InboundYardID != yardId) { continue; }
 
 					Main.LogDebug(() => $"Found {wagonsForUnloading.Count} cars for shunting unload jobs.");
 					wagonsForUnloading.Add(wagon);
@@ -246,7 +246,7 @@ public class ProceduralJobsController
 
 				wagonsInYard.ExceptWith(wagonsForUnloading);
 			}
-			else { Main.LogDebug(() => $"{stationId} doesn't support shunting unload jobs."); }
+			else { Main.LogDebug(() => $"{yardId} doesn't support shunting unload jobs."); }
 
 			Main.LogDebug(() => $"Excluding {wagonsInYard.Count} cars as incompatible.");
 
@@ -259,22 +259,28 @@ public class ProceduralJobsController
 			{
 				// These are expensive operations, so we'll yield for a frame around them
 				yield return null;
-				Dictionary<CargoGroup, HashSet<TrainCar>> associations = AssociateWagonsWithCargoGroups(licensedOutboundCargoGroups, wagonsForLoading);
+				Dictionary<(CargoGroup CargoGroup, string? OutboundYardID, string? InboundYardID), HashSet<TrainCar>> associations =
+					CreateWagonAssociations(licensedOutboundCargoGroups, wagonsForLoading);
 				yield return null;
-				KeyValuePair<CargoGroup, HashSet<TrainCar>> association = ChooseAssociation(associations);
+				(CargoGroup CargoGroup, string? OutboundYardID, string? InboundYardID, HashSet<TrainCar> Wagons) association =
+					ChooseAssociation(associations);
+
 				yield return null;
-				CargoGroup associatedCargoGroup = association.Key;
-				HashSet<TrainCar> associatedWagons = association.Value;
 				// This ensures a job will be generated even if there aren't technically enough total wagons
-				int targetMinWagonsPerJob = associatedWagons.Count < 2 * stationMinWagonsPerJob ? associatedWagons.Count : stationMinWagonsPerJob;
-				int absoluteMinWagonsPerJob = Math.Min(stationMinWagonsPerJob, associatedWagons.Count);
+				int targetMinWagonsPerJob = association.Wagons.Count < 2 * stationMinWagonsPerJob ? association.Wagons.Count : stationMinWagonsPerJob;
+				int absoluteMinWagonsPerJob = Math.Min(stationMinWagonsPerJob, association.Wagons.Count);
+
 				yield return null;
 				double maxWarehouseTrackLength = FindSupportedWarehouseMachineWithLongestTrack(
-					associatedCargoGroup,
+					association.CargoGroup,
 					stationController.warehouseMachineControllers
 				).warehouseTrack.logicTrack.length;
+
 				yield return null;
-				IEnumerable<CoupledSetData> coupledSets = GroupWagonsByCoupled(associatedWagons, maxWagonsPerJob, maxWarehouseTrackLength).RandomSorting(rng);
+				IEnumerable<CoupledSetData> coupledSets =
+					GroupWagonsByCoupled(association.Wagons, maxWagonsPerJob, maxWarehouseTrackLength)
+						.RandomSorting(rng);
+
 				yield return null;
 				int countSets = coupledSets.Count();
 				int maxSets = Math.Min(countSets, maxShuntingStorageTracks);
@@ -360,16 +366,20 @@ public class ProceduralJobsController
 				).ToList();
 
 				yield return null;
-				JobChainController? jobChainController = ProceduralJobGenerators.GenerateLoadChainJobForCars(rng, carSetsForJob, associatedCargoGroup, stationController);
+				JobChainController? jobChainController = ProceduralJobGenerators.GenerateLoadChainJobForCars(rng, carSetsForJob, association.CargoGroup, stationController);
 
 				if (jobChainController != null)
 				{
 					yield return null;
-					// TODO: setup EquipmentReservation on job activation
 					loadingJobs.Add(jobChainController);
 					List<TrainCar> wagonsForJob = jobChainController.trainCarsForJobChain;
 					wagonsForLoading.ExceptWith(wagonsForJob);
-					Main.LogDebug(() => $"Generated shunting load job with cars {string.Join(", ", wagonsForJob.Select(tc => tc.ID))}.");
+					foreach (TrainCar wagon in wagonsForJob)
+					{
+						yield return null;
+						RegisterReservationEvents(wagon, jobChainController.currentJobInChain);
+					}
+					Main.LogDebug(() => $"Generated shunting load job with cars {string.Join(", ", wagonsForJob.Select(wagon => wagon.ID))}.");
 				}
 			}
 			int attemptsUnsuccessful = MAX_JOB_GENERATION_ATTEMPTS - attemptsRemaining - loadingJobs.Count;
@@ -381,7 +391,54 @@ public class ProceduralJobsController
 			attemptsRemaining = MAX_JOB_GENERATION_ATTEMPTS;
 			var haulingJobs = new List<JobChainController>();
 			while (wagonsForHauling.Count > 0 && attemptsRemaining-- > 0)
-			{}
+			{
+				// These are expensive operations, so we'll yield for a frame around them
+				yield return null;
+				Dictionary<(CargoGroup CargoGroup, string? OutboundYardID, string? InboundYardID), HashSet<TrainCar>> associations =
+					CreateWagonAssociations(licensedOutboundCargoGroups, wagonsForHauling);
+				yield return null;
+				(CargoGroup CargoGroup, string? OutboundYardID, string? InboundYardID, HashSet<TrainCar> Wagons) association =
+					ChooseAssociation(associations);
+
+				yield return null;
+				// This ensures a job will be generated even if there aren't technically enough total wagons
+				int targetMinWagonsPerJob = association.Wagons.Count < 2 * stationMinWagonsPerJob ? association.Wagons.Count : stationMinWagonsPerJob;
+				int absoluteMinWagonsPerJob = Math.Min(stationMinWagonsPerJob, association.Wagons.Count);
+
+				yield return null;
+				// Selects a station:
+				//   - the reservations' inbound station, if reservations exist for these wagons
+				//   - a random inbound station, if no reservations exist for these wagons
+				StationController destination = association.CargoGroup.stations
+					.Where(station => association.InboundYardID == null || station.stationInfo.YardID == association.InboundYardID)
+					.ElementAtRandom(rng);
+
+				// TODO: find the longest inbound track at the destination and limit the coupled set length to this
+				// TODO: change this so it chooses a random sorting and iterates through until it finds a set that meets the strictest minimum wagon requirement possible
+				yield return null;
+				CoupledSetData coupledSet =
+					GroupWagonsByCoupled(association.Wagons, maxWagonsPerJob, double.PositiveInfinity)
+						.OrderByDescending(data => data.Wagons.Count) // This puts the sets with the highest number of train cars first
+						.First(); // Choose the largest set
+
+				yield return null;
+				List<Car> carsForJob = coupledSet.Wagons.Select(wagon => wagon.logicCar).ToList();
+
+				yield return null;
+				JobChainController? jobChainController = ProceduralJobGenerators.GenerateHaulChainJobForCars(rng, carsForJob, association.CargoGroup, stationController);
+
+				if (jobChainController != null)
+				{
+					yield return null;
+					jobChainController.currentJobInChain.JobAbandoned += (job) => {
+						ReservationManager.Instance.Release(jobChainController);
+					};
+					haulingJobs.Add(jobChainController);
+					List<TrainCar> wagonsForJob = jobChainController.trainCarsForJobChain;
+					wagonsForHauling.ExceptWith(wagonsForJob);
+					Main.LogDebug(() => $"Generated transport job with cars {string.Join(", ", wagonsForJob.Select(tc => tc.ID))}.");
+				}
+			}
 			attemptsUnsuccessful = MAX_JOB_GENERATION_ATTEMPTS - attemptsRemaining - haulingJobs.Count;
 			log.AppendLine($"Generated {haulingJobs.Count} transport jobs with {attemptsUnsuccessful}/{MAX_JOB_GENERATION_ATTEMPTS} unsuccessful attempts and {wagonsForHauling.Count} cars not receiving jobs.");
 
@@ -618,10 +675,10 @@ public class ProceduralJobsController
 		yield break;
 	}
 
-	private static IEnumerable<Track> GetTracksByStationID (string stationId)
+	private static IEnumerable<Track> GetTracksByYardID (string yardId)
 	{
 		var allTracks = RailTrackRegistry.Instance.AllTracks;
-		return from railTrack in allTracks where railTrack.logicTrack.ID.yardId == stationId select railTrack.logicTrack;
+		return from railTrack in allTracks where railTrack.logicTrack.ID.yardId == yardId select railTrack.logicTrack;
 	}
 
 	private static HashSet<Car> GetMatchingCoupledCars(Equipment equipment, CargoGroup cargoGroup, HashSet<Car> carsInYard, int maxCarsToReturn)
@@ -676,20 +733,27 @@ public class ProceduralJobsController
 	 * Associates cars with the cargo groups they can load.
 	 * Cars will be unique for any single cargo group, but may be associated with multiple cargo groups.
 	 */
-	private static Dictionary<CargoGroup, HashSet<TrainCar>> AssociateWagonsWithCargoGroups(List<CargoGroup> cargoGroups, HashSet<TrainCar> wagons)
+	private static Dictionary<
+		(CargoGroup CargoGroup, string? OutboundYardID, string? InboundYardID),
+		HashSet<TrainCar>
+	> CreateWagonAssociations(List<CargoGroup> cargoGroups, HashSet<TrainCar> wagons)
 	{
-		var associations = new Dictionary<CargoGroup, HashSet<TrainCar>>();
+		var associations = new Dictionary<(CargoGroup CargoGroup, string? OutboundYardID, string? InboundYardID), HashSet<TrainCar>>();
 
 		foreach (CargoGroup cargoGroup in cargoGroups)
 		{
-			var association = associations[cargoGroup] = new HashSet<TrainCar>();
-
 			foreach (CargoType cargoType in cargoGroup.cargoTypes)
 			{
 				foreach (TrainCar wagon in wagons)
 				{
 					if (cargoType.ToV2().IsLoadableOnCarType(wagon.logicCar.carType.parentType))
 					{
+						(CargoGroup, string?, string?) key = (cargoGroup, null, null);
+						if (ReservationManager.Instance.TryGetReservation(wagon, out Reservation? reservation))
+						{
+							key = (cargoGroup, reservation.OutboundYardID, reservation.InboundYardID);
+						}
+						var association = associations[key] ??= new HashSet<TrainCar>();
 						association.Add(wagon);
 					}
 				}
@@ -699,17 +763,26 @@ public class ProceduralJobsController
 		return associations;
 	}
 
-	private static KeyValuePair<CargoGroup, HashSet<TrainCar>> ChooseAssociation(Dictionary<CargoGroup, HashSet<TrainCar>> associations)
+	private static (CargoGroup CargoGroup, string? OutboundYardID, string? InboundYardID, HashSet<TrainCar> Wagons) ChooseAssociation(
+		Dictionary<(CargoGroup CargoGroup, string? OutboundYardID, string? InboundYardID), HashSet<TrainCar>> associations)
 	{
-		var chosenAssociation = associations.Aggregate(null as KeyValuePair<CargoGroup, HashSet<TrainCar>>?, (accumulator, kvpair) => {
-			int accumulatorSize = accumulator?.Value.Count ?? 0;
-			int kvpairSize = kvpair.Value.Count;
-			return kvpairSize > accumulatorSize ? kvpair : accumulator;
-		});
+		var chosenAssociation = associations.Aggregate(
+			null as KeyValuePair<(CargoGroup CargoGroup, string? OutboundYardID, string? InboundYardID), HashSet<TrainCar>>?,
+			(accumulator, kvpair) => {
+				int accumulatorSize = accumulator?.Value.Count ?? 0;
+				int kvpairSize = kvpair.Value.Count;
+				return kvpairSize > accumulatorSize ? kvpair : accumulator;
+			}
+		);
 
 		// All associations will exist in the input.
 		// The nullable nature only comes from using null as the aggregate seed.
-		return chosenAssociation!.Value;
+		return (
+			chosenAssociation!.Value.Key.CargoGroup,
+			chosenAssociation!.Value.Key.OutboundYardID,
+			chosenAssociation!.Value.Key.InboundYardID,
+			chosenAssociation!.Value.Value
+		);
 	}
 
 	private static List<CoupledSetData> GroupWagonsByCoupled(HashSet<TrainCar> wagons, int maxCount, double maxLength)
@@ -811,6 +884,42 @@ public class ProceduralJobsController
 		);
 
 		return supportedMachineWithLongestTrack;
+	}
+
+	private void RegisterReleaseEvents(TrainCar wagon)
+	{
+		void CargoUnloadedCallback()
+		{
+			ReservationManager.Instance.Release(wagon.logicCar);
+		}
+
+		wagon.CargoUnloaded += CargoUnloadedCallback;
+	}
+
+	private void RegisterReservationEvents(TrainCar wagon, Job job)
+	{
+		void CargoLoadedCallback(CargoType _)
+		{
+			wagon.CargoLoaded -= CargoLoadedCallback;
+			if (job.State != JobState.InProgress)
+			{
+				// Cargo has been loaded, but not as part of this job, making this job no longer valid
+				job.ExpireJob();
+				return;
+			}
+			ReservationManager.Instance.Reserve(wagon.logicCar, job.chainData);
+			RegisterReleaseEvents(wagon);
+		}
+
+		wagon.CargoLoaded += CargoLoadedCallback;
+
+		void JobObsoleteCallback(Job _)
+		{
+			wagon.CargoLoaded -= CargoLoadedCallback;
+		};
+
+		job.JobExpired += JobObsoleteCallback;
+		job.JobAbandoned += JobObsoleteCallback;
 	}
 
 	private class CoupledSetData
