@@ -278,8 +278,15 @@ public class ProceduralJobsController
 				double maxWarehouseTrackLength = GetLongestTrackLength(warehouseTracks);
 
 				yield return null;
+				// Find the longest outbound track and limit the coupled set length to this
+				IEnumerable<Track> outboundTracks = stationController.logicStation.yard.TransferOutTracks;
+				double maxOutboundTrackLength = GetLongestTrackLength(outboundTracks);
+
+				double maxTrackLength = Math.Min(maxWarehouseTrackLength, maxOutboundTrackLength);
+
+				yield return null;
 				IEnumerable<CoupledSetData> coupledSets =
-					GroupWagonsByCoupled(association.Wagons, maxWagonsPerJob, maxWarehouseTrackLength)
+					GroupWagonsByCoupled(association.Wagons, maxWagonsPerJob, maxTrackLength)
 						.RandomSorting(rng);
 
 				yield return null;
@@ -303,7 +310,7 @@ public class ProceduralJobsController
 					double trainLength = currentSliceOfCoupledSets.Aggregate(0d, (length, coupledSet) => length + coupledSet.Length);
 					bool currentSliceSatisfiesAbsoluteMinWagonsPerJob = wagonCount >= absoluteMinWagonsPerJob;
 					bool currentSliceSatisfiesMaxWagonsPerJob = wagonCount <= maxWagonsPerJob;
-					bool currentSliceSatisfiesMaxTrainLength = trainLength <= maxWarehouseTrackLength;
+					bool currentSliceSatisfiesMaxTrainLength = trainLength <= maxTrackLength;
 
 					int nextExpansion = expansion + 1;
 					if (!currentSliceSatisfiesAbsoluteMinWagonsPerJob && targetSets + nextExpansion - reduction <= maxSets)
@@ -342,6 +349,7 @@ public class ProceduralJobsController
 						$"Couldn't find a grouping of coupled sets to satisfy required car count and/or train length constraints.\n" +
 						$"required car count range: [{absoluteMinWagonsPerJob}, {maxWagonsPerJob}]\n" +
 						$"maximum warehouse track length: {maxWarehouseTrackLength}\n" +
+						$"maximum outbound track length: {maxOutboundTrackLength}\n" +
 						$"coupled sets: {WagonGroupsToString(coupledSets.Select(data => data.Wagons))}\n" +
 						$"coupled set count: {countSets}\n" +
 						$"maximum set count: {maxSets}\n" +
