@@ -271,10 +271,11 @@ public class ProceduralJobsController
 				int absoluteMinWagonsPerJob = Math.Min(stationMinWagonsPerJob, association.Wagons.Count);
 
 				yield return null;
-				double maxWarehouseTrackLength = FindSupportedWarehouseMachineWithLongestTrack(
-					association.CargoGroup,
-					stationController.warehouseMachineControllers
-				).warehouseTrack.logicTrack.length;
+				// Find the longest warehouse track and limit the coupled set length to this
+				IEnumerable<Track> warehouseTracks = stationController.logicStation.yard
+					.GetWarehouseMachinesThatSupportCargoTypes(association.CargoGroup.cargoTypes)
+					.Select(warehouseManchine => warehouseManchine.WarehouseTrack);
+				double maxWarehouseTrackLength = GetLongestTrackLength(warehouseTracks);
 
 				yield return null;
 				IEnumerable<CoupledSetData> coupledSets =
@@ -413,11 +414,15 @@ public class ProceduralJobsController
 					.Where(station => association.InboundYardID == null || station.stationInfo.YardID == association.InboundYardID)
 					.ElementAtRandom(rng);
 
-				// TODO: find the longest inbound track at the destination and limit the coupled set length to this
+				yield return null;
+				// Find the longest inbound track at the destination and limit the coupled set length to this
+				List<Track> inboundTracks = destination.logicStation.yard.TransferInTracks;
+				double maxInboundTrackLength = GetLongestTrackLength(inboundTracks);
+
 				// TODO: change this so it chooses a random sorting and iterates through until it finds a set that meets the strictest minimum wagon requirement possible
 				yield return null;
 				CoupledSetData coupledSet =
-					GroupWagonsByCoupled(association.Wagons, maxWagonsPerJob, double.PositiveInfinity)
+					GroupWagonsByCoupled(association.Wagons, maxWagonsPerJob, maxInboundTrackLength)
 						.OrderByDescending(data => data.Wagons.Count) // This puts the sets with the highest number of train cars first
 						.First(); // Choose the largest set
 
@@ -863,27 +868,16 @@ public class ProceduralJobsController
 		return $"[{string.Join(", ", wagons.Select(wagon => wagon.ID))}]";
 	}
 
-	private static WarehouseMachineController FindSupportedWarehouseMachineWithLongestTrack(
-		CargoGroup cargoGroup,
-		IEnumerable<WarehouseMachineController> warehouseMachineControllers)
+	private static double GetLongestTrackLength(IEnumerable<Track> tracks)
 	{
-		IEnumerable<WarehouseMachineController> supportedMachines =
-			warehouseMachineControllers.Where(machine => machine.supportedCargoTypes.Intersect(cargoGroup.cargoTypes).Count() > 0);
-
-		WarehouseMachineController supportedMachineWithLongestTrack = supportedMachines.Skip(1).Aggregate(
-			supportedMachines.First(),
-			(longest, current) => {
-				double longestLength = longest.warehouseTrack.logicTrack.length;
-				double currentLength = current.warehouseTrack.logicTrack.length;
-				if (currentLength > longestLength)
-				{
-					return current;
-				}
-				return longest;
+		return tracks.Aggregate(0d, (maxLength, track) => {
+			double trackLength = track.length;
+			if (trackLength > maxLength)
+			{
+				return trackLength;
 			}
-		);
-
-		return supportedMachineWithLongestTrack;
+			return maxLength;
+		});
 	}
 
 	private void RegisterReleaseEvents(TrainCar wagon)
