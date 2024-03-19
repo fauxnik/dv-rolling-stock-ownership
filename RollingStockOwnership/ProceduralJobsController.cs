@@ -1,4 +1,4 @@
-﻿using DV.Logic.Job;
+using DV.Logic.Job;
 using DV.ThingTypes;
 using DV.ThingTypes.TransitionHelpers;
 using HarmonyLib;
@@ -271,17 +271,16 @@ public class ProceduralJobsController
 				int absoluteMinWagonsPerJob = Math.Min(stationMinWagonsPerJob, association.Wagons.Count);
 
 				yield return null;
-				// Find the longest warehouse track and limit the coupled set length to this
 				IEnumerable<Track> warehouseTracks = stationController.logicStation.yard
 					.GetWarehouseMachinesThatSupportCargoTypes(association.CargoGroup.cargoTypes)
 					.Select(warehouseManchine => warehouseManchine.WarehouseTrack);
 				double maxWarehouseTrackLength = GetLongestTrackLength(warehouseTracks);
 
 				yield return null;
-				// Find the longest outbound track and limit the coupled set length to this
 				IEnumerable<Track> outboundTracks = stationController.logicStation.yard.TransferOutTracks;
 				double maxOutboundTrackLength = GetLongestTrackLength(outboundTracks);
 
+				// The limit is the shorter of the longest warehouse track and the longest outbound track
 				double maxTrackLength = Math.Min(maxWarehouseTrackLength, maxOutboundTrackLength);
 
 				yield return null;
@@ -423,7 +422,6 @@ public class ProceduralJobsController
 					.ElementAtRandom(rng);
 
 				yield return null;
-				// Find the longest inbound track at the destination and limit the coupled set length to this
 				List<Track> inboundTracks = destination.logicStation.yard.TransferInTracks;
 				double maxInboundTrackLength = GetLongestTrackLength(inboundTracks);
 
