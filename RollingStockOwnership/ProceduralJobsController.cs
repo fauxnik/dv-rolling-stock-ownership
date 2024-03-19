@@ -1,4 +1,4 @@
-using DV.Logic.Job;
+﻿using DV.Logic.Job;
 using DV.ThingTypes;
 using DV.ThingTypes.TransitionHelpers;
 using HarmonyLib;
@@ -425,15 +425,47 @@ public class ProceduralJobsController
 				List<Track> inboundTracks = destination.logicStation.yard.TransferInTracks;
 				double maxInboundTrackLength = GetLongestTrackLength(inboundTracks);
 
-				// TODO: change this so it chooses a random sorting and iterates through until it finds a set that meets the strictest minimum wagon requirement possible
 				yield return null;
-				CoupledSetData coupledSet =
+				IEnumerable<CoupledSetData> coupledSets =
 					GroupWagonsByCoupled(association.Wagons, maxWagonsPerJob, maxInboundTrackLength)
-						.OrderByDescending(data => data.Wagons.Count) // This puts the sets with the highest number of train cars first
-						.First(); // Choose the largest set
+						.RandomSorting(rng);
 
 				yield return null;
-				List<Car> carsForJob = coupledSet.Wagons.Select(wagon => wagon.logicCar).ToList();
+				CoupledSetData? coupledSet = null;
+				CoupledSetData? possibleCoupledSet = null;
+				foreach (CoupledSetData data in coupledSets)
+				{
+					if (data.Wagons.Count >= targetMinWagonsPerJob)
+					{
+						coupledSet = data;
+						break;
+					}
+					if (possibleCoupledSet == null && data.Wagons.Count >= absoluteMinWagonsPerJob)
+					{
+						possibleCoupledSet = data;
+					}
+				}
+
+				yield return null;
+				CoupledSetData? coupledSetForGeneration = coupledSet ?? possibleCoupledSet;
+				if (coupledSetForGeneration == null)
+				{
+					Main.LogWarning(
+						$"Couldn't find a coupled set to satisfy required car count and/or train length constraints.\n" +
+						$"required car count range: [{absoluteMinWagonsPerJob}, {maxWagonsPerJob}]\n" +
+						$"maximum inbound track length: {maxInboundTrackLength}\n" +
+						$"coupled sets: {WagonGroupsToString(coupledSets.Select(data => data.Wagons))}\n"
+					);
+					continue;
+				}
+
+				Main.LogDebug(() =>
+					$"Attempting transport job generation after satisfying {(coupledSet != null ? "all" : "required")} car count and train length constraints.\n" +
+					$"coupled set for generation: {WagonGroupsToString(new List<CoupledSetData>() { coupledSetForGeneration }.Select(data => data.Wagons))}"
+				);
+
+				yield return null;
+				List<Car> carsForJob = coupledSetForGeneration.Wagons.Select(wagon => wagon.logicCar).ToList();
 
 				yield return null;
 				JobChainController? jobChainController = ProceduralJobGenerators.GenerateHaulChainJobForCars(rng, carsForJob, association.CargoGroup, stationController);
