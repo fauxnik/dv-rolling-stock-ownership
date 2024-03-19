@@ -473,12 +473,18 @@ public class ProceduralJobsController
 				if (jobChainController != null)
 				{
 					yield return null;
-					jobChainController.currentJobInChain.JobAbandoned += (job) => {
-						ReservationManager.Instance.Release(jobChainController);
-					};
 					haulingJobs.Add(jobChainController);
 					List<TrainCar> wagonsForJob = jobChainController.trainCarsForJobChain;
 					wagonsForHauling.ExceptWith(wagonsForJob);
+					// TODO: do this on acceptance of job instead of immediately?
+					foreach (TrainCar wagon in wagonsForJob)
+					{
+						yield return null;
+						if (!ReservationManager.Instance.HasReservation(wagon))
+						{
+							ReservationManager.Instance.Reserve(wagon.logicCar, jobChainController.currentJobInChain.chainData);
+						}
+					}
 					Main.LogDebug(() => $"Generated transport job with cars {string.Join(", ", wagonsForJob.Select(tc => tc.ID))}.");
 				}
 			}

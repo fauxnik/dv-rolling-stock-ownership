@@ -13,13 +13,17 @@ public class ReservationManager
 
 	private Dictionary<string, Reservation> reservations = new Dictionary<string, Reservation>();
 
-
-	public Reservation? GetReservation(TrainCar trainCar)
+	public bool HasReservation(TrainCar trainCar)
 	{
-		return GetReservation(trainCar.logicCar);
+		return HasReservation(trainCar.logicCar);
 	}
 
-	public Reservation? GetReservation(Car car)
+	public bool HasReservation(Car car)
+	{
+		return reservations.ContainsKey(car.carGuid);
+	}
+
+	private Reservation? GetReservation(Car car)
 	{
 		if (reservations.TryGetValue(car.carGuid, out Reservation reservation))
 		{
