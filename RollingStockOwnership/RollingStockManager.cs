@@ -4,13 +4,14 @@ using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using DV.Utils;
 
 namespace RollingStockOwnership;
 
-public class RollingStockManager : SingletonBehaviour<RollingStockManager>
+public class RollingStockManager
 {
-	public static new string AllowAutoCreate() { return "[RollingStockOwnership_RollingStockManager]"; }
+	private static RollingStockManager? instance = null;
+	public static RollingStockManager Instance { get => instance ??= new RollingStockManager(); }
+
 	public static readonly object syncLock = new object();
 
 	private List<Equipment> registry = new List<Equipment>();
@@ -86,6 +87,18 @@ public class RollingStockManager : SingletonBehaviour<RollingStockManager>
 							where equipment.IsOnTrack(track) && (!spawned.HasValue || equipment.IsSpawned == spawned)
 							select equipment;
 		return equipments.ToList();
+	}
+
+	// Simply calling registry.Clear() won't suffice because the IDs must also be removed from IdGenerator
+	internal void Clear()
+	{
+		Main.Log($"Clearing rolling stock registry of {registry.Count} entries");
+
+		// AllEquipment returns a new List, otherwise Remove will modify the enumerable under iteration
+		foreach (Equipment equipment in AllEquipment)
+		{
+			Remove(equipment);
+		}
 	}
 
 	public void LoadSaveData(JArray data)
