@@ -1,5 +1,6 @@
 using DV.Logic.Job;
 using DV.ThingTypes;
+using DV.ThingTypes.TransitionHelpers;
 using HarmonyLib;
 using Newtonsoft.Json.Linq;
 using System;
@@ -103,6 +104,7 @@ public class ReservationManager
 			if (TryGetReservation(car, out Reservation? reservation))
 			{
 				bool passesChecks = reservation.CarGuid == car.carGuid; // This should be true because we found a reservation, but it doesn't hurt to double check
+				passesChecks &= reservation.CargoTypeID == car.CurrentCargoTypeInCar.ToV2().id;
 				passesChecks &= reservation.OutboundYardID == stationsData.chainOriginYardId;
 				passesChecks &= reservation.InboundYardID == stationsData.chainDestinationYardId;
 				if (passesChecks) { continue; }
@@ -137,19 +139,22 @@ public class ReservationManager
 public class Reservation
 {
 	public readonly string CarGuid;
+	public readonly string CargoTypeID;
 	public readonly string OutboundYardID;
 	public readonly string InboundYardID;
 
 	public Reservation(Car car, StationsChainData stations)
 	{
 		CarGuid = car.carGuid;
+		CargoTypeID = car.CurrentCargoTypeInCar.ToV2().id;
 		OutboundYardID = stations.chainOriginYardId;
 		InboundYardID = stations.chainDestinationYardId;
 	}
 
-	private Reservation(string carGuid, string outboundYardID, string inboundYardID)
+	private Reservation(string carGuid, string cargoTypeID, string outboundYardID, string inboundYardID)
 	{
 		CarGuid = carGuid;
+		CargoTypeID = cargoTypeID;
 		OutboundYardID = outboundYardID;
 		InboundYardID = inboundYardID;
 	}
@@ -157,6 +162,6 @@ public class Reservation
 	public static string ToString(Reservation reservation, string? wagonID = null)
 	{
 		wagonID ??= reservation.CarGuid;
-		return $"[{wagonID} | {reservation.OutboundYardID} -> {reservation.InboundYardID}]";
+		return $"[{wagonID} | {reservation.CargoTypeID} | {reservation.OutboundYardID} -> {reservation.InboundYardID}]";
 	}
 }
