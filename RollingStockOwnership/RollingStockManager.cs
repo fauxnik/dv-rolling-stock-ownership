@@ -90,6 +90,7 @@ public class RollingStockManager : SingletonBehaviour<RollingStockManager>
 
 	public void LoadSaveData(JArray data)
 	{
+		registry.Clear();
 		int countLoaded = 0, countTotal = 0;
 		foreach(var token in data)
 		{
