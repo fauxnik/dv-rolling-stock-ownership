@@ -324,18 +324,6 @@ public static class ProceduralJobGenerators
 		return jobDefinition;
 	}
 
-	[Obsolete("ReservationManager replaces the function of DestinationID")]
-	public static void SetDestination(JobChainController controller, string? destinationID)
-	{
-		var rollingStock = RollingStockManager.Instance;
-		var trainCars = controller.trainCarsForJobChain;
-		var equipments = from trainCar in trainCars select rollingStock.FindByTrainCar(trainCar);
-		foreach (var equipment in equipments)
-		{
-			equipment.SetDestination(destinationID);
-		}
-	}
-
 	public static void GenerateContinuationTransportJob(JobChainController? jobChainController, StationController originController, StationController destinationController)
 	{
 		var trainCars = jobChainController?.trainCarsForJobChain;

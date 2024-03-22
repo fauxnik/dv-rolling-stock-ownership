@@ -44,11 +44,9 @@ public class JobChainControllerWithEmptyHaulGeneration_Patches
 		else if (jobType == JobType.Transport)
 		{
 			ProceduralJobGenerators.GenerateContinuationUnloadJob(__instance, originController, destinationController);
-			ProceduralJobGenerators.SetDestination(__instance, destinationController.logicStation.ID);
 		}
 		else if (jobType == JobType.ShuntingUnload)
 		{
-			ProceduralJobGenerators.SetDestination(__instance, null);
 			if (!StationProceduralJobsController_Patches.StartJobGenerationCoroutine(destinationController, __instance.trainCarsForJobChain.Select(trainCar => trainCar.logicCar)))
 			{
 				Main.LogWarning($"Couldn't start job generation coroutine for ${destinationController.logicStation.ID}.\nGeneration of a new shunting load job for cars from ${lastJobInChain.ID} hasn't been attempted.");
