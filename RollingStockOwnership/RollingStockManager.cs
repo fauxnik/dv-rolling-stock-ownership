@@ -90,7 +90,7 @@ public class RollingStockManager
 	}
 
 	// Simply calling registry.Clear() won't suffice because the IDs must also be removed from IdGenerator
-	private void Clear()
+	internal void Clear()
 	{
 		Main.Log($"Clearing rolling stock registry of {registry.Count} entries");
 
@@ -103,8 +103,6 @@ public class RollingStockManager
 
 	public void LoadSaveData(JArray data)
 	{
-		Clear();
-
 		int countLoaded = 0, countTotal = 0;
 		foreach(var token in data)
 		{
