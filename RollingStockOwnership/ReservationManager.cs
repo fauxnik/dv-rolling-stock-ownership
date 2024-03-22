@@ -1,3 +1,4 @@
+using DV.JObjectExtstensions;
 using DV.Logic.Job;
 using DV.ThingTypes;
 using DV.ThingTypes.TransitionHelpers;
@@ -127,20 +128,50 @@ public class ReservationManager
 
 	internal JArray GetSaveData()
 	{
-		throw new NotImplementedException("TODO: implement ReservationManager.GetSaveData()");
+		var serializedReservations = from reservation in reservations.Values select reservation.GetSaveData();
+		Main.Log($"Serialized {serializedReservations.Count()} reservations from the reservation manager.");
+		return new JArray(serializedReservations.ToArray());
 	}
 
 	internal void LoadSaveData(JArray data)
 	{
-		throw new NotImplementedException("TODO: implement ReservationManager.LoadSaveData(data)");
+		reservations.Clear();
+		int countLoaded = 0, countTotal = 0;
+		foreach(var token in data)
+		{
+			if (token.Type != JTokenType.Object) { continue; }
+
+			countTotal++;
+
+			try
+			{
+				Reservation? loadedReservation = Reservation.FromSaveData((JObject)token);
+				if (loadedReservation == null) { continue; }
+				string carGuid = loadedReservation.CarGuid;
+				TrainCar? wagon = CarSpawner.Instance.AllCars.FirstOrDefault(wagon => wagon.logicCar.carGuid == carGuid);
+				if (wagon == null || wagon.LoadedCargo.ToV2().id != loadedReservation.CargoTypeID) { continue; }
+				reservations.Add(carGuid, loadedReservation);
+				countLoaded++;
+			}
+			catch (Exception exception)
+			{
+				// log the exception, but continue trying to load
+				Main.LogWarning(exception);
+			}
+		}
+		Main.Log($"Loaded {countLoaded}/{countTotal} reservations into the reservation manager.");
 	}
 }
 
 public class Reservation
 {
+	private const string CAR_GUID_SAVE_KEY = "carGuid";
 	public readonly string CarGuid;
+	private const string CARGO_TYPE_SAVE_KEY = "cargoType";
 	public readonly string CargoTypeID;
+	private const string OUTBOUND_YARD_SAVE_KEY = "outboundYard";
 	public readonly string OutboundYardID;
+	private const string INBOUND_YARD_SAVE_KEY = "inboundYard";
 	public readonly string InboundYardID;
 
 	public Reservation(Car car, StationsChainData stations)
@@ -157,6 +188,27 @@ public class Reservation
 		CargoTypeID = cargoTypeID;
 		OutboundYardID = outboundYardID;
 		InboundYardID = inboundYardID;
+	}
+
+	public JObject GetSaveData()
+	{
+		var data = new JObject
+		{
+			{ CAR_GUID_SAVE_KEY, CarGuid },
+			{ CARGO_TYPE_SAVE_KEY, CargoTypeID },
+			{ OUTBOUND_YARD_SAVE_KEY, OutboundYardID },
+			{ INBOUND_YARD_SAVE_KEY, InboundYardID }
+		};
+		return data;
+	}
+
+	public static Reservation FromSaveData(JObject data)
+	{
+		string carGuid = data.GetString(CAR_GUID_SAVE_KEY);
+		string cargoTypeID = data.GetString(CARGO_TYPE_SAVE_KEY);
+		string outboundYardID = data.GetString(OUTBOUND_YARD_SAVE_KEY);
+		string inboundYardID = data.GetString(INBOUND_YARD_SAVE_KEY);
+		return new Reservation(carGuid, cargoTypeID, outboundYardID, inboundYardID);
 	}
 
 	public static string ToString(Reservation reservation, string? wagonID = null)
