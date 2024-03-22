@@ -88,6 +88,11 @@ public class ReservationManager
 		return true;
 	}
 
+	internal void Clear()
+	{
+		reservations.Clear();
+	}
+
 	private void ForceReservations(JobChainController jobChainController)
 	{
 		Job job = jobChainController.currentJobInChain;
@@ -135,7 +140,6 @@ public class ReservationManager
 
 	internal void LoadSaveData(JArray data)
 	{
-		reservations.Clear();
 		int countLoaded = 0, countTotal = 0;
 		foreach(var token in data)
 		{

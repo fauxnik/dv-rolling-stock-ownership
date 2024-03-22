@@ -56,6 +56,7 @@ public class SaveManager
 			{
 				// Any previously loaded data must be cleared before loading new data
 				RollingStockManager.Instance.Clear();
+				ReservationManager.Instance.Clear();
 
 				JObject saveData = saveGameManager.data.GetJObject(PRIMARY_SAVE_KEY);
 
