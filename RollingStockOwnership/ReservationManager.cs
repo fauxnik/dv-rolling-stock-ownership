@@ -1,8 +1,11 @@
 using DV.Logic.Job;
+using DV.ThingTypes;
+using HarmonyLib;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 
 namespace RollingStockOwnership;
 
@@ -43,49 +46,81 @@ public class ReservationManager
 		return reservation != null;
 	}
 
-	public void Reserve(JobChainController chainController)
+	public bool Reserve(TrainCar wagon)
 	{
-		StationsChainData chainData = chainController.currentJobInChain.chainData;
-		foreach (TrainCar trainCar in chainController.trainCarsForJobChain)
-		{
-			Reserve(trainCar.logicCar, chainData);
-		}
+		var job = (Job?)JobsManager.Instance.GetJobOfCar(wagon);
+		if (job?.State != JobState.InProgress) { return false; }
+		return Reserve(wagon.logicCar, job.chainData);
 	}
 
-	public bool Reserve(Car car, StationsChainData stationsData)
+	private bool Reserve(Car car, StationsChainData stationsData)
 	{
-		string outboundYardID = stationsData.chainOriginYardId;
-		string inboundYardID = stationsData.chainDestinationYardId;
-		if (reservations.TryGetValue(car.carGuid, out Reservation reservation))
+		var reservation = new Reservation(car, stationsData);
+
+		if (reservations.TryGetValue(car.carGuid, out Reservation priorReservation))
 		{
-			Main.LogError($"Trying to create reservation [{car.ID} | {outboundYardID} -> {inboundYardID}] but {car.ID} is already reserved! [{car.ID} | {reservation.OutboundYardID} -> {reservation.InboundYardID}]");
-			return false;
+			Main.LogWarning(
+				$"Overwriting existing reservation {Reservation.ToString(priorReservation, car.ID)} " +
+				$"with new reservation {Reservation.ToString(reservation, car.ID)}"
+			);
 		}
 
-		reservation = new Reservation(car.carGuid, outboundYardID, inboundYardID);
-		reservations.Add(car.carGuid, reservation);
-
+		reservations[car.carGuid] = reservation;
 		return true;
 	}
 
-	public void Release(JobChainController chainController)
+	public bool Release(TrainCar wagon)
 	{
-		foreach (TrainCar trainCar in chainController.trainCarsForJobChain)
-		{
-			Release(trainCar.logicCar);
-		}
+		return Release(wagon.logicCar);
 	}
 
-	public bool Release(Car car)
+	private bool Release(Car car)
 	{
-		if (!reservations.TryGetValue(car.carGuid, out _))
+		if (!HasReservation(car))
 		{
-			Main.LogWarning($"Trying to clear reservation for {car.ID}, but no such reservation exists!");
+			Main.LogWarning($"Trying to clear reservation for {car.ID}, but no such reservation exists");
 			return false;
 		}
 
 		reservations.Remove(car.carGuid);
 		return true;
+	}
+
+	private void ForceReservations(JobChainController jobChainController)
+	{
+		Job job = jobChainController.currentJobInChain;
+
+		if (!new JobType[] {
+				JobType.Transport,
+				JobType.ShuntingUnload
+			}.Contains(job.jobType)) { return; }
+
+		StationsChainData stationsData = job.chainData;
+		foreach (TrainCar wagon in jobChainController.trainCarsForJobChain)
+		{
+			Car car = wagon.logicCar;
+
+			if (TryGetReservation(car, out Reservation? reservation))
+			{
+				bool passesChecks = reservation.CarGuid == car.carGuid; // This should be true because we found a reservation, but it doesn't hurt to double check
+				passesChecks &= reservation.OutboundYardID == stationsData.chainOriginYardId;
+				passesChecks &= reservation.InboundYardID == stationsData.chainDestinationYardId;
+				if (passesChecks) { continue; }
+			}
+
+			reservations[car.carGuid] = new Reservation(car, stationsData);
+		}
+	}
+
+	[HarmonyPatch(typeof(JobChainController), "OnJobGenerated")]
+	class JobChainController_OnJobGenerated_Patch
+	{
+		static void Prefix(Job generatedJob, JobChainController __instance)
+		{
+			generatedJob.JobTaken += (_, _) => {
+				Instance.ForceReservations(__instance);
+			};
+		}
 	}
 
 	internal JArray GetSaveData()
@@ -104,12 +139,24 @@ public class Reservation
 	public readonly string CarGuid;
 	public readonly string OutboundYardID;
 	public readonly string InboundYardID;
-	// TODO: Is more data needed? Perhaps cargo type or cargo group?
 
-	public Reservation(string carGuid, string outboundYardID, string inboundYardID)
+	public Reservation(Car car, StationsChainData stations)
+	{
+		CarGuid = car.carGuid;
+		OutboundYardID = stations.chainOriginYardId;
+		InboundYardID = stations.chainDestinationYardId;
+	}
+
+	private Reservation(string carGuid, string outboundYardID, string inboundYardID)
 	{
 		CarGuid = carGuid;
 		OutboundYardID = outboundYardID;
 		InboundYardID = inboundYardID;
+	}
+
+	public static string ToString(Reservation reservation, string? wagonID = null)
+	{
+		wagonID ??= reservation.CarGuid;
+		return $"[{wagonID} | {reservation.OutboundYardID} -> {reservation.InboundYardID}]";
 	}
 }

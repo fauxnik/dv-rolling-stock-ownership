@@ -382,11 +382,6 @@ public class ProceduralJobsController
 					loadingJobs.Add(jobChainController);
 					List<TrainCar> wagonsForJob = jobChainController.trainCarsForJobChain;
 					wagonsForLoading.ExceptWith(wagonsForJob);
-					foreach (TrainCar wagon in wagonsForJob)
-					{
-						yield return null;
-						RegisterReservationEvents(wagon, jobChainController.currentJobInChain);
-					}
 					Main.LogDebug(() => $"Generated shunting load job with cars {string.Join(", ", wagonsForJob.Select(wagon => wagon.ID))}.");
 				}
 			}
@@ -476,15 +471,6 @@ public class ProceduralJobsController
 					haulingJobs.Add(jobChainController);
 					List<TrainCar> wagonsForJob = jobChainController.trainCarsForJobChain;
 					wagonsForHauling.ExceptWith(wagonsForJob);
-					// TODO: do this on acceptance of job instead of immediately?
-					foreach (TrainCar wagon in wagonsForJob)
-					{
-						yield return null;
-						if (!ReservationManager.Instance.HasReservation(wagon))
-						{
-							ReservationManager.Instance.Reserve(wagon.logicCar, jobChainController.currentJobInChain.chainData);
-						}
-					}
 					Main.LogDebug(() => $"Generated transport job with cars {string.Join(", ", wagonsForJob.Select(tc => tc.ID))}.");
 				}
 			}
@@ -922,42 +908,6 @@ public class ProceduralJobsController
 			}
 			return maxLength;
 		});
-	}
-
-	private void RegisterReleaseEvents(TrainCar wagon)
-	{
-		void CargoUnloadedCallback()
-		{
-			ReservationManager.Instance.Release(wagon.logicCar);
-		}
-
-		wagon.CargoUnloaded += CargoUnloadedCallback;
-	}
-
-	private void RegisterReservationEvents(TrainCar wagon, Job job)
-	{
-		void CargoLoadedCallback(CargoType _)
-		{
-			wagon.CargoLoaded -= CargoLoadedCallback;
-			if (job.State != JobState.InProgress)
-			{
-				// Cargo has been loaded, but not as part of this job, making this job no longer valid
-				job.ExpireJob();
-				return;
-			}
-			ReservationManager.Instance.Reserve(wagon.logicCar, job.chainData);
-			RegisterReleaseEvents(wagon);
-		}
-
-		wagon.CargoLoaded += CargoLoadedCallback;
-
-		void JobObsoleteCallback(Job _)
-		{
-			wagon.CargoLoaded -= CargoLoadedCallback;
-		};
-
-		job.JobExpired += JobObsoleteCallback;
-		job.JobAbandoned += JobObsoleteCallback;
 	}
 
 	private class CoupledSetData
