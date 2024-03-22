@@ -54,6 +54,9 @@ public class SaveManager
 			SaveGameManager saveGameManager = SaveGameManager.Instance;
 			try
 			{
+				// Any previously loaded data must be cleared before loading new data
+				RollingStockManager.Instance.Clear();
+
 				JObject saveData = saveGameManager.data.GetJObject(PRIMARY_SAVE_KEY);
 
 				// Data migration for old save data
