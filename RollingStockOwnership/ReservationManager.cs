@@ -16,6 +16,32 @@ public class ReservationManager
 	private static ReservationManager? instance = null;
 	public static ReservationManager Instance { get => instance ??= new ReservationManager(); }
 
+	// CarSpawner doesn't allow instance auto-creation, so this must be run on WorldStreamingInit.LoadingFinished
+	internal static void SetupReservationCallbacks()
+	{
+		void CarSpawned(TrainCar wagon)
+		{
+			void CargoLoaded(CargoType _)
+			{
+				ReservationManager.Instance.Reserve(wagon);
+			}
+
+			wagon.CargoLoaded -= CargoLoaded;
+			wagon.CargoLoaded += CargoLoaded;
+
+			void CargoUnloaded()
+			{
+				ReservationManager.Instance.Release(wagon);
+			}
+
+			wagon.CargoUnloaded -= CargoUnloaded;
+			wagon.CargoUnloaded += CargoUnloaded;
+		}
+
+		CarSpawner.Instance.CarSpawned -= CarSpawned;
+		CarSpawner.Instance.CarSpawned += CarSpawned;
+	}
+
 	private Dictionary<string, Reservation> reservations = new Dictionary<string, Reservation>();
 
 	public bool HasReservation(TrainCar trainCar)
@@ -126,7 +152,7 @@ public class ReservationManager
 		static void Prefix(Job generatedJob, JobChainController __instance)
 		{
 			generatedJob.JobTaken += (_, _) => {
-				Instance.ForceReservations(__instance);
+				ReservationManager.Instance.ForceReservations(__instance);
 			};
 		}
 	}

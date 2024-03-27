@@ -61,28 +61,6 @@ public static class Main
 		}
 		catch (Exception e) { OnCriticalFailure(e, "injecting translations"); }
 
-		try
-		{
-			CarSpawner.Instance.CarSpawned += (wagon) => {
-				void CargoLoaded(CargoType _)
-				{
-					ReservationManager.Instance.Reserve(wagon);
-				}
-
-				wagon.CargoLoaded -= CargoLoaded;
-				wagon.CargoLoaded += CargoLoaded;
-
-				void CargoUnloaded()
-				{
-					ReservationManager.Instance.Release(wagon);
-				}
-
-				wagon.CargoUnloaded -= CargoUnloaded;
-				wagon.CargoUnloaded += CargoUnloaded;
-			};
-		}
-		catch (Exception e) { OnCriticalFailure(e, "setting up reservation callbacks"); }
-
 		try { CargoTypes_Patches.Setup(); }
 		catch (Exception e) { OnCriticalFailure(e, "patching CargoTypes"); }
 
@@ -122,6 +100,7 @@ public static class Main
 #endif
 
 		WorldStreamingInit.LoadingFinished += StartingConditions.Verify;
+		WorldStreamingInit.LoadingFinished += ReservationManager.SetupReservationCallbacks;
 	}
 
 	internal static string Localize(string nakedKey, params string[] paramValues) =>
