@@ -191,8 +191,8 @@ public class ProceduralJobsController
 					wagonsForLoading.Add(wagon);
 				}
 
-				Main.LogDebug(() => $"Found {wagonsForLoading.Count} cars for shunting load jobs.");
 				wagonsInYard.ExceptWith(wagonsForLoading);
+				Main.LogDebug(() => $"Found {wagonsForLoading.Count} cars for shunting load jobs.");
 			}
 			else { Main.LogDebug(() => $"{yardId} doesn't support shunting load jobs."); }
 
@@ -214,11 +214,11 @@ public class ProceduralJobsController
 					// If an equipment reservation exists, it must originate here
 					if (ReservationManager.Instance.TryGetReservation(wagon, out Reservation? reservation) && reservation.OutboundYardID != yardId) { continue; }
 
-					Main.LogDebug(() => $"Found {wagonsForHauling.Count} cars for transport jobs.");
 					wagonsForHauling.Add(wagon);
 				}
 
 				wagonsInYard.ExceptWith(wagonsForHauling);
+				Main.LogDebug(() => $"Found {wagonsForHauling.Count} cars for transport jobs.");
 			}
 			else { Main.LogDebug(() => $"{yardId} doesn't support transport jobs."); }
 
@@ -240,11 +240,11 @@ public class ProceduralJobsController
 					// If an equipment reservation exists, it must be destined for here
 					if (ReservationManager.Instance.TryGetReservation(wagon, out Reservation? reservation) && reservation.InboundYardID != yardId) { continue; }
 
-					Main.LogDebug(() => $"Found {wagonsForUnloading.Count} cars for shunting unload jobs.");
 					wagonsForUnloading.Add(wagon);
 				}
 
 				wagonsInYard.ExceptWith(wagonsForUnloading);
+				Main.LogDebug(() => $"Found {wagonsForUnloading.Count} cars for shunting unload jobs.");
 			}
 			else { Main.LogDebug(() => $"{yardId} doesn't support shunting unload jobs."); }
 
