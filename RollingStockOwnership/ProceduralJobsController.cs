@@ -788,7 +788,10 @@ public class ProceduralJobsController
 						{
 							key = (cargoGroup, reservation.OutboundYardID, reservation.InboundYardID);
 						}
-						var association = associations[key] ??= new HashSet<TrainCar>();
+						if (!associations.TryGetValue(key, out HashSet<TrainCar> association))
+						{
+							associations[key] = association = new HashSet<TrainCar>();
+						}
 						association.Add(wagon);
 					}
 				}
