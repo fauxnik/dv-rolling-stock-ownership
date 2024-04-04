@@ -1,4 +1,4 @@
-﻿using DV.Logic.Job;
+using DV.Logic.Job;
 using DV.ThingTypes;
 using DV.ThingTypes.TransitionHelpers;
 using HarmonyLib;
@@ -804,22 +804,25 @@ public class ProceduralJobsController
 	private static (CargoGroup CargoGroup, string? OutboundYardID, string? InboundYardID, HashSet<TrainCar> Wagons) ChooseAssociation(
 		Dictionary<(CargoGroup CargoGroup, string? OutboundYardID, string? InboundYardID), HashSet<TrainCar>> associations)
 	{
-		var chosenAssociation = associations.Aggregate(
-			null as KeyValuePair<(CargoGroup CargoGroup, string? OutboundYardID, string? InboundYardID), HashSet<TrainCar>>?,
+		if (associations.Count < 1)
+		{
+			throw new ArgumentException($"Associations must contain one or more kvpairs, but it was empty!");
+		}
+
+		var chosenAssociation = associations.Skip(1).Aggregate(
+			associations.ElementAt(0),
 			(accumulator, kvpair) => {
-				int accumulatorSize = accumulator?.Value.Count ?? 0;
+				int accumulatorSize = accumulator.Value.Count;
 				int kvpairSize = kvpair.Value.Count;
 				return kvpairSize > accumulatorSize ? kvpair : accumulator;
 			}
 		);
 
-		// All associations will exist in the input.
-		// The nullable nature only comes from using null as the aggregate seed.
 		return (
-			chosenAssociation!.Value.Key.CargoGroup,
-			chosenAssociation!.Value.Key.OutboundYardID,
-			chosenAssociation!.Value.Key.InboundYardID,
-			chosenAssociation!.Value.Value
+			chosenAssociation.Key.CargoGroup,
+			chosenAssociation.Key.OutboundYardID,
+			chosenAssociation.Key.InboundYardID,
+			chosenAssociation.Value
 		);
 	}
 
