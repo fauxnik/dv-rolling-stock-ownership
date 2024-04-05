@@ -280,7 +280,7 @@ public class ProceduralJobsController
 
 				yield return null;
 				IEnumerable<Track> outboundTracks = origin.logicStation.yard.TransferOutTracks;
-				double maxOutboundTrackLength = GetLongestTrackLength(outboundTracks);
+				double maxOutboundTrackLength = GetLongestTrackLength(outboundTracks, unoccupiedLengthOnly: true);
 
 				// The limit is the shorter of the longest warehouse track and the longest outbound track
 				double maxTrackLength = Math.Min(maxWarehouseTrackLength, maxOutboundTrackLength);
@@ -421,7 +421,7 @@ public class ProceduralJobsController
 
 				yield return null;
 				List<Track> inboundTracks = destination.logicStation.yard.TransferInTracks;
-				double maxInboundTrackLength = GetLongestTrackLength(inboundTracks);
+				double maxInboundTrackLength = GetLongestTrackLength(inboundTracks, unoccupiedLengthOnly: true);
 
 				yield return null;
 				IEnumerable<CoupledSetData> coupledSets =
@@ -907,10 +907,14 @@ public class ProceduralJobsController
 		return $"[{string.Join(", ", wagons.Select(wagon => wagon.ID))}]";
 	}
 
-	private static double GetLongestTrackLength(IEnumerable<Track> tracks)
+	private static double GetLongestTrackLength(IEnumerable<Track> tracks, bool unoccupiedLengthOnly = false)
 	{
 		return tracks.Aggregate(0d, (maxLength, track) => {
 			double trackLength = track.length;
+			if (unoccupiedLengthOnly)
+			{
+				trackLength -= track.OccupiedLength;
+			}
 			if (trackLength > maxLength)
 			{
 				return trackLength;
