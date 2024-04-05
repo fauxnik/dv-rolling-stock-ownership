@@ -257,6 +257,8 @@ public class ProceduralJobsController
 			var loadingJobs = new List<JobChainController>();
 			while (wagonsForLoading.Count > 0 && attemptsRemaining-- > 0)
 			{
+				StationController origin = stationController;
+
 				// These are expensive operations, so we'll yield for a frame around them
 				yield return null;
 				Dictionary<(CargoGroup CargoGroup, string? OutboundYardID, string? InboundYardID), HashSet<TrainCar>> associations =
@@ -271,13 +273,13 @@ public class ProceduralJobsController
 				int absoluteMinWagonsPerJob = Math.Min(stationMinWagonsPerJob, association.Wagons.Count);
 
 				yield return null;
-				IEnumerable<Track> warehouseTracks = stationController.logicStation.yard
+				IEnumerable<Track> warehouseTracks = origin.logicStation.yard
 					.GetWarehouseMachinesThatSupportCargoTypes(association.CargoGroup.cargoTypes)
 					.Select(warehouseManchine => warehouseManchine.WarehouseTrack);
 				double maxWarehouseTrackLength = GetLongestTrackLength(warehouseTracks);
 
 				yield return null;
-				IEnumerable<Track> outboundTracks = stationController.logicStation.yard.TransferOutTracks;
+				IEnumerable<Track> outboundTracks = origin.logicStation.yard.TransferOutTracks;
 				double maxOutboundTrackLength = GetLongestTrackLength(outboundTracks);
 
 				// The limit is the shorter of the longest warehouse track and the longest outbound track
@@ -374,7 +376,7 @@ public class ProceduralJobsController
 				).ToList();
 
 				yield return null;
-				JobChainController? jobChainController = ProceduralJobGenerators.GenerateLoadChainJobForCars(rng, carSetsForJob, association.CargoGroup, stationController);
+				JobChainController? jobChainController = ProceduralJobGenerators.GenerateLoadChainJobForCars(rng, carSetsForJob, association.CargoGroup, origin);
 
 				if (jobChainController != null)
 				{
@@ -415,6 +417,7 @@ public class ProceduralJobsController
 				StationController destination = association.CargoGroup.stations
 					.Where(station => association.InboundYardID == null || station.stationInfo.YardID == association.InboundYardID)
 					.ElementAtRandom(rng);
+				StationController origin = stationController;
 
 				yield return null;
 				List<Track> inboundTracks = destination.logicStation.yard.TransferInTracks;
@@ -463,7 +466,7 @@ public class ProceduralJobsController
 				List<Car> carsForJob = coupledSetForGeneration.Wagons.Select(wagon => wagon.logicCar).ToList();
 
 				yield return null;
-				JobChainController? jobChainController = ProceduralJobGenerators.GenerateHaulChainJobForCars(rng, carsForJob, association.CargoGroup, stationController);
+				JobChainController? jobChainController = ProceduralJobGenerators.GenerateHaulChainJobForCars(rng, carsForJob, origin, destination);
 
 				if (jobChainController != null)
 				{

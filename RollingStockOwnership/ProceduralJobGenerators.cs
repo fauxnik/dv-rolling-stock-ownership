@@ -11,12 +11,7 @@ namespace RollingStockOwnership;
 
 public static class ProceduralJobGenerators
 {
-	public static JobChainController? GenerateHaulChainJobForCars(System.Random rng, List<Car> carsForJob, CargoGroup cargoGroup, StationController originController)
-	{
-		return GenerateHaulChainJobForCars(rng, carsForJob, originController, cargoGroup.stations.ElementAtRandom(rng));
-	}
-
-	private static JobChainController? GenerateHaulChainJobForCars(System.Random rng, List<Car> carsForJob, StationController originController, StationController destinationController)
+	public static JobChainController? GenerateHaulChainJobForCars(System.Random rng, List<Car> carsForJob, StationController originController, StationController destinationController)
 	{
 		var yto = YardTracksOrganizer.Instance;
 		var carSpawn = CarSpawner.Instance;
@@ -73,12 +68,7 @@ public static class ProceduralJobGenerators
 		return jobChainController;
 	}
 
-	public static JobChainController? GenerateUnloadChainJobForCars(System.Random rng, List<Car> carsForJob, CargoGroup cargoGroup, StationController destinationController)
-	{
-		return GenerateUnloadChainJobForCars(rng, carsForJob, cargoGroup.stations.ElementAtRandom(rng), destinationController);
-	}
-
-	private static JobChainController? GenerateUnloadChainJobForCars(System.Random rng, List<Car> carsForJob, StationController originController, StationController destinationController)
+	public static JobChainController? GenerateUnloadChainJobForCars(System.Random rng, List<Car> carsForJob, StationController originController, StationController destinationController)
 	{
 		var yto = YardTracksOrganizer.Instance;
 		var carSpawn = CarSpawner.Instance;
