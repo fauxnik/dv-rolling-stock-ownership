@@ -40,7 +40,6 @@ public class ProceduralJobsController
 
 	public IEnumerator GenerateJobsCoro(Action onComplete, IEnumerable<Car>? carsToUse = null)
 	{
-		var log = new StringBuilder();
 		int tickCount = Environment.TickCount;
 		System.Random rng = new System.Random(tickCount);
 		var yardId = stationController.stationInfo.YardID;
@@ -388,7 +387,7 @@ public class ProceduralJobsController
 				}
 			}
 			int attemptsUnsuccessful = MAX_JOB_GENERATION_ATTEMPTS - attemptsRemaining - loadingJobs.Count;
-			log.AppendLine($"Generated {loadingJobs.Count} shunting load jobs with {attemptsUnsuccessful}/{MAX_JOB_GENERATION_ATTEMPTS} unsuccessful attempts and {wagonsForLoading.Count} cars not receiving jobs.");
+			Main.Log($"Generated {loadingJobs.Count} shunting load jobs with {attemptsUnsuccessful}/{MAX_JOB_GENERATION_ATTEMPTS} unsuccessful attempts and {wagonsForLoading.Count} cars not receiving jobs.");
 
 			/**
 			 * TRANSPORT
@@ -478,7 +477,7 @@ public class ProceduralJobsController
 				}
 			}
 			attemptsUnsuccessful = MAX_JOB_GENERATION_ATTEMPTS - attemptsRemaining - haulingJobs.Count;
-			log.AppendLine($"Generated {haulingJobs.Count} transport jobs with {attemptsUnsuccessful}/{MAX_JOB_GENERATION_ATTEMPTS} unsuccessful attempts and {wagonsForHauling.Count} cars not receiving jobs.");
+			Main.Log($"Generated {haulingJobs.Count} transport jobs with {attemptsUnsuccessful}/{MAX_JOB_GENERATION_ATTEMPTS} unsuccessful attempts and {wagonsForHauling.Count} cars not receiving jobs.");
 
 			/**
 			 * SHUNTING UNLOAD
@@ -488,7 +487,7 @@ public class ProceduralJobsController
 			while (wagonsForUnloading.Count > 0 && attemptsRemaining-- > 0)
 			{}
 			attemptsUnsuccessful = MAX_JOB_GENERATION_ATTEMPTS - attemptsRemaining - unloadingJobs.Count;
-			log.AppendLine($"Generated {unloadingJobs.Count} shunting unload jobs with {attemptsUnsuccessful}/{MAX_JOB_GENERATION_ATTEMPTS} unsuccessful attempts and {wagonsForUnloading.Count} cars not receiving jobs.");
+			Main.Log($"Generated {unloadingJobs.Count} shunting unload jobs with {attemptsUnsuccessful}/{MAX_JOB_GENERATION_ATTEMPTS} unsuccessful attempts and {wagonsForUnloading.Count} cars not receiving jobs.");
 
 			// // loop, generating jobs for train cars, until all train cars are accounted for or we reach an upper bound of attempts
 			// var carsQ = new Queue<Car>();
@@ -705,7 +704,6 @@ public class ProceduralJobsController
 			// log.Append($"Generated a total of {jobsGenerated} jobs with {attemptsUnsuccessful}/{MAX_JOB_GENERATION_ATTEMPTS} unsuccessful attempts.");
 		}
 
-		Main.Log(log.ToString());
 		if (onComplete != null)
 		{
 			onComplete();
