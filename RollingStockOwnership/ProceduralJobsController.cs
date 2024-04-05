@@ -1,4 +1,4 @@
-using DV.Logic.Job;
+﻿using DV.Logic.Job;
 using DV.ThingTypes;
 using DV.ThingTypes.TransitionHelpers;
 using HarmonyLib;
@@ -485,7 +485,115 @@ public class ProceduralJobsController
 			attemptsRemaining = MAX_JOB_GENERATION_ATTEMPTS;
 			var unloadingJobs = new List<JobChainController>();
 			while (wagonsForUnloading.Count > 0 && attemptsRemaining-- > 0)
-			{}
+			{
+				// These are expensive operations, so we'll yield for a frame around them
+				yield return null;
+				Dictionary<(CargoGroup CargoGroup, string? OutboundYardID, string? InboundYardID), HashSet<TrainCar>> associations =
+					CreateWagonAssociations(licensedInboundCargoGroups, wagonsForUnloading);
+				yield return null;
+				(CargoGroup CargoGroup, string? OutboundYardID, string? InboundYardID, HashSet<TrainCar> Wagons) association =
+					ChooseAssociation(associations);
+
+				yield return null;
+				// This ensures a job will be generated even if there aren't technically enough total wagons
+				int targetMinWagonsPerJob = association.Wagons.Count < 2 * stationMinWagonsPerJob ? association.Wagons.Count : stationMinWagonsPerJob;
+				int absoluteMinWagonsPerJob = Math.Min(stationMinWagonsPerJob, association.Wagons.Count);
+
+				yield return null;
+				// Selects a station:
+				//   - the reservations' outbound station, if reservations exist for these wagons
+				//   - a random inbound station, if no reservations exist for these wagons
+				StationController origin = association.CargoGroup.stations
+					.Where(station => association.OutboundYardID == null || station.stationInfo.YardID == association.OutboundYardID)
+					.ElementAtRandom(rng);
+				StationController destination = stationController;
+
+				yield return null;
+				int maxTracks = maxShuntingStorageTracks;
+				for (; maxTracks > 1; --maxTracks)
+				{
+					if (association.Wagons.Count / maxTracks >= stationMinWagonsPerJob)
+					{
+						break;
+					}
+				}
+				int trackCount = rng.Next(maxTracks) + 1;
+				List<Track> storageTracks = destination.logicStation.yard.StorageTracks;
+				IEnumerable<double> storageTrackUnoccupiedLengths = storageTracks
+					.Select(track => track.length - track.OccupiedLength)
+					.Where(unoccupiedLength => unoccupiedLength > 0d)
+					.OrderByDescending(unoccupiedLength => unoccupiedLength);
+
+				yield return null;
+				// Multiplying by a fractional factor attempts to accommodate for track lengths that aren't perfect multiples of wagon lengths
+				const double UNLOADING_STORAGE_TRACK_SPACE_FACTOR = 0.9d;
+				double maxStorageTracksLength = UNLOADING_STORAGE_TRACK_SPACE_FACTOR * storageTrackUnoccupiedLengths
+					.Take(trackCount) // Should this use a randomly selected target instead?
+					.Aggregate(0d, (totalUnoccupiedLength, trackUnoccupiedLength) => totalUnoccupiedLength + trackUnoccupiedLength);
+
+				yield return null;
+				IEnumerable<Track> warehouseTracks = destination.logicStation.yard
+					.GetWarehouseMachinesThatSupportCargoTypes(association.CargoGroup.cargoTypes)
+					.Select(warehouseManchine => warehouseManchine.WarehouseTrack);
+				double maxWarehouseTrackLength = GetLongestTrackLength(warehouseTracks);
+
+				// The limit is the shorter of the longest warehouse track and the sum of the longest storage tracks
+				double maxTrackLength = Math.Min(maxWarehouseTrackLength, maxStorageTracksLength);
+
+				yield return null;
+				IEnumerable<CoupledSetData> coupledSets =
+					GroupWagonsByCoupled(association.Wagons, maxWagonsPerJob, maxTrackLength)
+						.RandomSorting(rng);
+
+				yield return null;
+				CoupledSetData? coupledSet = null;
+				CoupledSetData? possibleCoupledSet = null;
+				foreach (CoupledSetData data in coupledSets)
+				{
+					if (data.Wagons.Count >= targetMinWagonsPerJob)
+					{
+						coupledSet = data;
+						break;
+					}
+					if (possibleCoupledSet == null && data.Wagons.Count >= absoluteMinWagonsPerJob)
+					{
+						possibleCoupledSet = data;
+					}
+				}
+
+				yield return null;
+				CoupledSetData? coupledSetForGeneration = coupledSet ?? possibleCoupledSet;
+				if (coupledSetForGeneration == null)
+				{
+					Main.LogWarning(
+						$"Couldn't find a coupled set to satisfy required car count and/or train length constraints.\n" +
+						$"required car count range: [{absoluteMinWagonsPerJob}, {maxWagonsPerJob}]\n" +
+						$"maximum storage track length: {maxTrackLength}\n" +
+						$"coupled sets: {WagonGroupsToString(coupledSets.Select(data => data.Wagons))}\n"
+					);
+					continue;
+				}
+
+				Main.LogDebug(() =>
+					$"Attempting transport job generation after satisfying {(coupledSet != null ? "all" : "required")} car count and train length constraints.\n" +
+					$"coupled set for generation: {WagonGroupsToString(new List<CoupledSetData>() { coupledSetForGeneration }.Select(data => data.Wagons))}"
+				);
+
+				yield return null;
+				List<Car> carsForJob = coupledSetForGeneration.Wagons.Select(wagon => wagon.logicCar).ToList();
+
+				yield return null;
+				JobChainController? jobChainController = ProceduralJobGenerators.GenerateUnloadChainJobForCars(rng, carsForJob, origin, destination);
+
+				if (jobChainController != null)
+				{
+					yield return null;
+					unloadingJobs.Add(jobChainController);
+					List<TrainCar> wagonsForJob = jobChainController.trainCarsForJobChain;
+					wagonsForUnloading.ExceptWith(wagonsForJob);
+					Main.LogDebug(() => $"Generated transport job with cars {string.Join(", ", wagonsForJob.Select(tc => tc.ID))}.");
+				}
+			}
 			attemptsUnsuccessful = MAX_JOB_GENERATION_ATTEMPTS - attemptsRemaining - unloadingJobs.Count;
 			Main.Log($"Generated {unloadingJobs.Count} shunting unload jobs with {attemptsUnsuccessful}/{MAX_JOB_GENERATION_ATTEMPTS} unsuccessful attempts and {wagonsForUnloading.Count} cars not receiving jobs.");
 
