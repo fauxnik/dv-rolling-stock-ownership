@@ -151,8 +151,11 @@ public class ReservationManager
 	{
 		static void Prefix(Job generatedJob, JobChainController __instance)
 		{
-			generatedJob.JobTaken += (_, _) => {
-				ReservationManager.Instance.ForceReservations(__instance);
+			generatedJob.JobTaken += (job, _) => {
+				if (job.jobType == JobType.Transport || job.jobType == JobType.ShuntingUnload)
+				{
+					ReservationManager.Instance.ForceReservations(__instance);
+				}
 			};
 		}
 	}
