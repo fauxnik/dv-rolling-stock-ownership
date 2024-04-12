@@ -1,4 +1,4 @@
-using DV.Logic.Job;
+﻿using DV.Logic.Job;
 using DV.ThingTypes;
 using DV.ThingTypes.TransitionHelpers;
 using HarmonyLib;
@@ -40,7 +40,7 @@ public class ProceduralJobsController
 	public IEnumerator GenerateJobsCoro(Action onComplete, IEnumerable<Car>? carsToUse = null)
 	{
 		int tickCount = Environment.TickCount;
-		System.Random rng = new System.Random(tickCount);
+		Random rng = new Random(tickCount);
 		var yardId = stationController.stationInfo.YardID;
 		var proceduralRuleset = stationController.proceduralJobsRuleset;
 		var manager = RollingStockManager.Instance;
@@ -267,7 +267,7 @@ public class ProceduralJobsController
 
 				yield return null;
 				IEnumerable<CoupledSetData> coupledSets =
-					GroupWagonsByCoupled(association.Wagons, maxWagonsPerJob, maxTrackLength)
+					GroupWagonsByCoupled(rng, association.Wagons, targetMinWagonsPerJob, maxWagonsPerJob, maxTrackLength)
 						.RandomSorting(rng);
 
 				yield return null;
@@ -406,7 +406,7 @@ public class ProceduralJobsController
 
 				yield return null;
 				IEnumerable<CoupledSetData> coupledSets =
-					GroupWagonsByCoupled(association.Wagons, maxWagonsPerJob, maxInboundTrackLength)
+					GroupWagonsByCoupled(rng, association.Wagons, targetMinWagonsPerJob, maxWagonsPerJob, maxInboundTrackLength)
 						.RandomSorting(rng);
 
 				yield return null;
@@ -525,7 +525,7 @@ public class ProceduralJobsController
 
 				yield return null;
 				IEnumerable<CoupledSetData> coupledSets =
-					GroupWagonsByCoupled(association.Wagons, maxWagonsPerJob, maxTrackLength)
+					GroupWagonsByCoupled(rng, association.Wagons, targetMinWagonsPerJob, maxWagonsPerJob, maxTrackLength)
 						.RandomSorting(rng);
 
 				yield return null;
@@ -656,7 +656,7 @@ public class ProceduralJobsController
 		);
 	}
 
-	private static List<CoupledSetData> GroupWagonsByCoupled(HashSet<TrainCar> wagons, int maxCount, double maxLength)
+	private static List<CoupledSetData> GroupWagonsByCoupled(Random rng, HashSet<TrainCar> wagons, int minCount, int maxCount, double maxLength)
 	{
 		var _wagons = new HashSet<TrainCar>(wagons); // Cloning the hash set so the input isn't mutated
 		var coupledSets = new List<CoupledSetData>();
@@ -665,14 +665,17 @@ public class ProceduralJobsController
 		{
 			var coupled = new HashSet<TrainCar>();
 			double coupledLength = 0;
-			var wagonsQ = new Queue<TrainCar>();
-			wagonsQ.Enqueue(GetNextEdgeWagonFromPool(_wagons)!); // _wagons.Count is checked above, so this won't be null
+			Queue<TrainCar> wagonsQ = GetNextWagonQueueFromPool(_wagons); // Finds all wagons from the pool that are coupled to the next wagon from the pool
+
+			// The first wagon is guaranteed to either make it into a group or not fit on any track
+			// This prevents infinite looping
+			_wagons.Remove(wagonsQ.Peek());
 
 			while (wagonsQ.Count > 0 && coupled.Count < maxCount)
 			{
 				TrainCar currentWagon = wagonsQ.Dequeue();
-				double wagonLength = 0;
-				if (coupledLength > 0)
+				double wagonLength = currentWagon.logicCar.length;
+				if (coupled.Count > 0)
 				{
 					// GetSeparationLengthBetweenCars includes space at the end on each side.
 					// Passing 0 gets the length of a single separation.
@@ -683,23 +686,50 @@ public class ProceduralJobsController
 					// This accounts for the separation on both ends of the coupled set
 					wagonLength += CarSpawner.Instance.GetSeparationLengthBetweenCars(1);
 				}
-				wagonLength += currentWagon.logicCar.length;
-				if (coupledLength + wagonLength > maxLength) { break; } // No more space on the longest possible supported warehouse track!
+				if (coupledLength + wagonLength > maxLength)
+				{
+					Main.LogDebug(() => $"Splitting coupled wagons due to length ({coupled.Count}/{maxCount})");
+					break;
+				} // No more space on the limiting track!
 				coupledLength += wagonLength;
 
-				coupled.Add(currentWagon); // If the wagon made it into the queue, it was coupled to a wagon already added to the hash set (or it's the first wagon)
-				_wagons.Remove(currentWagon); // The code that finds the coupled wagons relies on immediately removing the current wagon here to avoid a cycle/infinite loop
+				coupled.Add(currentWagon);
+				_wagons.Remove(currentWagon);
 
-				TrainCar? coupledFront = _wagons.FirstOrDefault(wagon => wagon == currentWagon.frontCoupler?.coupledTo?.train);
-				if (coupledFront != null) { wagonsQ.Enqueue(coupledFront); } // Relies on having already removed the current car to avoid cycles/infinite loop
+				// Random chance to split into a smaller group
+				// Shouldn't split when below the minumum wagon count for grouped wagons or remaining queued wagons
+				// Probability of splitting increases as the number grouped wagons approaches the maximum
+				if (coupled.Count >= minCount && wagonsQ.Count >= minCount)
+				{
+					const int RANDOM_SPLIT_SCALING_FACTOR = 2;
+					int result = rng.Next((maxCount - coupled.Count) * RANDOM_SPLIT_SCALING_FACTOR);
+					if (result == 0)
+					{
+						Main.LogDebug(() => $"Splitting coupled wagons due to random chance ({coupled.Count}/{maxCount})");
+						break;
+					}
+				}
 
-				TrainCar? coupledRear = _wagons.FirstOrDefault(wagon => wagon == currentWagon.rearCoupler?.coupledTo?.train);
-				if (coupledRear != null) { wagonsQ.Enqueue(coupledRear); } // Relies on having already removed the current car to avoid cycles/infinite loop
+				// We don't check if the wagons queue count is less than the minimum wagon count because
+				// we don't want to split off a group smaller than the minimum wagon count
+				// (unless we have to because of length requirements)
+				if (coupled.Count >= minCount && wagonsQ.Count == minCount)
+				{
+					double fullLength = coupledLength + CarSpawner.Instance.GetTotalCarsLength(wagonsQ.Select(tc => tc.logicCar).ToList())
+						+ CarSpawner.Instance.GetSeparationLengthBetweenCars(wagonsQ.Count - 1); // Adds 1 internally, but we've already accounted for the separation distance at both ends
+
+					if (fullLength > maxLength)
+					{
+						Main.LogDebug(() => $"Splitting coupled wagons due to remaining queue count ({coupled.Count}/{wagonsQ.Count})");
+						break;
+					}
+				}
 			}
 
 			if (coupled.Count > 0)
 			{
 				coupledSets.Add(new CoupledSetData(coupled, coupledLength));
+				Main.LogDebug(() => $"Grouped coupled wagons ({coupled.Count}/{maxCount})\n\tcoupled length: {coupledLength}m\n\tmax length: {maxLength}m");
 			}
 			else
 			{
@@ -712,16 +742,44 @@ public class ProceduralJobsController
 		return coupledSets;
 	}
 
-	private static TrainCar? GetNextEdgeWagonFromPool(IEnumerable<TrainCar> wagonPool)
+	private static Queue<TrainCar> GetNextWagonQueueFromPool(IEnumerable<TrainCar> wagonPool)
 	{
-		TrainCar? currentWagon = wagonPool.FirstOrDefault();
-		TrainCar? previousWagon = currentWagon;
-		while (currentWagon != null)
+		IEnumerable<TrainCar> coupledWagons = new List<TrainCar>();
+		TrainCar? firstWagon = wagonPool.FirstOrDefault();
+		Main.LogDebug(() => $"Wagon pool has {wagonPool.Count()} wagons and first wagon is {(firstWagon == null ? "null" : "not null")}.");
+
+		if (firstWagon != null)
 		{
-			previousWagon = currentWagon;
-			currentWagon = wagonPool.FirstOrDefault(wagon => wagon == previousWagon.frontCoupler?.coupledTo?.train);
+			coupledWagons = coupledWagons.Append(firstWagon);
+			var seenWagons = new HashSet<TrainCar> { firstWagon };
+
+			// Iterate "forward"
+			TrainCar? currentWagon = wagonPool.FirstOrDefault(wagon => wagon == firstWagon.frontCoupler?.coupledTo?.train);
+			while (currentWagon != null)
+			{
+				coupledWagons = coupledWagons.Prepend(currentWagon);
+				seenWagons.Add(currentWagon);
+				TrainCar? frontWagon = wagonPool.FirstOrDefault(wagon => wagon == currentWagon.frontCoupler?.coupledTo?.train);
+				TrainCar? rearWagon = wagonPool.FirstOrDefault(wagon => wagon == currentWagon.rearCoupler?.coupledTo?.train);
+				currentWagon = seenWagons.Contains(rearWagon) ? frontWagon : rearWagon;
+			}
+
+			// Iterate "backward"
+			currentWagon = wagonPool.FirstOrDefault(wagon => wagon == firstWagon.rearCoupler?.coupledTo?.train);
+			while (currentWagon != null)
+			{
+				coupledWagons = coupledWagons.Append(currentWagon);
+				seenWagons.Add(currentWagon);
+				TrainCar? frontWagon = wagonPool.FirstOrDefault(wagon => wagon == currentWagon.frontCoupler?.coupledTo?.train);
+				TrainCar? rearWagon = wagonPool.FirstOrDefault(wagon => wagon == currentWagon.rearCoupler?.coupledTo?.train);
+				currentWagon = seenWagons.Contains(rearWagon) ? frontWagon : rearWagon;
+			}
 		}
-		return previousWagon;
+
+		var wagonsQ = new Queue<TrainCar>();
+		coupledWagons.ToList().ForEach(wagonsQ.Enqueue);
+		Main.LogDebug(() => $"Next wagon list ({coupledWagons.Count()})\nNext wagon queue ({wagonsQ.Count})");
+		return wagonsQ;
 	}
 
 	private static string WagonGroupsToString(IEnumerable<IEnumerable<TrainCar>> wagonGroups)
@@ -731,7 +789,7 @@ public class ProceduralJobsController
 
 	private static string WagonGroupToString(IEnumerable<TrainCar> wagons)
 	{
-		return $"[{string.Join(", ", wagons.Select(wagon => wagon.ID))}]";
+		return $"[{string.Join(", ", wagons.Select(wagon => wagon.ID))}]({wagons.Count()}|{CarSpawner.Instance.GetTotalCarsLength(wagons.Select(tc => tc.logicCar).ToList(), true)}m)";
 	}
 
 	private static double GetLongestTrackLength(IEnumerable<Track> tracks, bool freeSpaceOnly = false)
