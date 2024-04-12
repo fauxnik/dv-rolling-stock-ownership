@@ -1,4 +1,4 @@
-﻿using DV.Logic.Job;
+using DV.Logic.Job;
 using DV.ThingTypes;
 using DV.ThingTypes.TransitionHelpers;
 using HarmonyLib;
@@ -259,10 +259,11 @@ public class ProceduralJobsController
 
 				yield return null;
 				IEnumerable<Track> outboundTracks = origin.logicStation.yard.TransferOutTracks;
-				double maxOutboundTrackLength = GetLongestTrackLength(outboundTracks, unoccupiedLengthOnly: true);
+				double maxOutboundTrackLength = GetLongestTrackLength(outboundTracks, freeSpaceOnly: true);
 
 				// The limit is the shorter of the longest warehouse track and the longest outbound track
 				double maxTrackLength = Math.Min(maxWarehouseTrackLength, maxOutboundTrackLength);
+				Main.LogDebug(() => $"maximum warehouse track length: {maxWarehouseTrackLength}m\n\tmaximum outbound track length: {maxOutboundTrackLength}m\n\tmaximum track length to use for splitting wagon groups: {maxTrackLength}m");
 
 				yield return null;
 				IEnumerable<CoupledSetData> coupledSets =
@@ -400,7 +401,8 @@ public class ProceduralJobsController
 
 				yield return null;
 				List<Track> inboundTracks = destination.logicStation.yard.TransferInTracks;
-				double maxInboundTrackLength = GetLongestTrackLength(inboundTracks, unoccupiedLengthOnly: true);
+				double maxInboundTrackLength = GetLongestTrackLength(inboundTracks, freeSpaceOnly: true);
+				Main.LogDebug(() => $"maximum inbound track length: {maxInboundTrackLength}m");
 
 				yield return null;
 				IEnumerable<CoupledSetData> coupledSets =
@@ -519,6 +521,7 @@ public class ProceduralJobsController
 
 				// The limit is the shorter of the longest warehouse track and the sum of the longest storage tracks
 				double maxTrackLength = Math.Min(maxWarehouseTrackLength, maxStorageTracksLength);
+				Main.LogDebug(() => $"maximum warehouse track length: {maxWarehouseTrackLength}m\n\tmaximum storage tracks length: {maxStorageTracksLength}m / {trackCount} tracks\n\tmaximum track length to use for splitting wagon groups: {maxTrackLength}m");
 
 				yield return null;
 				IEnumerable<CoupledSetData> coupledSets =
@@ -731,19 +734,12 @@ public class ProceduralJobsController
 		return $"[{string.Join(", ", wagons.Select(wagon => wagon.ID))}]";
 	}
 
-	private static double GetLongestTrackLength(IEnumerable<Track> tracks, bool unoccupiedLengthOnly = false)
+	private static double GetLongestTrackLength(IEnumerable<Track> tracks, bool freeSpaceOnly = false)
 	{
 		return tracks.Aggregate(0d, (maxLength, track) => {
-			double trackLength = track.length;
-			if (unoccupiedLengthOnly)
-			{
-				trackLength -= track.OccupiedLength;
-			}
-			if (trackLength > maxLength)
-			{
-				return trackLength;
-			}
-			return maxLength;
+			double trackLength = freeSpaceOnly ? YardTracksOrganizer.Instance.GetFreeSpaceOnTrack(track) : track.length;
+			Main.LogDebug(() => $"track {track.ID} -> {trackLength}m{(freeSpaceOnly ? $" / {track.length}m" : "")}");
+			return trackLength > maxLength ? trackLength : maxLength;
 		});
 	}
 
