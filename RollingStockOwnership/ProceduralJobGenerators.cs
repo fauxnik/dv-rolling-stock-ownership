@@ -28,7 +28,7 @@ public static class ProceduralJobGenerators
 		}
 		Track startingTrack = tracksForCars.First();
 
-		float approxLengthOfWholeTrain = carSpawn.GetTotalCarsLength(carsForJob) + carSpawn.GetSeparationLengthBetweenCars(carsForJob.Count);
+		float approxLengthOfWholeTrain = carSpawn.GetTotalCarsLength(carsForJob, true);
 
 		HashSet<JobLicenseType_v2> jobLicenses = new (
 			from license in licenseManager.GetRequiredLicensesForCargoTypes(cargoTypes)
@@ -85,7 +85,7 @@ public static class ProceduralJobGenerators
 		}
 		Track startingTrack = tracksForCars.First();
 
-		float approxLengthOfWholeTrain = carSpawn.GetTotalCarsLength(carsForJob) + carSpawn.GetSeparationLengthBetweenCars(carsForJob.Count);
+		float approxLengthOfWholeTrain = carSpawn.GetTotalCarsLength(carsForJob, true);
 
 		HashSet<JobLicenseType_v2> jobLicenses = new (
 			from license in licenseManager.GetRequiredLicensesForCargoTypes(cargoTypes)
@@ -190,7 +190,7 @@ public static class ProceduralJobGenerators
 		}
 		List<CarsPerCargoType> carsPerCargoTypes = Utilities.ExtractCarsPerCargoType(carsForJob, cargoTypes);
 
-		float approxLengthOfWholeTrain = carSpawn.GetTotalCarsLength(carsForJob) + carSpawn.GetSeparationLengthBetweenCars(carsForJob.Count);
+		float approxLengthOfWholeTrain = carSpawn.GetTotalCarsLength(carsForJob, true);
 
 		HashSet<JobLicenseType_v2> jobLicenses = new (
 			from license in licenseManager.GetRequiredLicensesForCargoTypes(cargoTypes)
