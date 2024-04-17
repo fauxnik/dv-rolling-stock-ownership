@@ -150,6 +150,7 @@ public class ProceduralJobsController
 			var wagonsForLoading = new HashSet<TrainCar>();
 			var wagonsForHauling = new HashSet<TrainCar>();
 			var wagonsForUnloading = new HashSet<TrainCar>();
+			var wagonsForLogistics = new HashSet<TrainCar>();
 
 			if (loadStartingJobSupported)
 			{
@@ -226,6 +227,26 @@ public class ProceduralJobsController
 				Main.LogDebug(() => $"Found {wagonsForUnloading.Count} cars for shunting unload jobs.");
 			}
 			else { Main.LogDebug(() => $"{yardId} doesn't support shunting unload jobs."); }
+
+			if (wagonsInYard.Count > 0)
+			{
+				// Find all cars available for logistic jobs
+				foreach (TrainCar wagon in wagonsInYard)
+				{
+					yield return null;
+
+					// Must be empty
+					if (wagon.logicCar.CurrentCargoTypeInCar != CargoType.None) { continue; }
+					Main.LogDebug(() => $"{wagon.ID} ({wagon.carLivery.id}) {(Utilities.CanWagonHoldCargo(wagon) ? "can" : "cannot")} load cargo");
+					// Must be able to hold cargo
+					if (!Utilities.CanWagonHoldCargo(wagon)) { continue; }
+
+					wagonsForLogistics.Add(wagon);
+				}
+
+				wagonsInYard.ExceptWith(wagonsForLogistics);
+				Main.LogDebug(() => $"Found {wagonsForLogistics.Count} cars for logistic jobs.");
+			}
 
 			Main.LogDebug(() => $"Excluding {wagonsInYard.Count} cars as incompatible.");
 
