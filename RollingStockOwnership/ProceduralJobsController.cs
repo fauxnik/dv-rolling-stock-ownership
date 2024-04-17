@@ -1,4 +1,4 @@
-﻿using DV.Logic.Job;
+using DV.Logic.Job;
 using DV.ThingTypes;
 using DV.ThingTypes.TransitionHelpers;
 using HarmonyLib;
@@ -367,7 +367,7 @@ public class ProceduralJobsController
 					Main.LogDebug(() => $"Generated shunting load job with cars {string.Join(", ", wagonsForJob.Select(wagon => wagon.ID))}.");
 				}
 			}
-			int attemptsUnsuccessful = MAX_JOB_GENERATION_ATTEMPTS - attemptsRemaining - loadingJobs.Count;
+			int attemptsUnsuccessful = MAX_JOB_GENERATION_ATTEMPTS - Math.Max(0, attemptsRemaining) - loadingJobs.Count;
 			Main.Log($"Generated {loadingJobs.Count} shunting load jobs with {attemptsUnsuccessful}/{MAX_JOB_GENERATION_ATTEMPTS} unsuccessful attempts and {wagonsForLoading.Count} cars not receiving jobs.");
 
 			/**
@@ -458,7 +458,7 @@ public class ProceduralJobsController
 					Main.LogDebug(() => $"Generated transport job with cars {string.Join(", ", wagonsForJob.Select(tc => tc.ID))}.");
 				}
 			}
-			attemptsUnsuccessful = MAX_JOB_GENERATION_ATTEMPTS - attemptsRemaining - haulingJobs.Count;
+			attemptsUnsuccessful = MAX_JOB_GENERATION_ATTEMPTS - Math.Max(0, attemptsRemaining) - haulingJobs.Count;
 			Main.Log($"Generated {haulingJobs.Count} transport jobs with {attemptsUnsuccessful}/{MAX_JOB_GENERATION_ATTEMPTS} unsuccessful attempts and {wagonsForHauling.Count} cars not receiving jobs.");
 
 			/**
@@ -577,7 +577,7 @@ public class ProceduralJobsController
 					Main.LogDebug(() => $"Generated transport job with cars {string.Join(", ", wagonsForJob.Select(tc => tc.ID))}.");
 				}
 			}
-			attemptsUnsuccessful = MAX_JOB_GENERATION_ATTEMPTS - attemptsRemaining - unloadingJobs.Count;
+			attemptsUnsuccessful = MAX_JOB_GENERATION_ATTEMPTS - Math.Max(0, attemptsRemaining) - unloadingJobs.Count;
 			Main.Log($"Generated {unloadingJobs.Count} shunting unload jobs with {attemptsUnsuccessful}/{MAX_JOB_GENERATION_ATTEMPTS} unsuccessful attempts and {wagonsForUnloading.Count} cars not receiving jobs.");
 		}
 
