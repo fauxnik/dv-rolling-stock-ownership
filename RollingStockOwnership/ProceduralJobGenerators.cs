@@ -110,8 +110,8 @@ public static class ProceduralJobGenerators
 		var stationsChainData = new StationsChainData(originController.stationInfo.YardID, destinationController.stationInfo.YardID);
 
 		float distanceBetweenStations = JobPaymentCalculator.GetDistanceBetweenStations(originController, destinationController);
-		float bonusTimeLimit = JobPaymentCalculator.CalculateHaulBonusTimeLimit(distanceBetweenStations);
-		float baseWage = JobPaymentCalculator.CalculateJobPayment(JobType.Transport, distanceBetweenStations, Utilities.ExtractPaymentCalculationData(carsForJob));
+		float bonusTimeLimit = 0; //JobPaymentCalculator.CalculateHaulBonusTimeLimit(distanceBetweenStations);
+		float baseWage = 0; //JobPaymentCalculator.CalculateJobPayment(JobType.Transport, distanceBetweenStations, Utilities.ExtractPaymentCalculationData(carsForJob));
 		HashSet<JobLicenseType_v2> requiredLicenses = jobLicenses.Concat(licenseManager.GetRequiredLicensesForJobType(JobType.EmptyHaul)).ToHashSet();
 
 		StaticEmptyHaulJobDefinition jobDefinition = PopulateEmptyHaulJobDefinitionWithExistingCars(jobChainController.jobChainGO, originController.logicStation, startingTrack, destinationTrack, carsForJob, bonusTimeLimit, baseWage, stationsChainData, JobLicenseType_v2.ListToFlags(requiredLicenses));
