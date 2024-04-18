@@ -122,6 +122,7 @@ public class Equipment
 	}
 
 	private static readonly string DESTINATION_SAVE_KEY = "destination";
+	[Obsolete("ReservationManager replaces the function of DestinationID")]
 	public string? DestinationID { get; private set; }
 
 	public Equipment(string id, string carGuid, TrainCarLivery livery, Vector3 position, Quaternion rotation, string? bogie1TrackID, double bogie1PositionAlongTrack, bool isBogie1Derailed, string? bogie2TrackID, double bogie2PositionAlongTrack, bool isBogie2Derailed, string? carGuidCoupledFront, string? carGuidCoupledRear, bool isExploded, CargoType loadedCargo, float? handbrakeApplication, float? mainReservoirPressure, float? controlReservoirPressure, float? brakeCylinderPressure, JObject? carStateSave, JObject? simCarStateSave, TrainCar? trainCar)
@@ -290,6 +291,7 @@ public class Equipment
 		}
 	}
 
+	[Obsolete("ReservationManager replaces the function of DestinationID")]
 	public void SetDestination(string? stationId)
 	{
 		DestinationID = stationId;

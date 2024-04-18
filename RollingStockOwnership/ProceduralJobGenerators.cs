@@ -1,6 +1,7 @@
 ﻿using DV.Logic.Job;
 using DV.ThingTypes;
 using DV.ThingTypes.TransitionHelpers;
+using RollingStockOwnership.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,12 +11,7 @@ namespace RollingStockOwnership;
 
 public static class ProceduralJobGenerators
 {
-	public static JobChainController? GenerateHaulChainJobForCars(System.Random rng, List<Car> carsForJob, CargoGroup cargoGroup, StationController originController)
-	{
-		return GenerateHaulChainJobForCars(rng, carsForJob, originController, Utilities.GetRandomFrom(rng, cargoGroup.stations));
-	}
-
-	private static JobChainController? GenerateHaulChainJobForCars(System.Random rng, List<Car> carsForJob, StationController originController, StationController destinationController)
+	public static JobChainController? GenerateHaulChainJobForCars(System.Random rng, List<Car> carsForJob, StationController originController, StationController destinationController)
 	{
 		var yto = YardTracksOrganizer.Instance;
 		var carSpawn = CarSpawner.Instance;
@@ -32,7 +28,7 @@ public static class ProceduralJobGenerators
 		}
 		Track startingTrack = tracksForCars.First();
 
-		float approxLengthOfWholeTrain = carSpawn.GetTotalCarsLength(carsForJob) + carSpawn.GetSeparationLengthBetweenCars(carsForJob.Count);
+		float approxLengthOfWholeTrain = carSpawn.GetTotalCarsLength(carsForJob, true);
 
 		HashSet<JobLicenseType_v2> jobLicenses = new (
 			from license in licenseManager.GetRequiredLicensesForCargoTypes(cargoTypes)
@@ -47,7 +43,7 @@ public static class ProceduralJobGenerators
 			Main.LogWarning($"Station[{originController.logicStation.ID}] couldn't find an inbound track with enough free space for the job. ({approxLengthOfWholeTrain})");
 			return null;
 		}
-		Track destinationTrack = Utilities.GetRandomFrom(rng, possibleDestinationTracks);
+		Track destinationTrack = possibleDestinationTracks.ElementAtRandom(rng);
 
 		var gameObject = new GameObject($"ChainJob[{JobType.Transport}]: {originController.logicStation.ID} - {destinationController.logicStation.ID}");
 		gameObject.transform.SetParent(originController.transform);
@@ -72,12 +68,7 @@ public static class ProceduralJobGenerators
 		return jobChainController;
 	}
 
-	public static JobChainController? GenerateUnloadChainJobForCars(System.Random rng, List<Car> carsForJob, CargoGroup cargoGroup, StationController destinationController)
-	{
-		return GenerateUnloadChainJobForCars(rng, carsForJob, Utilities.GetRandomFrom(rng, cargoGroup.stations), destinationController);
-	}
-
-	private static JobChainController? GenerateUnloadChainJobForCars(System.Random rng, List<Car> carsForJob, StationController originController, StationController destinationController)
+	public static JobChainController? GenerateUnloadChainJobForCars(System.Random rng, List<Car> carsForJob, StationController originController, StationController destinationController)
 	{
 		var yto = YardTracksOrganizer.Instance;
 		var carSpawn = CarSpawner.Instance;
@@ -94,7 +85,7 @@ public static class ProceduralJobGenerators
 		}
 		Track startingTrack = tracksForCars.First();
 
-		float approxLengthOfWholeTrain = carSpawn.GetTotalCarsLength(carsForJob) + carSpawn.GetSeparationLengthBetweenCars(carsForJob.Count);
+		float approxLengthOfWholeTrain = carSpawn.GetTotalCarsLength(carsForJob, true);
 
 		HashSet<JobLicenseType_v2> jobLicenses = new (
 			from license in licenseManager.GetRequiredLicensesForCargoTypes(cargoTypes)
@@ -115,7 +106,7 @@ public static class ProceduralJobGenerators
 			Main.LogDebug(() => $"Station[{destinationController.logicStation.ID}] doesn't have a warehouse track long enough for the job. ({approxLengthOfWholeTrain})");
 			return null;
 		}
-		WarehouseMachine warehouseMachine = Utilities.GetRandomFrom(rng, warehouseMachinesThatSupportCargoTypes);
+		WarehouseMachine warehouseMachine = warehouseMachinesThatSupportCargoTypes.ElementAtRandom(rng);
 
 		List<CarsPerTrack>? randomSortingOfCarsOnTracks = Utilities.GetRandomSortingOfCarsOnTracks(rng, destinationController.logicStation.yard.StorageTracks, carsForJob, generationRuleset.maxShuntingStorageTracks, generationRuleset.minCarsPerJob);
 		if (randomSortingOfCarsOnTracks == null)
@@ -193,13 +184,13 @@ public static class ProceduralJobGenerators
 					Main.LogError($"Station[{originController.logicStation.ID}] found no matching cargo types for car type {car.carType} and cargo group cargo types [{string.Join(", ", cargoGroup.cargoTypes)}].");
 					return null;
 				}
-				CargoType_v2 selectedCargoType = Utilities.GetRandomFrom(rng, potentialCargoTypes);
+				CargoType_v2 selectedCargoType = potentialCargoTypes.ElementAtRandom(rng);
 				cargoTypes.Add(selectedCargoType.v1);
 			}
 		}
 		List<CarsPerCargoType> carsPerCargoTypes = Utilities.ExtractCarsPerCargoType(carsForJob, cargoTypes);
 
-		float approxLengthOfWholeTrain = carSpawn.GetTotalCarsLength(carsForJob) + carSpawn.GetSeparationLengthBetweenCars(carsForJob.Count);
+		float approxLengthOfWholeTrain = carSpawn.GetTotalCarsLength(carsForJob, true);
 
 		HashSet<JobLicenseType_v2> jobLicenses = new (
 			from license in licenseManager.GetRequiredLicensesForCargoTypes(cargoTypes)
@@ -220,16 +211,16 @@ public static class ProceduralJobGenerators
 			Main.LogDebug(() => $"Station[{originController.logicStation.ID}] doesn't have a warehouse track long enough for the job. ({approxLengthOfWholeTrain})");
 			return null;
 		}
-		WarehouseMachine warehouseMachine = Utilities.GetRandomFrom(rng, warehouseMachinesThatSupportCargoTypes);
+		WarehouseMachine warehouseMachine = warehouseMachinesThatSupportCargoTypes.ElementAtRandom(rng);
 
-		StationController destinationController = Utilities.GetRandomFrom(rng, cargoGroup.stations);
+		StationController destinationController = cargoGroup.stations.ElementAtRandom(rng);
 		List<Track> possibleDestinationTracks = yto.FilterOutTracksWithoutRequiredFreeSpace(originController.logicStation.yard.TransferOutTracks, approxLengthOfWholeTrain);
 		if (possibleDestinationTracks.Count() < 1)
 		{
 			Main.LogWarning($"Station[{originController.logicStation.ID}] couldn't find an outbound track with enough free space for the job. ({approxLengthOfWholeTrain})");
 			return null;
 		}
-		Track destinationTrack = Utilities.GetRandomFrom(rng, possibleDestinationTracks);
+		Track destinationTrack = possibleDestinationTracks.ElementAtRandom(rng);
 
 		var gameObject = new GameObject($"ChainJob[{JobType.ShuntingLoad}]: {originController.logicStation.ID} - {destinationController.logicStation.ID}");
 		gameObject.transform.SetParent(originController.transform);
@@ -321,17 +312,6 @@ public static class ProceduralJobGenerators
 		jobDefinition.destinationTrack = destinationTrack;
 		jobDefinition.forceCorrectCargoStateOnCars = true;
 		return jobDefinition;
-	}
-
-	public static void SetDestination(JobChainController controller, string? destinationID)
-	{
-		var rollingStock = RollingStockManager.Instance;
-		var trainCars = controller.trainCarsForJobChain;
-		var equipments = from trainCar in trainCars select rollingStock.FindByTrainCar(trainCar);
-		foreach (var equipment in equipments)
-		{
-			equipment.SetDestination(destinationID);
-		}
 	}
 
 	public static void GenerateContinuationTransportJob(JobChainController? jobChainController, StationController originController, StationController destinationController)

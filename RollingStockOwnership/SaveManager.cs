@@ -8,10 +8,11 @@ namespace RollingStockOwnership;
 
 public class SaveManager
 {
-	private static readonly string PRIMARY_SAVE_KEY = "RollingStockOwnership";
-	private static readonly string VERSION_SAVE_KEY = "Version";
-	private static readonly string TRACKS_HASH_SAVE_KEY = "TracksHash";
-	private static readonly string ROLLING_STOCK_SAVE_KEY = "RollingStock";
+	private const string PRIMARY_SAVE_KEY = "RollingStockOwnership";
+	private const string VERSION_SAVE_KEY = "Version";
+	private const string TRACKS_HASH_SAVE_KEY = "TracksHash";
+	private const string ROLLING_STOCK_SAVE_KEY = "RollingStock";
+	private const string RESERVATION_SAVE_KEY = "Reservations";
 
 	[HarmonyPatch(typeof(SaveGameManager), "Save")]
 	class SaveGameManager_Save_Patch
@@ -23,6 +24,7 @@ public class SaveManager
 			{
 				var tracksHash = WorldData.Instance.TracksHash;
 				var rollingStockManager = RollingStockManager.Instance;
+				var reservationManager = ReservationManager.Instance;
 				SaveGameManager saveGameManager = SaveGameManager.Instance;
 
 				// TODO: is there any more data that needs to be saved?
@@ -30,7 +32,8 @@ public class SaveManager
 				JObject saveData = new JObject(
 					new JProperty(VERSION_SAVE_KEY, Main.Version.ToString()),
 					new JProperty(TRACKS_HASH_SAVE_KEY, tracksHash),
-					new JProperty(ROLLING_STOCK_SAVE_KEY, rollingStockManager.GetSaveData()));
+					new JProperty(ROLLING_STOCK_SAVE_KEY, rollingStockManager.GetSaveData()),
+					new JProperty(RESERVATION_SAVE_KEY, reservationManager.GetSaveData()));
 
 				saveGameManager.data.SetJObject(PRIMARY_SAVE_KEY, saveData);
 			}
@@ -53,6 +56,7 @@ public class SaveManager
 			{
 				// Any previously loaded data must be cleared before loading new data
 				RollingStockManager.Instance.Clear();
+				ReservationManager.Instance.Clear();
 
 				JObject saveData = saveGameManager.data.GetJObject(PRIMARY_SAVE_KEY);
 
@@ -78,6 +82,15 @@ public class SaveManager
 				{
 					var rollingStockManager = RollingStockManager.Instance;
 					rollingStockManager.LoadSaveData(rollingStockJArray);
+
+					var reservationsSaveData = saveData[RESERVATION_SAVE_KEY];
+					if (reservationsSaveData == null) { Main.Log($"Not loading reservations: data is null."); }
+					else if (!(reservationsSaveData is JArray reservationsJArray)) { throw new Exception($"Tried to load reservations, but data type is {reservationsSaveData.Type} instead of {JTokenType.Array}."); }
+					else
+					{
+						var reservationManager = ReservationManager.Instance;
+						reservationManager.LoadSaveData(reservationsJArray);
+					}
 				}
 
 				// TODO: load more data?
