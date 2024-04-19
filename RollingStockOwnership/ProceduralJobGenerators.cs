@@ -68,6 +68,60 @@ public static class ProceduralJobGenerators
 		return jobChainController;
 	}
 
+	public static JobChainController? GenerateLogisticChainJobForCars(System.Random rng, List<Car> carsForJob, StationController originController, StationController destinationController)
+	{
+		var yto = YardTracksOrganizer.Instance;
+		var carSpawn = CarSpawner.Instance;
+		var licenseManager = LicenseManager.Instance;
+
+		HashSet<Track> tracksForCars = (from car in carsForJob select car.CurrentTrack).ToHashSet();
+		if (tracksForCars.Count != 1)
+		{
+			Main.LogError($"Expected only one starting track for {JobType.EmptyHaul} job, but got {tracksForCars.Count}.");
+			return null;
+		}
+		Track startingTrack = tracksForCars.First();
+
+		float approxLengthOfWholeTrain = carSpawn.GetTotalCarsLength(carsForJob, true);
+
+		HashSet<JobLicenseType_v2> jobLicenses = new (
+			from license in new HashSet<JobLicenseType_v2>()
+				.Append(licenseManager.GetRequiredLicenseForNumberOfTransportedCars(carsForJob.Count))
+			where license != null
+			select license
+		);
+
+		List<Track> possibleDestinationTracks = yto.FilterOutTracksWithoutRequiredFreeSpace(destinationController.logicStation.yard.StorageTracks, approxLengthOfWholeTrain);
+		if (possibleDestinationTracks.Count < 1)
+		{
+			Main.LogWarning($"Station[{originController.logicStation.ID}] couldn't find a storage track with enough free space for the job. ({approxLengthOfWholeTrain})");
+			return null;
+		}
+		Track destinationTrack = possibleDestinationTracks.ElementAtRandom(rng);
+
+		var gameObject = new GameObject($"ChainJob[{JobType.Transport}]: {originController.logicStation.ID} - {destinationController.logicStation.ID}");
+		gameObject.transform.SetParent(originController.transform);
+		// This class is patched to do next-in-chain job generation
+		var jobChainController = new JobChainControllerWithEmptyHaulGeneration(gameObject)
+		{
+			trainCarsForJobChain = Utilities.ConvertLogicCarsToTrainCars(carsForJob).ToList()
+		};
+
+		var stationsChainData = new StationsChainData(originController.stationInfo.YardID, destinationController.stationInfo.YardID);
+
+		float distanceBetweenStations = JobPaymentCalculator.GetDistanceBetweenStations(originController, destinationController);
+		float bonusTimeLimit = 0; //JobPaymentCalculator.CalculateHaulBonusTimeLimit(distanceBetweenStations);
+		float baseWage = 0; //JobPaymentCalculator.CalculateJobPayment(JobType.Transport, distanceBetweenStations, Utilities.ExtractPaymentCalculationData(carsForJob));
+		HashSet<JobLicenseType_v2> requiredLicenses = jobLicenses.Concat(licenseManager.GetRequiredLicensesForJobType(JobType.EmptyHaul)).ToHashSet();
+
+		StaticEmptyHaulJobDefinition jobDefinition = PopulateEmptyHaulJobDefinitionWithExistingCars(jobChainController.jobChainGO, originController.logicStation, startingTrack, destinationTrack, carsForJob, bonusTimeLimit, baseWage, stationsChainData, JobLicenseType_v2.ListToFlags(requiredLicenses));
+
+		jobChainController.AddJobDefinitionToChain(jobDefinition);
+		jobChainController.FinalizeSetupAndGenerateFirstJob();
+
+		return jobChainController;
+	}
+
 	public static JobChainController? GenerateUnloadChainJobForCars(System.Random rng, List<Car> carsForJob, StationController originController, StationController destinationController)
 	{
 		var yto = YardTracksOrganizer.Instance;
@@ -264,6 +318,23 @@ public static class ProceduralJobGenerators
 		jobDefinition.transportedCargoPerCar = cargoTypePerCar;
 		jobDefinition.cargoAmountPerCar = cargoAmountPerCar;
 		jobDefinition.forceCorrectCargoStateOnCars = true;
+		jobDefinition.destinationTrack = destinationTrack;
+		return jobDefinition;
+	}
+
+	private static StaticEmptyHaulJobDefinition PopulateEmptyHaulJobDefinitionWithExistingCars(GameObject chainJobGO, Station logicStation, Track startingTrack, Track destinationTrack, List<Car> logicCarsToHaul, float bonusTimeLimit, float baseWage, StationsChainData stationsChainData, JobLicenses requiredLicenses)
+	{
+		if (chainJobGO == null) { Main.LogError("Chain job game object must not be null, but is (in PopulateEmptyHaulJobDefinitionWithExistingCars)"); }
+		if (logicStation == null) { Main.LogError("Origin station must not be null, but is (in PopulateEmptyHaulJobDefinitionWithExistingCars)"); }
+		if (startingTrack == null) { Main.LogError("Starting track must not be null, but is (in PopulateEmptyHaulJobDefinitionWithExistingCars)"); }
+		if (destinationTrack == null) { Main.LogError("Destination track must not be null, but is (in PopulateEmptyHaulJobDefinitionWithExistingCars)"); }
+		if (logicCarsToHaul == null) { Main.LogError("List of logic cars must not be null, but is (in PopulateEmptyHaulJobDefinitionWithExistingCars)"); }
+		if (logicCarsToHaul.Any(car => car == null)) { Main.LogError("All logic cars must not be null, but at least one of them is (in PopulateEmptyHaulJobDefinitionWithExistingCars)"); }
+		if (stationsChainData == null) { Main.LogError("Stations chain data must not be null, but is (in PopulateEmptyHaulJobDefinitionWithExistingCars)"); }
+		var jobDefinition = chainJobGO!.AddComponent<StaticEmptyHaulJobDefinition>();
+		jobDefinition.PopulateBaseJobDefinition(logicStation, bonusTimeLimit, baseWage, stationsChainData, requiredLicenses);
+		jobDefinition.startingTrack = startingTrack;
+		jobDefinition.trainCarsToTransport = logicCarsToHaul;
 		jobDefinition.destinationTrack = destinationTrack;
 		return jobDefinition;
 	}

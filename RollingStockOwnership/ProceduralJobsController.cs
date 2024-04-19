@@ -1,4 +1,4 @@
-using DV.Logic.Job;
+﻿using DV.Logic.Job;
 using DV.ThingTypes;
 using DV.ThingTypes.TransitionHelpers;
 using HarmonyLib;
@@ -150,6 +150,7 @@ public class ProceduralJobsController
 			var wagonsForLoading = new HashSet<TrainCar>();
 			var wagonsForHauling = new HashSet<TrainCar>();
 			var wagonsForUnloading = new HashSet<TrainCar>();
+			var wagonsForLogistics = new HashSet<TrainCar>();
 
 			if (loadStartingJobSupported)
 			{
@@ -226,6 +227,26 @@ public class ProceduralJobsController
 				Main.LogDebug(() => $"Found {wagonsForUnloading.Count} cars for shunting unload jobs.");
 			}
 			else { Main.LogDebug(() => $"{yardId} doesn't support shunting unload jobs."); }
+
+			if (wagonsInYard.Count > 0)
+			{
+				// Find all cars available for logistic jobs
+				foreach (TrainCar wagon in wagonsInYard)
+				{
+					yield return null;
+
+					// Must be empty
+					if (wagon.logicCar.CurrentCargoTypeInCar != CargoType.None) { continue; }
+					Main.LogDebug(() => $"{wagon.ID} ({wagon.carLivery.id}) {(Utilities.CanWagonHoldCargo(wagon) ? "can" : "cannot")} load cargo");
+					// Must be able to hold cargo
+					if (!Utilities.CanWagonHoldCargo(wagon)) { continue; }
+
+					wagonsForLogistics.Add(wagon);
+				}
+
+				wagonsInYard.ExceptWith(wagonsForLogistics);
+				Main.LogDebug(() => $"Found {wagonsForLogistics.Count} cars for logistic jobs.");
+			}
 
 			Main.LogDebug(() => $"Excluding {wagonsInYard.Count} cars as incompatible.");
 
@@ -579,6 +600,104 @@ public class ProceduralJobsController
 			}
 			attemptsUnsuccessful = MAX_JOB_GENERATION_ATTEMPTS - Math.Max(0, attemptsRemaining) - unloadingJobs.Count;
 			Main.Log($"Generated {unloadingJobs.Count} shunting unload jobs with {attemptsUnsuccessful}/{MAX_JOB_GENERATION_ATTEMPTS} unsuccessful attempts and {wagonsForUnloading.Count} cars not receiving jobs.");
+
+			/**
+			 * LOGISTIC
+			 */
+			attemptsRemaining = MAX_JOB_GENERATION_ATTEMPTS;
+			var logisticJobs = new List<JobChainController>();
+			while (wagonsForLogistics.Count > 0 && attemptsRemaining-- > 0)
+			{
+				// These are expensive operations, so we'll yield for a frame around them
+				yield return null;
+				// Find stations that load cargo onto available wagons
+				IEnumerable<StationController> availableStations = LogicController.Instance.YardIdToStationController.Values
+					.Where(station => station.proceduralJobsRuleset.outputCargoGroups
+						.Where(cargoGroup => LicenseManager_Patches.IsLicensedForCargoTypes(cargoGroup.cargoTypes))
+						.Any(cargoGroup => cargoGroup.cargoTypes
+							.Any(cargoType => cargoType.ToV2().loadableCarTypes.Select(info => info.carType)
+								.Intersect(wagonsForLogistics.Select(wagon => wagon.carLivery.parentType)).Count() > 0)));
+				yield return null;
+				StationController destination = availableStations.ElementAtRandom(rng);
+				StationController origin = stationController;
+				yield return null;
+				List<CargoGroup> licesenedCargoGroupsAtDestination = (
+					from cargoGroup in destination.proceduralJobsRuleset.outputCargoGroups
+					where LicenseManager_Patches.IsLicensedForCargoTypes(cargoGroup.cargoTypes)
+					select cargoGroup
+				).ToList();
+				Dictionary<(CargoGroup CargoGroup, string? OutboundYardID, string? InboundYardID), HashSet<TrainCar>> associations =
+					CreateWagonAssociations(licesenedCargoGroupsAtDestination, wagonsForLogistics);
+				yield return null;
+				(CargoGroup CargoGroup, string? OutboundYardID, string? InboundYardID, HashSet<TrainCar> Wagons) association =
+					ChooseAssociation(associations);
+
+				yield return null;
+				// This ensures a job will be generated even if there aren't technically enough total wagons
+				int targetMinWagonsPerJob = association.Wagons.Count < 2 * stationMinWagonsPerJob ? association.Wagons.Count : stationMinWagonsPerJob;
+				int absoluteMinWagonsPerJob = Math.Min(stationMinWagonsPerJob, association.Wagons.Count);
+
+				yield return null;
+				List<Track> storageTracks = destination.logicStation.yard.StorageTracks;
+				double maxStorageTrackLength = GetLongestTrackLength(storageTracks, freeSpaceOnly: true);
+				Main.LogDebug(() => $"maximum storage track length: {maxStorageTrackLength}m");
+
+				yield return null;
+				IEnumerable<CoupledSetData> coupledSets =
+					GroupWagonsByCoupled(rng, association.Wagons, targetMinWagonsPerJob, maxWagonsPerJob, maxStorageTrackLength)
+						.RandomSorting(rng);
+
+				yield return null;
+				CoupledSetData? coupledSet = null;
+				CoupledSetData? possibleCoupledSet = null;
+				foreach (CoupledSetData data in coupledSets)
+				{
+					if (data.Wagons.Count >= targetMinWagonsPerJob)
+					{
+						coupledSet = data;
+						break;
+					}
+					if (possibleCoupledSet == null && data.Wagons.Count >= absoluteMinWagonsPerJob)
+					{
+						possibleCoupledSet = data;
+					}
+				}
+
+				yield return null;
+				CoupledSetData? coupledSetForGeneration = coupledSet ?? possibleCoupledSet;
+				if (coupledSetForGeneration == null)
+				{
+					Main.LogWarning(
+						$"Couldn't find a coupled set to satisfy required car count and/or train length constraints.\n" +
+						$"required car count range: [{absoluteMinWagonsPerJob}, {maxWagonsPerJob}]\n" +
+						$"maximum storage track length: {maxStorageTrackLength}\n" +
+						$"coupled sets: {WagonGroupsToString(coupledSets.Select(data => data.Wagons))}\n"
+					);
+					continue;
+				}
+
+				Main.LogDebug(() =>
+					$"Attempting logistic job generation after satisfying {(coupledSet != null ? "all" : "required")} car count and train length constraints.\n" +
+					$"coupled set for generation: {WagonGroupsToString(new List<CoupledSetData>() { coupledSetForGeneration }.Select(data => data.Wagons))}"
+				);
+
+				yield return null;
+				List<Car> carsForJob = coupledSetForGeneration.Wagons.Select(wagon => wagon.logicCar).ToList();
+
+				yield return null;
+				JobChainController? jobChainController = ProceduralJobGenerators.GenerateLogisticChainJobForCars(rng, carsForJob, origin, destination);
+
+				if (jobChainController != null)
+				{
+					yield return null;
+					logisticJobs.Add(jobChainController);
+					List<TrainCar> wagonsForJob = jobChainController.trainCarsForJobChain;
+					wagonsForLogistics.ExceptWith(wagonsForJob);
+					Main.LogDebug(() => $"Generated logistic job with cars {string.Join(", ", wagonsForJob.Select(tc => tc.ID))}.");
+				}
+			}
+			attemptsUnsuccessful = MAX_JOB_GENERATION_ATTEMPTS - Math.Max(0, attemptsRemaining) - logisticJobs.Count;
+			Main.Log($"Generated {logisticJobs.Count} logistic jobs with {attemptsUnsuccessful}/{MAX_JOB_GENERATION_ATTEMPTS} unsuccessful attempts and {wagonsForLogistics.Count} cars not receiving jobs.");
 		}
 
 		if (onComplete != null)

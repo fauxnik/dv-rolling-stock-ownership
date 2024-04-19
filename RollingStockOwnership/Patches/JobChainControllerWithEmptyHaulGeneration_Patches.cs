@@ -49,7 +49,7 @@ public class JobChainControllerWithEmptyHaulGeneration_Patches
 		{
 			if (!StationProceduralJobsController_Patches.StartJobGenerationCoroutine(destinationController, __instance.trainCarsForJobChain.Select(trainCar => trainCar.logicCar)))
 			{
-				Main.LogWarning($"Couldn't start job generation coroutine for ${destinationController.logicStation.ID}.\nGeneration of a new shunting load job for cars from ${lastJobInChain.ID} hasn't been attempted.");
+				Main.LogWarning($"Couldn't start job generation coroutine for ${destinationController.logicStation.ID}.\nGeneration of a new job for cars from ${lastJobInChain.ID} hasn't been attempted.");
 			}
 		}
 	}

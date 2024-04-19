@@ -150,6 +150,11 @@ public static class Utilities
 		return carsPerCargoTypes.ToList();
 	}
 
+	public static bool CanWagonHoldCargo(TrainCar wagon)
+	{
+		return DV.Globals.G.Types.CarTypeToLoadableCargo[wagon.carLivery.parentType].Count > 0;
+	}
+
 	public static IEnumerable<TrainCar> ConvertLogicCarsToTrainCars(IEnumerable<Car> cars)
 	{
 		var trainCars = new List<TrainCar>();
