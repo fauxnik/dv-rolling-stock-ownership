@@ -2,12 +2,13 @@
 using DV.JObjectExtstensions;
 using DV.Simulation.Cars;
 using DV.ThingTypes;
-using UnityEngine;
+using DV.ThingTypes.TransitionHelpers;
+using HarmonyLib;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
-using DV.ThingTypes.TransitionHelpers;
 using System.Linq;
+using UnityEngine;
 
 
 namespace RollingStockOwnership;
@@ -406,9 +407,27 @@ public class Equipment
 		// Make sure position is up-to-date before comparing
 		if (IsSpawned) { Update(trainCar!, false); } // IsSpawned checks if trainCar is null
 
-		// Train car position appears to be world absolute, so we have compare to the player's world absolute position
+		// Train car position appears to be world absolute, so we have to compare to the player's world absolute position
 		// This is different from what UnusedTrainCarDeleter appears to be doing, but I'm not sure why
 		return (position - PlayerManager.GetWorldAbsolutePlayerPosition()).sqrMagnitude;
+	}
+
+	public float SquaredDistanceFromStation(StationController stationController)
+	{
+		// Make sure position is up-to-date before comparing
+		if (IsSpawned) { Update(trainCar!, false); } // IsSpawned checks if trainCar is null
+
+		Transform stationTransform = stationController.transform;
+		if (AccessTools.Field(typeof(StationController), "stationRange").GetValue(stationController) is StationJobGenerationRange stationRange)
+		{
+			stationTransform = stationRange.stationCenterAnchor;
+		}
+
+		// Train car position appears to be world absolute, so we have to compare to the station's world absolute position
+		Vector3 stationPosition = stationTransform.position - WorldMover.currentMove;
+
+		Main.LogDebug(() => $"{ID} position: {position}, {stationController.logicStation.ID} position: {stationPosition}, sqr distance: {(position - stationPosition).sqrMagnitude}");
+		return (position - stationPosition).sqrMagnitude;
 	}
 
 	public bool ExistsInTrainset(Trainset? trainset)
