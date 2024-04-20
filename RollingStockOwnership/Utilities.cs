@@ -45,7 +45,7 @@ public static class Utilities
 			}
 			if (numCarsForCurrentTrack < minCarsPerTrack)
 			{
-				Main.LogWarning($"Assigned {numCarsForCurrentTrack} to a track, but minCarsPerTrack is {minCarsPerTrack}");
+				Main.LogWarning($"Assigned {numCarsForCurrentTrack} cars to a track, but minCarsPerTrack is {minCarsPerTrack}");
 			}
 			numCarsPerTracks.Add(numCarsForCurrentTrack);
 			numCarsAccountedFor += numCarsForCurrentTrack;
