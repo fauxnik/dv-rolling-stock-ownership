@@ -7,7 +7,7 @@ using System.Reflection.Emit;
 
 namespace RollingStockOwnership.Patches;
 
-public class JobChainControllerWithEmptyHaulGeneration_Patches
+public class JobChainController_Patches
 {
 	private static bool isSetup = false;
 
@@ -15,20 +15,22 @@ public class JobChainControllerWithEmptyHaulGeneration_Patches
 	{
 		if (isSetup)
 		{
-			Main.LogWarning("Trying to set up JobChainControllerWithEmptyHaulGeneration patches, but they've already been set up!");
+			Main.LogWarning("Trying to set up JobChainController patches, but they've already been set up!");
 			return;
 		}
 
-		Main.Log("Setting up JobChainControllerWithEmptyHaulGeneration patches.");
+		Main.Log("Setting up JobChainController patches.");
 
 		isSetup = true;
+		var JCC_OnLastJobInChainCompleted = AccessTools.Method(typeof(JobChainController), "OnLastJobInChainCompleted");
+		var JCC_OnLastJobInChainCompleted_Prefix = AccessTools.Method(typeof(JobChainController_Patches), nameof(OnLastJobInChainCompleted_Prefix));
+		Main.Patch(JCC_OnLastJobInChainCompleted, prefix: new HarmonyMethod(JCC_OnLastJobInChainCompleted_Prefix));
 		var JCCWEHG_OnLastJobInChainCompleted = AccessTools.Method(typeof(JobChainControllerWithEmptyHaulGeneration), "OnLastJobInChainCompleted");
-		var JCCWEHG_OnLastJobInChainCompleted_Prefix = AccessTools.Method(typeof(JobChainControllerWithEmptyHaulGeneration_Patches), nameof(OnLastJobInChainCompleted_Prefix));
-		var JCWEHG_OnLastJobInChainCompleted_Transpiler = AccessTools.Method(typeof(JobChainControllerWithEmptyHaulGeneration_Patches), nameof(OnLastJobInChainCompleted_Transpiler));
-		Main.Patch(JCCWEHG_OnLastJobInChainCompleted, prefix: new HarmonyMethod(JCCWEHG_OnLastJobInChainCompleted_Prefix), transpiler: new HarmonyMethod(JCWEHG_OnLastJobInChainCompleted_Transpiler));
+		var JCCWEHG_OnLastJobInChainCompleted_Transpiler = AccessTools.Method(typeof(JobChainController_Patches), nameof(OnLastJobInChainCompleted_Transpiler));
+		Main.Patch(JCCWEHG_OnLastJobInChainCompleted, transpiler: new HarmonyMethod(JCCWEHG_OnLastJobInChainCompleted_Transpiler));
 	}
 
-	// Instead of generating empty haul jobs, we need to generate the next job in the chain.
+	// Job chain controllers won't contain the full job chain, so we need to generate the next job in the chain.
 	static void OnLastJobInChainCompleted_Prefix(JobChainControllerWithEmptyHaulGeneration __instance, Job lastJobInChain)
 	{
 		var jobType = lastJobInChain.jobType;
