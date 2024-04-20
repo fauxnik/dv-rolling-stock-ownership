@@ -37,11 +37,15 @@ public static class Utilities
 			}
 			else
 			{
-				numCarsForCurrentTrack = rng.Next(1, averageNumCarsPerTrack + 1);
+				numCarsForCurrentTrack = rng.Next(minCarsPerTrack, averageNumCarsPerTrack + 1);
 			}
 			if (numCarsForCurrentTrack < 1)
 			{
 				Main.LogError("Assigned zero cars to a track. This should never happen!");
+			}
+			if (numCarsForCurrentTrack < minCarsPerTrack)
+			{
+				Main.LogWarning($"Assigned {numCarsForCurrentTrack} to a track, but minCarsPerTrack is {minCarsPerTrack}");
 			}
 			numCarsPerTracks.Add(numCarsForCurrentTrack);
 			numCarsAccountedFor += numCarsForCurrentTrack;
