@@ -70,7 +70,7 @@ public static class Main
 		try { IdGenerator_Patches.Setup(); }
 		catch (Exception e) { OnCriticalFailure(e, "patching IdGenerator"); }
 
-		try { JobChainControllerWithEmptyHaulGeneration_Patches.Setup(); }
+		try { JobChainController_Patches.Setup(); }
 		catch (Exception e) { OnCriticalFailure(e, "patching JobChainControllerWithEmptyHaulGeneration"); }
 
 		try { JobSaveManager_Patches.Setup(); }

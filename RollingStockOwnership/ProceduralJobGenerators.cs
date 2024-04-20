@@ -102,7 +102,7 @@ public static class ProceduralJobGenerators
 		var gameObject = new GameObject($"ChainJob[{JobType.Transport}]: {originController.logicStation.ID} - {destinationController.logicStation.ID}");
 		gameObject.transform.SetParent(originController.transform);
 		// This class is patched to do next-in-chain job generation
-		var jobChainController = new JobChainControllerWithEmptyHaulGeneration(gameObject)
+		var jobChainController = new JobChainController(gameObject)
 		{
 			trainCarsForJobChain = Utilities.ConvertLogicCarsToTrainCars(carsForJob).ToList()
 		};
