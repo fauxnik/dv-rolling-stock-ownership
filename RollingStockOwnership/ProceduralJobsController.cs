@@ -18,6 +18,7 @@ public class ProceduralJobsController
 
 	private StationController stationController;
 	private List<Track> stationTracks;
+	private StationJobGenerationRange? stationRange;
 
 	public static ProceduralJobsController ForStation(StationController stationController)
 	{
@@ -35,6 +36,15 @@ public class ProceduralJobsController
 	{
 		this.stationController = stationController;
 		stationTracks = GetTracksByYardID(stationController.stationInfo.YardID).ToList();
+
+		if (AccessTools.Field(typeof(StationController), "stationRange").GetValue(stationController) is StationJobGenerationRange range)
+		{
+			stationRange = range;
+		}
+		else
+		{
+			Main.LogError($"Can't find StationJobGenerationRange for {stationController.logicStation.ID}");
+		}
 	}
 
 	public IEnumerator GenerateJobsCoro(Action onComplete, IEnumerable<Car>? carsToUse = null)
@@ -58,25 +68,59 @@ public class ProceduralJobsController
 			{
 				// Get all cars in the yard
 				carsInYard = new HashSet<Car>();
-				foreach (var track in stationTracks)
+				if (stationRange != null)
 				{
-					yield return null;
-
-					// respawn equipment on track
-					foreach (var equipment in manager.GetEquipmentOnTrack(track, false))
+					foreach (var equipment in manager.AllEquipment)
 					{
 						yield return null;
-						equipment.Spawn();
-					}
 
-					foreach (var car in track.GetCarsFullyOnTrack())
-					{
-						carsInYard.Add(car);
-					}
+						// check distance to station
+						if (equipment.SquaredDistanceFromStation(stationController) > stationRange.generateJobsSqrDistance)
+						{
+							Main.LogDebug(() => $"Not using {equipment.ID} for job generation because it's outside of range");
+							continue;
+						}
 
-					foreach (var car in track.GetCarsPartiallyOnTrack())
+						// respawn equipment or else GetTrainCar may return null
+						if (!equipment.IsSpawned) { equipment.Spawn(); }
+						TrainCar? wagon = equipment.GetTrainCar();
+
+						if (wagon == null) {
+							Main.LogWarning($"Unexpected null TrainCar! Not using {equipment.ID} for job generation");
+							continue;
+						}
+
+						if (wagon.derailed)
+						{
+							Main.Log($"Not using {equipment.ID} for job generation because it's derailed");
+							continue;
+						}
+
+						carsInYard.Add(wagon.logicCar);
+					}
+				}
+				else
+				{
+					foreach (var track in stationTracks)
 					{
-						carsInYard.Add(car);
+						yield return null;
+
+						// respawn equipment on track
+						foreach (var equipment in manager.GetEquipmentOnTrack(track, false))
+						{
+							yield return null;
+							if (!equipment.IsSpawned) { equipment.Spawn(); }
+						}
+
+						foreach (var car in track.GetCarsFullyOnTrack())
+						{
+							carsInYard.Add(car);
+						}
+
+						foreach (var car in track.GetCarsPartiallyOnTrack())
+						{
+							carsInYard.Add(car);
+						}
 					}
 				}
 
