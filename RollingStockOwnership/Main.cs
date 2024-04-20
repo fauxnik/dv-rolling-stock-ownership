@@ -95,9 +95,7 @@ public static class Main
 		catch (Exception e) { OnCriticalFailure(e, "patching UnusedTrainCarDeleter"); }
 
 		CommsRadioAPI.ControllerAPI.Ready += CommsRadio.EquipmentPurchaserMode.Create;
-#if DEBUG
 		CommsRadioAPI.ControllerAPI.Ready += CommsRadio.JobRequesterMode.Create;
-#endif
 
 		WorldStreamingInit.LoadingFinished += StartingConditions.Verify;
 		WorldStreamingInit.LoadingFinished += ReservationManager.SetupReservationCallbacks;
