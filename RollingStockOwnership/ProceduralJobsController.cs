@@ -55,7 +55,7 @@ public class ProceduralJobsController
 		var proceduralRuleset = stationController.proceduralJobsRuleset;
 		var manager = RollingStockManager.Instance;
 
-		Main.Log(() => $"Player owns licenses: [{string.Join(", ", LicenseManager.Instance.GetAcquiredJobLicenses().Union<Thing_v2>(LicenseManager.Instance.GetGeneralAcquiredLicenses()).Select(license => license.name))}]");
+		Main.Log($"Player owns licenses: [{string.Join(", ", LicenseManager.Instance.GetAcquiredJobLicenses().Union<Thing_v2>(LicenseManager.Instance.GetGeneralAcquiredLicenses()).Select(license => license.name))}]");
 
 		lock (RollingStockManager.syncLock)
 		{
@@ -130,7 +130,7 @@ public class ProceduralJobsController
 				foreach (var car in playerCars) { carsInYard.Add(car); }
 			}
 
-			Main.Log(() => $"Found {carsInYard.Count()} cars in {yardId} yard and player's train.");
+			Main.Log($"Found {carsInYard.Count()} cars in {yardId} yard and player's train.");
 
 			// Get all cars with assigned jobs
 			var carsWithJobs = new HashSet<Car>();
@@ -156,13 +156,13 @@ public class ProceduralJobsController
 				carsWithJobs.UnionWith(jobCars.Select(trainCar => trainCar.logicCar));
 			}
 
-			Main.Log(() => $"Found {carsWithJobs.Count()} cars with jobs assigned.");
+			Main.Log($"Found {carsWithJobs.Count()} cars with jobs assigned.");
 
 			// Filter out cars with assigned jobs
 			yield return null;
 			carsInYard.ExceptWith(carsWithJobs);
 
-			Main.Log(() => $"Found {carsInYard.Count()} jobless cars in {yardId} yard and player's train.");
+			Main.Log($"Found {carsInYard.Count()} jobless cars in {yardId} yard and player's train.");
 
 			int stationMinWagonsPerJob = proceduralRuleset.minCarsPerJob;
 			int maxWagonsPerJob = Math.Min(proceduralRuleset.maxCarsPerJob, LicenseManager.Instance.GetMaxNumberOfCarsPerJobWithAcquiredJobLicenses());
@@ -177,7 +177,7 @@ public class ProceduralJobsController
 				where LicenseManager_Patches.IsLicensedForCargoTypes(cargoGroup.cargoTypes)
 				select cargoGroup
 			).ToList();
-			Main.Log(() => $"Licensed inbound cargo groups: [{string.Join(", ", licensedInboundCargoGroups.Select(cg => string.Join(", ", cg.cargoTypes)))}]");
+			Main.Log($"Licensed inbound cargo groups: [{string.Join(", ", licensedInboundCargoGroups.Select(cg => string.Join(", ", cg.cargoTypes)))}]");
 
 			yield return null;
 			List<CargoGroup> licensedOutboundCargoGroups = (
@@ -185,7 +185,7 @@ public class ProceduralJobsController
 				where LicenseManager_Patches.IsLicensedForCargoTypes(cargoGroup.cargoTypes)
 				select cargoGroup
 			).ToList();
-			Main.Log(() => $"Licensed outbound cargo groups: [{string.Join(", ", licensedOutboundCargoGroups.Select(cg => string.Join(", ", cg.cargoTypes)))}]");
+			Main.Log($"Licensed outbound cargo groups: [{string.Join(", ", licensedOutboundCargoGroups.Select(cg => string.Join(", ", cg.cargoTypes)))}]");
 
 			// TrainCar is necessary for some operations, so convert once upfront
 			HashSet<TrainCar> wagonsInYard = Utilities.ConvertLogicCarsToTrainCars(carsInYard).ToHashSet();
@@ -216,9 +216,9 @@ public class ProceduralJobsController
 				}
 
 				wagonsInYard.ExceptWith(wagonsForLoading);
-				Main.Log(() => $"Found {wagonsForLoading.Count} cars for shunting load jobs.");
+				Main.Log($"Found {wagonsForLoading.Count} cars for shunting load jobs.");
 			}
-			else { Main.Log(() => $"{yardId} doesn't support shunting load jobs."); }
+			else { Main.Log($"{yardId} doesn't support shunting load jobs."); }
 
 			if (haulStartingJobSupported)
 			{
@@ -242,9 +242,9 @@ public class ProceduralJobsController
 				}
 
 				wagonsInYard.ExceptWith(wagonsForHauling);
-				Main.Log(() => $"Found {wagonsForHauling.Count} cars for transport jobs.");
+				Main.Log($"Found {wagonsForHauling.Count} cars for transport jobs.");
 			}
-			else { Main.Log(() => $"{yardId} doesn't support transport jobs."); }
+			else { Main.Log($"{yardId} doesn't support transport jobs."); }
 
 			if (unloadStartingJobSupported)
 			{
@@ -268,9 +268,9 @@ public class ProceduralJobsController
 				}
 
 				wagonsInYard.ExceptWith(wagonsForUnloading);
-				Main.Log(() => $"Found {wagonsForUnloading.Count} cars for shunting unload jobs.");
+				Main.Log($"Found {wagonsForUnloading.Count} cars for shunting unload jobs.");
 			}
-			else { Main.Log(() => $"{yardId} doesn't support shunting unload jobs."); }
+			else { Main.Log($"{yardId} doesn't support shunting unload jobs."); }
 
 			if (wagonsInYard.Count > 0)
 			{
@@ -289,10 +289,10 @@ public class ProceduralJobsController
 				}
 
 				wagonsInYard.ExceptWith(wagonsForLogistics);
-				Main.Log(() => $"Found {wagonsForLogistics.Count} cars for logistic jobs.");
+				Main.Log($"Found {wagonsForLogistics.Count} cars for logistic jobs.");
 			}
 
-			Main.Log(() => $"Excluding {wagonsInYard.Count} cars as incompatible.");
+			Main.Log($"Excluding {wagonsInYard.Count} cars as incompatible.");
 
 			/**
 			 * SHUNTING LOAD

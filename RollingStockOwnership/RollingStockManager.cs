@@ -120,7 +120,7 @@ public class RollingStockManager
 			catch (Exception exception)
 			{
 				// log the exception, but continue trying to load
-				Main.LogWarning(exception);
+				Main.LogWarning(exception.ToString());
 			}
 		}
 		Main.Log($"Loaded {countLoaded}/{countTotal} equipment records into the rolling stock registry.");

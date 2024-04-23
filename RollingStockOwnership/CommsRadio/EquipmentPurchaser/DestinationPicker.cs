@@ -102,7 +102,7 @@ internal class DestinationPicker : AStateBehaviour
 			case InputAction.Activate:
 				if (IsPlaceable(selectedCarLivery, selectedTrack, selectedPoint))
 				{
-					Main.Log(() => $"Selected track: {selectedTrack.logicTrack.ID.FullID}");
+					Main.Log($"Selected track: {selectedTrack.logicTrack.ID.FullID}");
 					utility.PlaySound(VanillaSoundCommsRadio.Confirm);
 					return new PurchaseConfirmer(selectedCarLivery, selectedTrack, selectedPoint.Value, isSelectedOrientationOppositeTrackDirection, destinationHighlighter);
 				}

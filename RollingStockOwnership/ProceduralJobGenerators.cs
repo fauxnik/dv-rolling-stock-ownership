@@ -157,7 +157,7 @@ public static class ProceduralJobGenerators
 		warehouseMachinesThatSupportCargoTypes.RemoveAll((machine) => machine.WarehouseTrack.length < (double)approxLengthOfWholeTrain);
 		if (warehouseMachinesThatSupportCargoTypes.Count == 0)
 		{
-			Main.LogWarning(() => $"Station[{destinationController.logicStation.ID}] doesn't have a warehouse track long enough for the job. ({approxLengthOfWholeTrain})");
+			Main.LogWarning($"Station[{destinationController.logicStation.ID}] doesn't have a warehouse track long enough for the job. ({approxLengthOfWholeTrain})");
 			return null;
 		}
 		WarehouseMachine warehouseMachine = warehouseMachinesThatSupportCargoTypes.ElementAtRandom(rng);
@@ -165,7 +165,7 @@ public static class ProceduralJobGenerators
 		List<CarsPerTrack>? randomSortingOfCarsOnTracks = Utilities.GetRandomSortingOfCarsOnTracks(rng, destinationController.logicStation.yard.StorageTracks, carsForJob, generationRuleset.maxShuntingStorageTracks, generationRuleset.minCarsPerJob);
 		if (randomSortingOfCarsOnTracks == null)
 		{
-			Main.LogWarning(() => $"Station[{destinationController.logicStation.ID}] couldn't assign cars to storage tracks.");
+			Main.LogWarning($"Station[{destinationController.logicStation.ID}] couldn't assign cars to storage tracks.");
 			return null;
 		}
 
@@ -262,7 +262,7 @@ public static class ProceduralJobGenerators
 		warehouseMachinesThatSupportCargoTypes.RemoveAll((machine) => machine.WarehouseTrack.length < (double)approxLengthOfWholeTrain);
 		if (warehouseMachinesThatSupportCargoTypes.Count == 0)
 		{
-			Main.LogWarning(() => $"Station[{originController.logicStation.ID}] doesn't have a warehouse track long enough for the job. ({approxLengthOfWholeTrain})");
+			Main.LogWarning($"Station[{originController.logicStation.ID}] doesn't have a warehouse track long enough for the job. ({approxLengthOfWholeTrain})");
 			return null;
 		}
 		WarehouseMachine warehouseMachine = warehouseMachinesThatSupportCargoTypes.ElementAtRandom(rng);
