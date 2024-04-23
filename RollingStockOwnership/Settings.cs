@@ -15,9 +15,6 @@ public class Settings : UnityModManager.ModSettings, IDrawable
 	[Draw("Sandbox price multiplier", Min = 0f, Max = 1f)]
 	public float sandboxPriceMultiplier = 0f;
 
-	[Draw("Starter locomotive")]
-	public StarterLocoType starterLocoType = StarterLocoType.LocoDE2;
-
 	public void OnChange() { }
 
 	public override void Save(UnityModManager.ModEntry modEntry)
