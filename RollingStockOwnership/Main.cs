@@ -122,7 +122,7 @@ public static class Main
 
 	private static void LogAtLevel(Func<object> messageFactory, LogLevel level)
 	{
-		if (Settings.selectedLogLevel > level) { return; }
+		if (Settings.logLevel_v2 > level) { return; }
 
 		var message = messageFactory();
 		if (message is string messageString) { modEntry.Logger.Log(messageString); }
@@ -135,7 +135,7 @@ public static class Main
 
 	public static void Log(object message)
 	{
-		if (Settings.selectedLogLevel > LogLevel.Info) { return; }
+		if (Settings.logLevel_v2 > LogLevel.Info) { return; }
 
 		if (message is string messageString) { modEntry.Logger.Log(messageString); }
 		else if (message is Func<string> messageFactory) { modEntry.Logger.Log(messageFactory()); }
@@ -148,14 +148,14 @@ public static class Main
 
 	public static void LogWarning(string message)
 	{
-		if (Settings.selectedLogLevel > LogLevel.Warn) { return; }
+		if (Settings.logLevel_v2 > LogLevel.Warn) { return; }
 
 		modEntry.Logger.Warning(message);
 	}
 
 	public static void LogError(string message)
 	{
-		if (Settings.selectedLogLevel > LogLevel.Error) { return; }
+		if (Settings.logLevel_v2 > LogLevel.Error) { return; }
 
 		modEntry.Logger.Error(message);
 	}

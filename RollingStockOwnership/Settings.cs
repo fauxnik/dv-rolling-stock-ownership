@@ -5,11 +5,11 @@ namespace RollingStockOwnership;
 public class Settings : UnityModManager.ModSettings, IDrawable
 {
 	[Draw("Log level")]
-	public LogLevel selectedLogLevel =
+	public LogLevel logLevel_v2 = // versioning let's us reset players' selected log level
 #if DEBUG
 		LogLevel.Debug;
 #else
-		LogLevel.Warn;
+		LogLevel.Info;
 #endif
 
 	[Draw("Sandbox price multiplier", Min = 0f, Max = 1f)]
