@@ -114,18 +114,18 @@ public static class Main
 		HarmonyMethod? transpiler = null
 	) => harmony.Patch(original, prefix, postfix, transpiler);
 
-	public static void LogVerbose(System.Func<object> messageFactory) =>
+	public static void LogVerbose(Func<object> messageFactory) =>
 		LogAtLevel(messageFactory, LogLevel.Verbose);
 
-	public static void LogDebug(System.Func<object> messageFactory) =>
+	public static void LogDebug(Func<object> messageFactory) =>
 		LogAtLevel(messageFactory, LogLevel.Debug);
 
-	private static void LogAtLevel(System.Func<object> messageFactory, LogLevel level)
+	private static void LogAtLevel(Func<object> messageFactory, LogLevel level)
 	{
-		if (Settings.selectedLogLevel > level) { return; }
+		if (Settings.logLevel_v2 > level) { return; }
 
 		var message = messageFactory();
-		if (message is string) { modEntry.Logger.Log(message as string); }
+		if (message is string messageString) { modEntry.Logger.Log(messageString); }
 		else
 		{
 			modEntry.Logger.Log("Logging object via UnityEngine.Debug...");
@@ -135,9 +135,10 @@ public static class Main
 
 	public static void Log(object message)
 	{
-		if (Settings.selectedLogLevel > LogLevel.Info) { return; }
+		if (Settings.logLevel_v2 > LogLevel.Info) { return; }
 
-		if (message is string) { modEntry.Logger.Log(message as string); }
+		if (message is string messageString) { modEntry.Logger.Log(messageString); }
+		else if (message is Func<string> messageFactory) { modEntry.Logger.Log(messageFactory()); }
 		else
 		{
 			modEntry.Logger.Log("Logging object via UnityEngine.Debug...");
@@ -145,18 +146,18 @@ public static class Main
 		}
 	}
 
-	public static void LogWarning(object message)
+	public static void LogWarning(string message)
 	{
-		if (Settings.selectedLogLevel > LogLevel.Warn) { return; }
+		if (Settings.logLevel_v2 > LogLevel.Warn) { return; }
 
-		modEntry.Logger.Warning($"{message}");
+		modEntry.Logger.Warning(message);
 	}
 
-	public static void LogError(object message)
+	public static void LogError(string message)
 	{
-		if (Settings.selectedLogLevel > LogLevel.Error) { return; }
+		if (Settings.logLevel_v2 > LogLevel.Error) { return; }
 
-		modEntry.Logger.Error($"{message}");
+		modEntry.Logger.Error(message);
 	}
 
 	public static void OnCriticalFailure(Exception exception, string action)

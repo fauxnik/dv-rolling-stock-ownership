@@ -189,7 +189,7 @@ public class ReservationManager
 			catch (Exception exception)
 			{
 				// log the exception, but continue trying to load
-				Main.LogWarning(exception);
+				Main.LogWarning(exception.ToString());
 			}
 		}
 		Main.Log($"Loaded {countLoaded}/{countTotal} reservations into the reservation manager.");
