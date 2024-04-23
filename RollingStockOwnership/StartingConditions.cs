@@ -7,6 +7,7 @@ using DV.InventorySystem;
 using DV.Localization;
 using DV.Logic.Job;
 using DV.Shops;
+using DV.Teleporters;
 using DV.ThingTypes;
 using DV.ThingTypes.TransitionHelpers;
 using DV.UIFramework;
@@ -152,7 +153,21 @@ internal static class StartingConditions
 				positive: Main.Localize("teleport_to_starter_equipment_positive")
 			);
 		}).Then((_) => {
-			// TODO: how to teleport the player?
+			var teleportTarget = GameObject.Find("TeleportHouse");
+			if (teleportTarget == null)
+			{
+				throw new Exception("Failed to find player house teleport target");
+			}
+
+			var teleporter = teleportTarget.GetComponent<NonStationTeleporter>();
+			if (teleporter == null)
+			{
+				throw new Exception("Failed to find player house teleporter");
+			}
+
+			teleporter.TeleportToStation();
+		}).Catch((exception) => {
+			Main.LogError($"Exception thrown while displaying first run messages: {exception}");
 		});
 	}
 
