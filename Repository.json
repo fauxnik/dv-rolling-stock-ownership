@@ -2,6 +2,11 @@
   "Releases": [
     {
       "Id": "RollingStockOwnership",
+      "Version": "3.0.1",
+      "DownloadUrl": "https://github.com/fauxnik/dv-rolling-stock-ownership/releases/download/v3.0.1/RollingStockOwnership_v3.0.1.zip"
+    },
+    {
+      "Id": "RollingStockOwnership",
       "Version": "3.0.0",
       "DownloadUrl": "https://github.com/fauxnik/dv-rolling-stock-ownership/releases/download/v3.0.0/RollingStockOwnership_v3.0.0.zip"
     },
