@@ -20,11 +20,6 @@ namespace RollingStockOwnership;
 
 internal static class StartingConditions
 {
-	private static readonly Vector3 starterLocoSpawnPosition = new Vector3(
-		5698.63135f,
-		155.929153f,
-		7622.781f
-	);
 	private static readonly System.Random random = new System.Random();
 
 	internal static void Verify()
@@ -68,7 +63,7 @@ internal static class StartingConditions
 		CarSpawner.Instance.DeleteTrainCars(CarSpawner.Instance.AllCars, true);
 	}
 
-	private static void AcquireStarterEquipment(StarterChoices choices)
+	private static void AcquireStarterEquipment(StarterChoices choices, Vector3 position)
 	{
 		Inventory inventory = Inventory.Instance;
 		UnusedTrainCarDeleter unusedTrainCarDeleter = UnusedTrainCarDeleter.Instance;
@@ -89,7 +84,7 @@ internal static class StartingConditions
 			EnsurePlayerHasRequiredItemsForSteamLoco();
 		}
 
-		RailTrack track = CarSpawner.GetTrackClosestTo(starterLocoSpawnPosition + WorldMover.currentMove, 0, out int nodeIndex);
+		RailTrack track = CarSpawner.GetTrackClosestTo(position, 0, out int nodeIndex);
 		double startSpan = 5;
 		bool flipConsist = false;
 		bool randomOrientation = false;
@@ -106,6 +101,8 @@ internal static class StartingConditions
 		yield return new WaitForSeconds(2);
 
 		bool isWelcomeMessageShown = false;
+		bool isTeleportTargetFound = false;
+		bool isTeleporterFound = false;
 		bool isLocoTypeSelected = false;
 		bool isWagonTypeSelected = false;
 		bool isStarterEquipmentAcquired = false;
@@ -124,12 +121,24 @@ internal static class StartingConditions
 		locoOptions.Sort((_, _) => random.NextDouble() < 0.5 ? -1 : 1);
 		wagonOptions.Sort((_, _) => random.NextDouble() < 0.5 ? -1 : 1);
 
+		GameObject? teleportTarget = null;
+		NonStationTeleporter? teleporter = null;
+
 		PopupAPI.ShowOk(
 			title: "Rolling Stock Ownership",
 			message: Main.Localize("first_time_with_save"),
 			positive: Main.Localize("first_time_with_save_positive")
 		).Then((_) => {
 			isWelcomeMessageShown = true;
+
+			teleportTarget = GameObject.Find("TeleportHouse");
+			if (teleportTarget == null) { throw new Exception("Failed to find player house teleport target"); }
+			isTeleportTargetFound = true;
+
+			teleporter = teleportTarget.GetComponent<NonStationTeleporter>();
+			if (teleporter == null) { throw new Exception("Failed to find player house teleporter"); }
+			isTeleporterFound = true;
+
 			string message = isShuntingLicenseChanged ? Main.Localize("given_shunting_license_choose_starter_loco") : Main.Localize("choose_starter_loco");
 
 			return PopupAPI.Show3Buttons(
@@ -166,7 +175,8 @@ internal static class StartingConditions
 			choices.ChooseWagonType(wagonChoice);
 			isWagonTypeSelected = true;
 
-			AcquireStarterEquipment(choices);
+			if (teleporter == null) { throw new Exception("Player house teleporter unexpectedly null"); }
+			AcquireStarterEquipment(choices, teleporter.playerTeleportAnchor.position);
 			isStarterEquipmentAcquired = true;
 
 			return PopupAPI.ShowOk(
@@ -175,17 +185,7 @@ internal static class StartingConditions
 				positive: Main.Localize("teleport_to_starter_equipment_positive")
 			);
 		}).Then((_) => {
-			var teleportTarget = GameObject.Find("TeleportHouse");
-			if (teleportTarget == null)
-			{
-				throw new Exception("Failed to find player house teleport target");
-			}
-
-			var teleporter = teleportTarget.GetComponent<NonStationTeleporter>();
-			if (teleporter == null)
-			{
-				throw new Exception("Failed to find player house teleporter");
-			}
+			if (teleporter == null) { throw new Exception("Player house teleporter unexpectedly null"); }
 
 			teleporter.TeleportToStation();
 			isPlayerTeleported = true;
@@ -194,6 +194,8 @@ internal static class StartingConditions
 
 			string errorReference = "unknown error";
 			if (!isWelcomeMessageShown) { errorReference = "error displaying welcome message"; }
+			else if (!isTeleportTargetFound) { errorReference = "error finding teleport target"; }
+			else if (!isTeleporterFound) { errorReference = "error finding teleporter"; }
 			else if (!isLocoTypeSelected) { errorReference = "error selecting loco type"; }
 			else if (!isWagonTypeSelected) { errorReference = "error selecting wagon type"; }
 			else if (!isStarterEquipmentAcquired) { errorReference = "error acquiring starter equipment"; }
