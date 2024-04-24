@@ -105,6 +105,12 @@ internal static class StartingConditions
 	{
 		yield return new WaitForSeconds(2);
 
+		bool isWelcomeMessageShown = false;
+		bool isLocoTypeSelected = false;
+		bool isWagonTypeSelected = false;
+		bool isStarterEquipmentAcquired = false;
+		bool isPlayerTeleported = false;
+
 		var choices = new StarterChoices();
 		var locoOptions = new List<TrainCarType> { TrainCarType.LocoShunter, TrainCarType.LocoDM3, TrainCarType.LocoS060 };
 		var wagonOptions = new List<TrainCarType>
@@ -123,6 +129,7 @@ internal static class StartingConditions
 			message: Main.Localize("first_time_with_save"),
 			positive: Main.Localize("first_time_with_save_positive")
 		).Then((_) => {
+			isWelcomeMessageShown = true;
 			string message = isShuntingLicenseChanged ? Main.Localize("given_shunting_license_choose_starter_loco") : Main.Localize("choose_starter_loco");
 
 			return PopupAPI.Show3Buttons(
@@ -140,6 +147,7 @@ internal static class StartingConditions
 					? locoOptions[1]
 					: locoOptions[2];
 			choices.ChooseLocomotive(locoChoice);
+			isLocoTypeSelected = true;
 
 			return PopupAPI.Show3Buttons(
 				title: "Rolling Stock Ownership",
@@ -156,8 +164,10 @@ internal static class StartingConditions
 					? wagonOptions[1]
 					: wagonOptions[2];
 			choices.ChooseWagonType(wagonChoice);
+			isWagonTypeSelected = true;
 
 			AcquireStarterEquipment(choices);
+			isStarterEquipmentAcquired = true;
 
 			return PopupAPI.ShowOk(
 				title: "Rolling Stock Ownership",
@@ -178,8 +188,22 @@ internal static class StartingConditions
 			}
 
 			teleporter.TeleportToStation();
+			isPlayerTeleported = true;
 		}).Catch((exception) => {
-			Main.LogError($"Exception thrown while displaying first run messages: {exception}");
+			Main.LogError($"Exception thrown during RSO setup: {exception}");
+
+			string errorReference = "unknown error";
+			if (!isWelcomeMessageShown) { errorReference = "error displaying welcome message"; }
+			else if (!isLocoTypeSelected) { errorReference = "error selecting loco type"; }
+			else if (!isWagonTypeSelected) { errorReference = "error selecting wagon type"; }
+			else if (!isStarterEquipmentAcquired) { errorReference = "error acquiring starter equipment"; }
+			else if (!isPlayerTeleported) { errorReference = "error teleporting player"; }
+
+			PopupAPI.ShowOk(
+				title: "Rolling Stock Ownership",
+				message: Main.Localize("starting_conditions_error", errorReference),
+				positive: Main.Localize("starting_conditions_error_positive")
+			);
 		});
 	}
 
