@@ -107,7 +107,12 @@ internal static class StartingConditions
 
 		var choices = new StarterChoices();
 		var locoOptions = new List<TrainCarType> { TrainCarType.LocoShunter, TrainCarType.LocoDM3, TrainCarType.LocoS060 };
-		var wagonOptions = new List<TrainCarType> { TrainCarType.StockBrown, TrainCarType.TankShortMilk, TrainCarType.GondolaGray };
+		var wagonOptions = new List<TrainCarType>
+		{
+			TrainCarType.StockBrown, // single route, lowest average pay, lowest average tonnage, highest average pay to tonnage ratio
+			TrainCarType.GondolaGray, // more routes, medium average pay, medium average tonnage, medium average pay to tonnage ratio
+			TrainCarType.HopperTeal // most routes, highest average pay, highest average tonnage, lowest average pay to tonnage ratio
+		};
 
 		// Randomize the order of the displayed option
 		locoOptions.Sort((_, _) => random.NextDouble() < 0.5 ? -1 : 1);
