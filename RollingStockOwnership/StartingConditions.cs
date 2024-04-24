@@ -113,7 +113,7 @@ internal static class StartingConditions
 		var wagonOptions = new List<TrainCarType>
 		{
 			TrainCarType.StockBrown, // single route, lowest average pay, lowest average tonnage, highest average pay to tonnage ratio
-			TrainCarType.GondolaGray, // more routes, medium average pay, medium average tonnage, medium average pay to tonnage ratio
+			TrainCarType.FlatbedStakes, // more routes, medium average pay, medium average tonnage, medium average pay to tonnage ratio
 			TrainCarType.HopperTeal // most routes, highest average pay, highest average tonnage, lowest average pay to tonnage ratio
 		};
 
