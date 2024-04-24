@@ -116,9 +116,9 @@ internal static class StartingConditions
 			return PopupAPI.Show3Buttons(
 				title: "Rolling Stock Ownership",
 				message: message,
-				positive: LocalizationAPI.L(locoOptions[0].ToV2().localizationKey),
-				negative: LocalizationAPI.L(locoOptions[1].ToV2().localizationKey),
-				abort: LocalizationAPI.L(locoOptions[2].ToV2().localizationKey)
+				positive: LocalizationAPI.L(locoOptions[0].ToV2().parentType.localizationKey),
+				negative: LocalizationAPI.L(locoOptions[1].ToV2().parentType.localizationKey),
+				abort: LocalizationAPI.L(locoOptions[2].ToV2().parentType.localizationKey)
 			);
 		}).Then((popupResult) => {
 			PopupClosedByAction pressedButton = popupResult.closedBy;
@@ -132,9 +132,9 @@ internal static class StartingConditions
 			return PopupAPI.Show3Buttons(
 				title: "Rolling Stock Ownership",
 				message: Main.Localize("choose_starter_wagon"),
-				positive: LocalizationAPI.L(wagonOptions[0].ToV2().localizationKey),
-				negative: LocalizationAPI.L(wagonOptions[1].ToV2().localizationKey),
-				abort: LocalizationAPI.L(wagonOptions[2].ToV2().localizationKey)
+				positive: LocalizationAPI.L(wagonOptions[0].ToV2().parentType.localizationKey),
+				negative: LocalizationAPI.L(wagonOptions[1].ToV2().parentType.localizationKey),
+				abort: LocalizationAPI.L(wagonOptions[2].ToV2().parentType.localizationKey)
 			);
 		}).Then((popupResult) => {
 			PopupClosedByAction pressedButton = popupResult.closedBy;
@@ -232,11 +232,11 @@ internal static class StartingConditions
 
 		public string LocalizedSelectedLocomotive
 		{
-			get { return LocalizationAPI.L(SelectedLocomotiveType.ToV2().localizationKey); }
+			get { return LocalizationAPI.L(SelectedLocomotiveType.ToV2().parentType.localizationKey); }
 		}
 		public string LocalizedSelectedWagon
 		{
-			get { return LocalizationAPI.L(SelectedWagonType.ToV2().localizationKey); }
+			get { return LocalizationAPI.L(SelectedWagonType.ToV2().parentType.localizationKey); }
 		}
 
 		public void ChooseLocomotive(TrainCarType locomotiveType)
