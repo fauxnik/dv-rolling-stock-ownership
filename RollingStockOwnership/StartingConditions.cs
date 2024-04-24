@@ -13,6 +13,7 @@ using DV.ThingTypes.TransitionHelpers;
 using DV.UIFramework;
 using HarmonyLib;
 using MessageBox;
+using RollingStockOwnership.Extensions;
 using UnityEngine;
 
 namespace RollingStockOwnership;
@@ -72,9 +73,15 @@ internal static class StartingConditions
 		Inventory inventory = Inventory.Instance;
 		UnusedTrainCarDeleter unusedTrainCarDeleter = UnusedTrainCarDeleter.Instance;
 		CarSpawner carSpawner = CarSpawner.Instance;
-		TrainCarLivery starterLoco = choices.SelectedLocomotiveType.ToV2();
-		TrainCarLivery starterWagon = choices.SelectedWagonType.ToV2();
-		List<TrainCarLivery> liveries = new List<TrainCarLivery> { starterLoco, starterWagon, starterWagon, starterWagon };
+		TrainCarLivery starterLoco = choices.SelectedLocomotiveType.ToV2().parentType.liveries.ElementAtRandom(random);
+		List<TrainCarLivery> starterWagonLiveries = choices.SelectedWagonType.ToV2().parentType.liveries;
+		List<TrainCarLivery> starterLiveries = new List<TrainCarLivery>
+		{
+			starterLoco,
+			starterWagonLiveries.ElementAtRandom(random),
+			starterWagonLiveries.ElementAtRandom(random),
+			starterWagonLiveries.ElementAtRandom(random)
+		};
 
 		LicenseManager.Instance.AcquireGeneralLicense(starterLoco.requiredLicense);
 		if (CarTypes.IsSteamLocomotive(starterLoco))
@@ -88,7 +95,7 @@ internal static class StartingConditions
 		bool randomOrientation = false;
 		bool playerSpawnedCar = false;
 		IEnumerable<Equipment> spawnedEquipment =
-			carSpawner.SpawnCarTypesOnTrackStrict(liveries, track, true, true, startSpan, flipConsist, randomOrientation, playerSpawnedCar)
+			carSpawner.SpawnCarTypesOnTrackStrict(starterLiveries, track, true, true, startSpan, flipConsist, randomOrientation, playerSpawnedCar)
 			.Select(Equipment.FromTrainCar);
 
 		spawnedEquipment.Do(RollingStockManager.Instance.Add);
