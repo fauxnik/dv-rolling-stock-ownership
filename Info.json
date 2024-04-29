@@ -4,7 +4,14 @@
   "DisplayName": "Rolling Stock Ownership",
   "Author": "fauxnik",
   "EntryMethod": "RollingStockOwnership.Main.OnLoad",
-  "LoadAfter": ["DVCustomCarLoader"],
+	"Requirements": [
+		"CommsRadioAPI",
+		"DVLangHelper",
+		"MessageBox"
+	],
+  "LoadAfter": [
+		"DVCustomCarLoader"
+	],
 	"ManagerVersion": "0.27.8",
   "Repository": "https://raw.githubusercontent.com/fauxnik/dv-rolling-stock-ownership/main/Repository.json"
 }
