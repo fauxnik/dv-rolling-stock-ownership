@@ -1,4 +1,5 @@
 ﻿using DV.ThingTypes;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -6,30 +7,6 @@ namespace RollingStockOwnership.Patches;
 
 public class LicenseManager_Patches
 {
-	private static HashSet<CargoType> cargoTypesRequiringLicense = new HashSet<CargoType>
-	{
-		CargoType.CrudeOil,
-		CargoType.Diesel,
-		CargoType.Gasoline,
-		CargoType.Methane,
-		CargoType.ChemicalsIskar,
-		CargoType.ChemicalsSperex,
-		CargoType.Alcohol,
-		CargoType.Acetylene,
-		CargoType.CryoOxygen,
-		CargoType.CryoHydrogen,
-		CargoType.Argon,
-		CargoType.Nitrogen,
-		CargoType.Ammonia,
-		CargoType.SodiumHydroxide,
-		CargoType.SpentNuclearFuel,
-		CargoType.Ammunition,
-		CargoType.Biohazard,
-		CargoType.Tanks,
-		CargoType.MilitaryTrucks,
-		CargoType.MilitarySupplies,
-	};
-
 	public static bool IsLicensedForCargoTypes(List<CargoType> cargoTypes)
 	{
 
@@ -44,7 +21,7 @@ public class LicenseManager_Patches
 
 	public static bool IsLicensedForCar(TrainCarLivery carLivery)
 	{
-		var unlicensedCargoTypes = from cargoType in cargoTypesRequiringLicense
+		var unlicensedCargoTypes = from CargoType cargoType in Enum.GetValues(typeof(CargoType))
 									where !IsLicensedForCargoType(cargoType)
 									select cargoType;
 		if (CargoTypes_Patches.CanCarContainOnlyTheseCargoTypes(carLivery, unlicensedCargoTypes.ToHashSet()))
