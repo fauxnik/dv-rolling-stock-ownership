@@ -7,27 +7,20 @@ using DV.InventorySystem;
 using DV.Localization;
 using DV.Logic.Job;
 using DV.Shops;
-using DV.Simulation.Cars;
+using DV.Teleporters;
 using DV.ThingTypes;
 using DV.ThingTypes.TransitionHelpers;
+using DV.UIFramework;
 using HarmonyLib;
 using MessageBox;
+using RollingStockOwnership.Extensions;
 using UnityEngine;
 
 namespace RollingStockOwnership;
 
 internal static class StartingConditions
 {
-	private static readonly Vector3 starterLocoSpawnPosition = new Vector3(
-		5698.63135f,
-		155.929153f,
-		7622.781f
-	);
-	private static readonly TrainCarLivery[] startingWagons = {
-		TrainCarType.FlatbedStakes.ToV2(),
-		TrainCarType.FlatbedStakes.ToV2(),
-		TrainCarType.FlatbedStakes.ToV2(),
-	};
+	private static readonly System.Random random = new System.Random();
 
 	internal static void Verify()
 	{
@@ -43,7 +36,6 @@ internal static class StartingConditions
 		{
 			ClearWorldJobs();
 			ClearWorldTrains();
-			CoroutineManager.Instance.StartCoroutine(AcquireStarterEquipment());
 			CoroutineManager.Instance.StartCoroutine(ShowIntroductoryPopup(isShuntingLicenseChanged));
 		}
 	}
@@ -71,14 +63,20 @@ internal static class StartingConditions
 		CarSpawner.Instance.DeleteTrainCars(CarSpawner.Instance.AllCars, true);
 	}
 
-	private static IEnumerator AcquireStarterEquipment()
+	private static void AcquireStarterEquipment(StarterChoices choices, Vector3 position)
 	{
-		yield return new WaitForSeconds(1);
-
 		Inventory inventory = Inventory.Instance;
 		UnusedTrainCarDeleter unusedTrainCarDeleter = UnusedTrainCarDeleter.Instance;
 		CarSpawner carSpawner = CarSpawner.Instance;
-		TrainCarLivery starterLoco = ((TrainCarType) Main.Settings.starterLocoType).ToV2();
+		TrainCarLivery starterLoco = choices.SelectedLocomotiveType.ToV2().parentType.liveries.ElementAtRandom(random);
+		List<TrainCarLivery> starterWagonLiveries = choices.SelectedWagonType.ToV2().parentType.liveries;
+		List<TrainCarLivery> starterLiveries = new List<TrainCarLivery>
+		{
+			starterLoco,
+			starterWagonLiveries.ElementAtRandom(random),
+			starterWagonLiveries.ElementAtRandom(random),
+			starterWagonLiveries.ElementAtRandom(random)
+		};
 
 		LicenseManager.Instance.AcquireGeneralLicense(starterLoco.requiredLicense);
 		if (CarTypes.IsSteamLocomotive(starterLoco))
@@ -86,68 +84,129 @@ internal static class StartingConditions
 			EnsurePlayerHasRequiredItemsForSteamLoco();
 		}
 
-		bool flipRotation = false;
+		RailTrack track = CarSpawner.GetTrackClosestTo(position, 0, out int nodeIndex);
+		double startSpan = 5;
+		bool flipConsist = false;
+		bool randomOrientation = false;
 		bool playerSpawnedCar = false;
-		bool uniqueCar = false;
 		IEnumerable<Equipment> spawnedEquipment =
-			new List<TrainCar>
-			{
-				carSpawner.SpawnCarOnClosestTrack(
-					starterLocoSpawnPosition + WorldMover.currentMove,
-					starterLoco,
-					flipRotation,
-					playerSpawnedCar,
-					uniqueCar
-				)
-			}
+			carSpawner.SpawnCarTypesOnTrackStrict(starterLiveries, track, true, true, startSpan, flipConsist, randomOrientation, playerSpawnedCar)
 			.Select(Equipment.FromTrainCar);
 
-		foreach (Equipment equipment in spawnedEquipment)
-		{
-			yield return null;
-
-			RollingStockManager.Instance.Add(equipment);
-
-			SimController? simController = equipment.GetTrainCar()?.GetComponent<SimController>();
-			BaseControlsOverrider? baseControlsOverrider = simController?.controlsOverrider;
-
-			if (baseControlsOverrider != null)
-			{
-				BaseControlsOverrider.SpawnType brakesOnSpawn =
-					equipment.IsCoupledFront || equipment.IsCoupledRear
-					? BaseControlsOverrider.SpawnType.GAME_LOAD_COUPLED
-					: BaseControlsOverrider.SpawnType.GAME_LOAD_UNCOUPLED;
-
-				baseControlsOverrider.SetBrakesOnSpawn(brakesOnSpawn);
-			}
-		}
-
-		foreach(TrainCarLivery livery in startingWagons)
-		{
-			inventory.AddMoney(Finance.CalculateCarPrice(livery));
-		}
+		spawnedEquipment.Do(RollingStockManager.Instance.Add);
 	}
 
 	private static IEnumerator ShowIntroductoryPopup(bool isShuntingLicenseChanged)
 	{
 		yield return new WaitForSeconds(2);
 
-		string locoName = LocalizationAPI.L(((TrainCarType) Main.Settings.starterLocoType).ToV2().localizationKey);
+		bool isWelcomeMessageShown = false;
+		bool isTeleportTargetFound = false;
+		bool isTeleporterFound = false;
+		bool isLocoTypeSelected = false;
+		bool isWagonTypeSelected = false;
+		bool isStarterEquipmentAcquired = false;
+		bool isPlayerTeleported = false;
+
+		var choices = new StarterChoices();
+		var locoOptions = new List<TrainCarType> { TrainCarType.LocoShunter, TrainCarType.LocoDM3, TrainCarType.LocoS060 };
+		var wagonOptions = new List<TrainCarType>
+		{
+			TrainCarType.StockBrown, // single route, lowest average pay, lowest average tonnage, highest average pay to tonnage ratio
+			TrainCarType.FlatbedStakes, // more routes, medium average pay, medium average tonnage, medium average pay to tonnage ratio
+			TrainCarType.HopperTeal // most routes, highest average pay, highest average tonnage, lowest average pay to tonnage ratio
+		};
+
+		// Randomize the order of the displayed option
+		locoOptions.Sort((_, _) => random.NextDouble() < 0.5 ? -1 : 1);
+		wagonOptions.Sort((_, _) => random.NextDouble() < 0.5 ? -1 : 1);
+
+		GameObject? teleportTarget = null;
+		NonStationTeleporter? teleporter = null;
 
 		PopupAPI.ShowOk(
 			title: "Rolling Stock Ownership",
 			message: Main.Localize("first_time_with_save"),
 			positive: Main.Localize("first_time_with_save_positive")
-		).Then((_) => (
+		).Then((_) => {
+			isWelcomeMessageShown = true;
+
+			teleportTarget = GameObject.Find("TeleportHouse");
+			if (teleportTarget == null) { throw new Exception("Failed to find player house teleport target"); }
+			isTeleportTargetFound = true;
+
+			teleporter = teleportTarget.GetComponent<NonStationTeleporter>();
+			if (teleporter == null) { throw new Exception("Failed to find player house teleporter"); }
+			isTeleporterFound = true;
+
+			string message = isShuntingLicenseChanged ? Main.Localize("given_shunting_license_choose_starter_loco") : Main.Localize("choose_starter_loco");
+
+			return PopupAPI.Show3Buttons(
+				title: "Rolling Stock Ownership",
+				message: message,
+				positive: LocalizationAPI.L(locoOptions[0].ToV2().parentType.localizationKey),
+				negative: LocalizationAPI.L(locoOptions[1].ToV2().parentType.localizationKey),
+				abort: LocalizationAPI.L(locoOptions[2].ToV2().parentType.localizationKey)
+			);
+		}).Then((popupResult) => {
+			PopupClosedByAction pressedButton = popupResult.closedBy;
+			TrainCarType locoChoice = pressedButton == PopupClosedByAction.Positive
+				? locoOptions[0]
+				: pressedButton == PopupClosedByAction.Negative
+					? locoOptions[1]
+					: locoOptions[2];
+			choices.ChooseLocomotive(locoChoice);
+			isLocoTypeSelected = true;
+
+			return PopupAPI.Show3Buttons(
+				title: "Rolling Stock Ownership",
+				message: Main.Localize("choose_starter_wagon"),
+				positive: LocalizationAPI.L(wagonOptions[0].ToV2().parentType.localizationKey),
+				negative: LocalizationAPI.L(wagonOptions[1].ToV2().parentType.localizationKey),
+				abort: LocalizationAPI.L(wagonOptions[2].ToV2().parentType.localizationKey)
+			);
+		}).Then((popupResult) => {
+			PopupClosedByAction pressedButton = popupResult.closedBy;
+			TrainCarType wagonChoice = pressedButton == PopupClosedByAction.Positive
+				? wagonOptions[0]
+				: pressedButton == PopupClosedByAction.Negative
+					? wagonOptions[1]
+					: wagonOptions[2];
+			choices.ChooseWagonType(wagonChoice);
+			isWagonTypeSelected = true;
+
+			if (teleporter == null) { throw new Exception("Player house teleporter unexpectedly null"); }
+			AcquireStarterEquipment(choices, teleporter.playerTeleportAnchor.position);
+			isStarterEquipmentAcquired = true;
+
+			return PopupAPI.ShowOk(
+				title: "Rolling Stock Ownership",
+				message: Main.Localize("teleport_to_starter_equipment", choices.LocalizedSelectedLocomotive, choices.LocalizedSelectedWagon),
+				positive: Main.Localize("teleport_to_starter_equipment_positive")
+			);
+		}).Then((_) => {
+			if (teleporter == null) { throw new Exception("Player house teleporter unexpectedly null"); }
+
+			teleporter.TeleportToStation();
+			isPlayerTeleported = true;
+		}).Catch((exception) => {
+			Main.LogError($"Exception thrown during RSO setup: {exception}");
+
+			string errorReference = "unknown error";
+			if (!isWelcomeMessageShown) { errorReference = "error displaying welcome message"; }
+			else if (!isTeleportTargetFound) { errorReference = "error finding teleport target"; }
+			else if (!isTeleporterFound) { errorReference = "error finding teleporter"; }
+			else if (!isLocoTypeSelected) { errorReference = "error selecting loco type"; }
+			else if (!isWagonTypeSelected) { errorReference = "error selecting wagon type"; }
+			else if (!isStarterEquipmentAcquired) { errorReference = "error acquiring starter equipment"; }
+			else if (!isPlayerTeleported) { errorReference = "error teleporting player"; }
+
 			PopupAPI.ShowOk(
 				title: "Rolling Stock Ownership",
-				message: string.Join(" ", new string [] {
-					isShuntingLicenseChanged ? Main.Localize("given_shunting_license") : "",
-					Main.Localize("given_starter_equipment", locoName),
-				}),
-				positive: Main.Localize("given_starter_equipment_positive")
-			)
-		));
+				message: Main.Localize("starting_conditions_error", errorReference),
+				positive: Main.Localize("starting_conditions_error_positive")
+			);
+		});
 	}
 
 	private static void EnsurePlayerHasRequiredItemsForSteamLoco()
@@ -202,5 +261,30 @@ internal static class StartingConditions
 				return false;
 			}
 		};
+	}
+
+	private class StarterChoices
+	{
+		public TrainCarType SelectedLocomotiveType { get; private set; }
+		public TrainCarType SelectedWagonType { get; private set; }
+
+		public string LocalizedSelectedLocomotive
+		{
+			get { return LocalizationAPI.L(SelectedLocomotiveType.ToV2().parentType.localizationKey); }
+		}
+		public string LocalizedSelectedWagon
+		{
+			get { return LocalizationAPI.L(SelectedWagonType.ToV2().parentType.localizationKey); }
+		}
+
+		public void ChooseLocomotive(TrainCarType locomotiveType)
+		{
+			SelectedLocomotiveType = locomotiveType;
+		}
+
+		public void ChooseWagonType(TrainCarType wagonType)
+		{
+			SelectedWagonType = wagonType;
+		}
 	}
 }
