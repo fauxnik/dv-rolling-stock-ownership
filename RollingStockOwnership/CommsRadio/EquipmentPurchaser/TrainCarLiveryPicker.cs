@@ -5,7 +5,7 @@ using CommsRadioAPI;
 using DV;
 using DV.Localization;
 using DV.ThingTypes;
-using RollingStockOwnership.Patches;
+using RollingStockOwnership.Extensions;
 using UnityEngine;
 
 namespace RollingStockOwnership.CommsRadio.EquipmentPurchaser;
@@ -88,7 +88,7 @@ internal class TrainCarLiveryPicker : AStateBehaviour
 							  select carLivery;
 		var licensedCarLiveries = from carLivery in allowedCarLiveries
 							   where CarTypes.IsRegularCar(carLivery)
-								   ? LicenseManager_Patches.IsLicensedForCar(carLivery)
+								   ? LicenseManager.Instance.IsLicensedForAnyCompatibleCargo(carLivery)
 								   : LicenseManager.Instance.IsLicensedForCar(TrainCarLiveryIntegrator.LocoForTender(carLivery))
 							   select carLivery;
 		availableCarLiveries = licensedCarLiveries.ToList();
