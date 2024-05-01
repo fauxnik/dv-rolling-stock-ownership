@@ -61,9 +61,6 @@ public static class Main
 		}
 		catch (Exception e) { OnCriticalFailure(e, "injecting translations"); }
 
-		try { CargoTypes_Patches.Setup(); }
-		catch (Exception e) { OnCriticalFailure(e, "patching CargoTypes"); }
-
 		try { CommsRadioCarDeleter_Patches.Setup(); }
 		catch (Exception e) { OnCriticalFailure(e, "patching CommsRadioCarDeleter"); }
 

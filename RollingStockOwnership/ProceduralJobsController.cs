@@ -3,7 +3,6 @@ using DV.ThingTypes;
 using DV.ThingTypes.TransitionHelpers;
 using HarmonyLib;
 using RollingStockOwnership.Extensions;
-using RollingStockOwnership.Patches;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -174,7 +173,7 @@ public class ProceduralJobsController
 			yield return null;
 			List<CargoGroup> licensedInboundCargoGroups = (
 				from cargoGroup in proceduralRuleset.inputCargoGroups
-				where LicenseManager_Patches.IsLicensedForCargoTypes(cargoGroup.cargoTypes)
+				where LicenseManager.Instance.IsLicensedForCargoTypes(cargoGroup.cargoTypes)
 				select cargoGroup
 			).ToList();
 			Main.Log($"Licensed inbound cargo groups: [{string.Join(", ", licensedInboundCargoGroups.Select(cg => string.Join(", ", cg.cargoTypes)))}]");
@@ -182,7 +181,7 @@ public class ProceduralJobsController
 			yield return null;
 			List<CargoGroup> licensedOutboundCargoGroups = (
 				from cargoGroup in proceduralRuleset.outputCargoGroups
-				where LicenseManager_Patches.IsLicensedForCargoTypes(cargoGroup.cargoTypes)
+				where LicenseManager.Instance.IsLicensedForCargoTypes(cargoGroup.cargoTypes)
 				select cargoGroup
 			).ToList();
 			Main.Log($"Licensed outbound cargo groups: [{string.Join(", ", licensedOutboundCargoGroups.Select(cg => string.Join(", ", cg.cargoTypes)))}]");
@@ -657,7 +656,7 @@ public class ProceduralJobsController
 				// Find stations that load cargo onto available wagons
 				IEnumerable<StationController> availableStations = LogicController.Instance.YardIdToStationController.Values
 					.Where(station => station.proceduralJobsRuleset.outputCargoGroups
-						.Where(cargoGroup => LicenseManager_Patches.IsLicensedForCargoTypes(cargoGroup.cargoTypes))
+						.Where(cargoGroup => LicenseManager.Instance.IsLicensedForCargoTypes(cargoGroup.cargoTypes))
 						.Any(cargoGroup => cargoGroup.cargoTypes
 							.Any(cargoType => cargoType.ToV2().loadableCarTypes.Select(info => info.carType)
 								.Intersect(wagonsForLogistics.Select(wagon => wagon.carLivery.parentType)).Count() > 0)));
@@ -667,7 +666,7 @@ public class ProceduralJobsController
 				yield return null;
 				List<CargoGroup> licesenedCargoGroupsAtDestination = (
 					from cargoGroup in destination.proceduralJobsRuleset.outputCargoGroups
-					where LicenseManager_Patches.IsLicensedForCargoTypes(cargoGroup.cargoTypes)
+					where LicenseManager.Instance.IsLicensedForCargoTypes(cargoGroup.cargoTypes)
 					select cargoGroup
 				).ToList();
 				Dictionary<(CargoGroup CargoGroup, string? OutboundYardID, string? InboundYardID), HashSet<TrainCar>> associations =
