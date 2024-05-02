@@ -95,7 +95,6 @@ public static class Main
 		CommsRadioAPI.ControllerAPI.Ready += CommsRadio.JobRequesterMode.Create;
 
 		WorldStreamingInit.LoadingFinished += StartingConditions.Verify;
-		WorldStreamingInit.LoadingFinished += ReservationManager.SetupReservationCallbacks;
 	}
 
 	internal static string Localize(string nakedKey, params string[] paramValues) =>

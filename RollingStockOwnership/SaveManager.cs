@@ -48,6 +48,11 @@ public class SaveManager
 	[HarmonyPatch(typeof(CarsSaveManager), "Load")]
 	class SaveGameManager_Load_Patch
 	{
+		static void Prefix()
+		{
+			// These callbacks must be setup before the saved wagons are spawned
+			ReservationManager.SetupReservationCallbacks();
+		}
 
 		static void Postfix(SaveGameManager __instance)
 		{

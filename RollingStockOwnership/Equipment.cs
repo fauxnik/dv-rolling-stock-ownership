@@ -89,7 +89,12 @@ public class Equipment
 	private bool isExploded;
 
 	private static readonly string LOADED_CARGO_SAVE_KEY = "loadedCargo";
-	private CargoType loadedCargo;
+	private CargoType _loadedCargo;
+	public CargoType LoadedCargo
+	{
+		get => _loadedCargo;
+		private set { _loadedCargo = value; }
+	}
 
 	private static readonly string HANDBRAKE_SAVE_KEY = "handbrake";
 	private float? handbrakeApplication;
@@ -143,7 +148,7 @@ public class Equipment
 		this.CarGuidCoupledFront = carGuidCoupledFront;
 		this.CarGuidCoupledRear = carGuidCoupledRear;
 		this.isExploded = isExploded;
-		this.loadedCargo = loadedCargo;
+		this.LoadedCargo = loadedCargo;
 		this.handbrakeApplication = handbrakeApplication;
 		this.mainReservoirPressure = mainReservoirPressure;
 		this.controlReservoirPressure = controlReservoirPressure;
@@ -228,7 +233,7 @@ public class Equipment
 	private void UpdateCargo(TrainCar? trainCar)
 	{
 		if (trainCar == null) { return; }
-		loadedCargo = trainCar.logicCar.CurrentCargoTypeInCar;
+		LoadedCargo = trainCar.logicCar.CurrentCargoTypeInCar;
 	}
 
 	private void SetupCouplerEventHandlers(TrainCar? trainCar)
@@ -335,7 +340,7 @@ public class Equipment
 		bool isUniqueCar = false;
 		trainCar = CarSpawner.Instance.SpawnLoadedCar(carPrefab, ID, CarGUID, isPlayerSpawnedCar, isUniqueCar, position + WorldMover.currentMove, rotation, isBogie1Derailed, bogie1Track, bogie1PositionAlongTrack, isBogie2Derailed, bogie2Track, bogie2PositionAlongTrack, IsCoupledFront, IsCoupledRear);
 
-		if (loadedCargo != CargoType.None) { trainCar.logicCar.LoadCargo(trainCar.cargoCapacity, loadedCargo, null); }
+		if (LoadedCargo != CargoType.None) { trainCar.logicCar.LoadCargo(trainCar.cargoCapacity, LoadedCargo, null); }
 		if (isExploded) { TrainCarExplosion.UpdateModelToExploded(trainCar); }
 
 		if (handbrakeApplication.HasValue) { trainCar.brakeSystem.SetHandbrakePosition(handbrakeApplication.Value); }
@@ -597,7 +602,7 @@ public class Equipment
 		{
 			data.SetFloat(BRAKE_CYLINDER_PRESSURE_SAVE_KEY, brakeCylinderPressure.Value);
 		}
-		data.SetInt(LOADED_CARGO_SAVE_KEY, (int)loadedCargo);
+		data.SetInt(LOADED_CARGO_SAVE_KEY, (int)LoadedCargo);
 		data.SetJObject(CAR_STATE_SAVE_KEY, carStateSave);
 		data.SetJObject(SIM_CAR_STATE_SAVE_KEY, simCarStateSave);
 		data.SetBool(SPAWNED_SAVE_KEY, IsSpawned);
