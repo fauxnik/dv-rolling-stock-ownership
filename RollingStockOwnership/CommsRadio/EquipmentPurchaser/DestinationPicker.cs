@@ -65,6 +65,14 @@ internal class DestinationPicker : AStateBehaviour
 			CommsRadioCrewVehicle? summoner = ControllerAPI.GetVanillaMode(VanillaMode.SummonCrewVehicle) as CommsRadioCrewVehicle;
 			if (summoner == null) { throw new Exception("Couldn't find crew vehicle summoner mode."); }
 			destinationHighlighter = cachedDestinationHighlighter = new CarDestinationHighlighter(summoner.destinationHighlighterGO, summoner.directionArrowsHighlighterGO);
+
+			void ClearCacheOnReload()
+			{
+				Main.Log("Clearing destination picker cache due to reload");
+				cachedDestinationHighlighter = null;
+				WorldStreamingInit.LoadingFinished -= ClearCacheOnReload;
+			}
+			WorldStreamingInit.LoadingFinished += ClearCacheOnReload;
 		}
 	}
 
