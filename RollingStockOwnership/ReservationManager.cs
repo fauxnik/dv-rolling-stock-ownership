@@ -16,7 +16,7 @@ public class ReservationManager
 	private static ReservationManager? instance = null;
 	public static ReservationManager Instance { get => instance ??= new ReservationManager(); }
 
-	// CarSpawner doesn't allow instance auto-creation, so this must be run on WorldStreamingInit.LoadingFinished
+	// CarSpawner doesn't allow instance auto-creation, so this must be run when the instance already exists
 	internal static void SetupReservationCallbacks()
 	{
 		void CarSpawned(TrainCar wagon)
@@ -133,6 +133,9 @@ public class ReservationManager
 		{
 			Car car = wagon.logicCar;
 
+			// Empty wagons don't have reservations
+			if (car.CurrentCargoTypeInCar == CargoType.None) { continue; }
+
 			if (TryGetReservation(car, out Reservation? reservation))
 			{
 				bool passesChecks = reservation.CarGuid == car.carGuid; // This should be true because we found a reservation, but it doesn't hurt to double check
@@ -178,12 +181,19 @@ public class ReservationManager
 
 			try
 			{
+				Main.LogDebug(() => $"Attempting to load reservation data:\n{token}");
 				Reservation? loadedReservation = Reservation.FromSaveData((JObject)token);
 				if (loadedReservation == null) { continue; }
+				Main.LogDebug(() => $"Got reservation data: {loadedReservation}");
 				string carGuid = loadedReservation.CarGuid;
-				TrainCar? wagon = CarSpawner.Instance.AllCars.FirstOrDefault(wagon => wagon.logicCar.carGuid == carGuid);
-				if (wagon == null || wagon.LoadedCargo.ToV2().id != loadedReservation.CargoTypeID) { continue; }
+				Main.LogDebug(() => $"Reservation car guid: {carGuid}");
+				Equipment? wagon = RollingStockManager.Instance.FindByCarGUID(carGuid);
+				Main.LogDebug(() => $"Wagon: {wagon?.ID}\tCargo in wagon: {wagon?.LoadedCargo.ToV2()?.id ?? "null"}");
+				Main.LogDebug(() => $"Reservation cargo: {loadedReservation.CargoTypeID}");
+				if (wagon == null || wagon.LoadedCargo.ToV2()?.id != loadedReservation.CargoTypeID) { continue; }
+				Main.LogDebug(() => "Adding reservation");
 				reservations.Add(carGuid, loadedReservation);
+				Main.LogDebug(() => "Done adding reservation");
 				countLoaded++;
 			}
 			catch (Exception exception)
