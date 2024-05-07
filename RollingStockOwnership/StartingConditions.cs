@@ -63,7 +63,7 @@ internal static class StartingConditions
 		CarSpawner.Instance.DeleteTrainCars(CarSpawner.Instance.AllCars, true);
 	}
 
-	private static void AcquireStarterEquipment(StarterChoices choices, Vector3 position)
+	private static List<TrainCar> AcquireStarterEquipment(StarterChoices choices, Vector3 position)
 	{
 		Inventory inventory = Inventory.Instance;
 		UnusedTrainCarDeleter unusedTrainCarDeleter = UnusedTrainCarDeleter.Instance;
@@ -89,16 +89,18 @@ internal static class StartingConditions
 		bool flipConsist = false;
 		bool randomOrientation = false;
 		bool playerSpawnedCar = false;
-		IEnumerable<Equipment> spawnedEquipment =
-			carSpawner.SpawnCarTypesOnTrackStrict(starterLiveries, track, true, true, startSpan, flipConsist, randomOrientation, playerSpawnedCar)
-			.Select(Equipment.FromTrainCar);
+		List<TrainCar> spawnedTrainCars =
+			carSpawner.SpawnCarTypesOnTrackStrict(starterLiveries, track, true, true, startSpan, flipConsist, randomOrientation, playerSpawnedCar);
 
+		IEnumerable<Equipment> spawnedEquipment = spawnedTrainCars.Select(Equipment.FromTrainCar);
 		spawnedEquipment.Do(RollingStockManager.Instance.Add);
+
+		return spawnedTrainCars;
 	}
 
 	private static IEnumerator ShowIntroductoryPopup(bool isShuntingLicenseChanged)
 	{
-		yield return new WaitForSeconds(2);
+		yield return WaitFor.SecondsRealtime(2);
 
 		bool isWelcomeMessageShown = false;
 		bool isTeleportTargetFound = false;
@@ -165,7 +167,7 @@ internal static class StartingConditions
 				negative: LocalizationAPI.L(wagonOptions[1].ToV2().parentType.localizationKey),
 				abort: LocalizationAPI.L(wagonOptions[2].ToV2().parentType.localizationKey)
 			);
-		}).Then((popupResult) => {
+		}).Then<List<TrainCar>>((popupResult) => {
 			PopupClosedByAction pressedButton = popupResult.closedBy;
 			TrainCarType wagonChoice = pressedButton == PopupClosedByAction.Positive
 				? wagonOptions[0]
@@ -176,8 +178,26 @@ internal static class StartingConditions
 			isWagonTypeSelected = true;
 
 			if (teleporter == null) { throw new Exception("Player house teleporter unexpectedly null"); }
-			AcquireStarterEquipment(choices, teleporter.playerTeleportAnchor.position);
+			List<TrainCar> spawnedTrainCars = AcquireStarterEquipment(choices, teleporter.playerTeleportAnchor.position);
 			isStarterEquipmentAcquired = true;
+
+			IEnumerator WaitForCoupling(Action proceed)
+			{
+				while (!spawnedTrainCars.All(trainCar => trainCar.frontCoupler.IsCoupled() || trainCar.rearCoupler.IsCoupled()))
+				{
+					yield return null;
+				}
+				proceed();
+			}
+
+			return new RSG.Promise<List<TrainCar>>((resolve, _) => {
+				// The spawned equipment needs to be coupled before we delete it
+				CoroutineManager.Instance.StartCoroutine(WaitForCoupling(() => resolve(spawnedTrainCars)));
+			});
+		}).Then((spawnedTrainCars) => {
+			// The spawned equipment must be deleted/respawned to prevent a weird bug where the wagons become immovable
+			spawnedTrainCars.Select(RollingStockManager.Instance.FindByTrainCar).Do(equipment => equipment.PrepareForDespawning());
+			CarSpawner.Instance.DeleteTrainCars(spawnedTrainCars);
 
 			return PopupAPI.ShowOk(
 				title: "Rolling Stock Ownership",
@@ -189,6 +209,10 @@ internal static class StartingConditions
 
 			teleporter.TeleportToStation();
 			isPlayerTeleported = true;
+
+			// Restarting the spawn state manager causes the deleted equipment to respawn as soon as possible
+			SpawnStateManager.Instance.Stop();
+			SpawnStateManager.Instance.Start();
 		}).Catch((exception) => {
 			Main.LogError($"Exception thrown during RSO setup: {exception}");
 
